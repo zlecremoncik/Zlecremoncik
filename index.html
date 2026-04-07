@@ -3,30 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zlecremoncik - Twoje Zlecenia</title>
+    <title>Zlecremoncik - Marketplace</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body class="bg-gray-50 font-sans">
 
-    <!-- Nawigacja (Styl pierwotny) -->
+    <!-- Nawigacja -->
     <nav class="bg-white shadow-sm py-4 px-6 flex justify-between items-center">
         <div class="text-2xl font-bold text-blue-600">Zlecremoncik</div>
-        <div class="space-x-4">
-            <button onclick="document.getElementById('modal').classList.remove('hidden')" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-bold">Dodaj zlecenie</button>
-        </div>
+        <button onclick="document.getElementById('modal').classList.remove('hidden')" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-bold">Dodaj zlecenie</button>
     </nav>
 
-    <!-- Hero Section (Ten duży niebieski z początku) -->
+    <!-- Hero Section -->
     <header class="bg-blue-600 py-16 px-6 text-center text-white">
         <h1 class="text-4xl md:text-5xl font-extrabold mb-4">Znajdź najlepszego wykonawcę</h1>
         <p class="text-xl mb-8 text-blue-100">Aktualne zapytania ofertowe z Twojej okolicy</p>
     </header>
 
-    <!-- Lista zleceń (Styl kart z pierwszej wersji) -->
+    <!-- Lista zleceń -->
     <section class="max-w-6xl mx-auto py-12 px-6">
-        <h2 class="text-2xl font-bold mb-8 text-gray-800">Najnowsze zlecenia w bazie:</h2>
+        <h2 class="text-2xl font-bold mb-8 text-gray-800 text-center md:text-left">Najnowsze zlecenia w bazie:</h2>
         <div id="zlecenia-list" class="space-y-4">
             <p class="text-center text-gray-500 italic">Ładowanie zleceń...</p>
         </div>
@@ -35,7 +33,7 @@
     <!-- Modal Formularza -->
     <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-[100]">
         <div class="bg-white rounded-xl w-full max-w-md p-8 relative shadow-2xl">
-            <button onclick="document.getElementById('modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            <button onclick="document.getElementById('modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-800 text-2xl">&times;</button>
             <h2 class="text-2xl font-bold mb-6 text-gray-800 text-center">Dodaj zlecenie</h2>
             
             <form id="orderForm" class="space-y-4">
@@ -48,12 +46,11 @@
     </div>
 
     <script>
-        // TWOJE DANE API
+        // TWOJE DANE API - POPRAWIONE
         const SUPABASE_URL = 'https://uodwrtpaesemcizdhcht.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_WVkkoJLfkTfUD95EeSZMDQQ_VEhzlW6n';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // 1. POBIERANIE ZLECEŃ
         async function fetchZlecenia() {
             const { data, error } = await supabaseClient
                 .from('Zlecenia')
@@ -67,6 +64,11 @@
                 return;
             }
 
+            if (data.length === 0) {
+                list.innerHTML = '<p class="text-center text-gray-500">Brak zleceń w bazie.</p>';
+                return;
+            }
+
             list.innerHTML = data.map(z => `
                 <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center">
                     <div>
@@ -76,13 +78,12 @@
                         <p class="text-gray-600 mt-2 text-sm italic">${z.Opis || ''}</p>
                     </div>
                     <div class="mt-4 md:mt-0">
-                        <button class="border-2 border-blue-600 text-blue-600 px-6 py-2 rounded-lg font-bold hover:bg-blue-600 hover:text-white transition">Wyślij ofertę</button>
+                        <button class="border-2 border-blue-600 text-blue-600 px-6 py-2 rounded-lg font-bold hover:bg-blue-600 hover:text-white transition shadow-sm">Wyślij ofertę</button>
                     </div>
                 </div>
             `).join('');
         }
 
-        // 2. DODAWANIE ZLECENIA
         document.getElementById('orderForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('submitBtn');
@@ -112,3 +113,4 @@
     </script>
 </body>
 </html>
+
