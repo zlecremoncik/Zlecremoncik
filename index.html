@@ -1,109 +1,56 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zlecremoncik - Marketplace</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zlecremoncik</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 </head>
-<body class="bg-gray-50 font-sans">
+<body class="bg-gray-100">
 
-    <nav class="bg-white shadow-sm py-4 px-6 flex justify-between items-center">
-        <div class="text-2xl font-bold text-blue-600">Zlecremoncik</div>
-        <button onclick="document.getElementById('modal').classList.remove('hidden')" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-bold shadow-md">Dodaj zlecenie</button>
-    </nav>
+<h1 style="text-align:center; margin-top:40px;">Zlecenia</h1>
 
-    <header class="bg-blue-600 py-16 px-6 text-center text-white">
-        <h1 class="text-4xl md:text-5xl font-extrabold mb-4">Znajdź fachowca w Twojej okolicy</h1>
-        <p class="text-xl mb-8 text-blue-100">Przeglądaj najnowsze zapytania od klientów</p>
-    </header>
+<div id="list" style="max-width:600px; margin:20px auto;"></div>
 
-    <main class="max-w-4xl mx-auto p-6">
-        <h2 class="text-2xl font-bold mb-8 text-gray-800 text-center md:text-left">Najnowsze zlecenia:</h2>
-        <div id="zlecenia-list" class="space-y-4">
-            <p class="text-center text-gray-500 italic">Ładowanie zleceń...</p>
-        </div>
-    </main>
+<script>
+const SUPABASE_URL = "https://uodwrtpaesemcizdhcht.supabase.co";
 
-    <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-[100]">
-        <div class="bg-white rounded-xl w-full max-w-md p-8 relative shadow-2xl">
-            <button onclick="document.getElementById('modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-800 text-2xl">&times;</button>
-            <h2 class="text-2xl font-bold mb-6 text-gray-800 text-center text-lg">Dodaj nowe zlecenie</h2>
-            <form id="orderForm" class="space-y-4">
-                <input type="text" id="tytulInput" required placeholder="Tytuł (np. Malowanie pokoju)" class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:border-blue-500">
-                <input type="text" id="miastoInput" required placeholder="Miasto" class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:border-blue-500">
-                <textarea id="opisInput" rows="4" placeholder="Opisz zlecenie..." class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:border-blue-500"></textarea>
-                <button type="submit" id="submitBtn" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-lg transition text-lg shadow-md">Opublikuj teraz</button>
-            </form>
-        </div>
+// 🔴 TU WKLEJ SWÓJ ANON KEY
+const SUPABASE_KEY = "TU_WKLEJ_ANON_KEY";
+
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+async function load() {
+  const { data, error } = await supabaseClient
+    .from("Zlecenia")
+    .select("*");
+
+  const el = document.getElementById("list");
+
+  if (error) {
+    el.innerHTML = "Błąd: " + error.message;
+    return;
+  }
+
+  if (!data.length) {
+    el.innerHTML = "Brak danych";
+    return;
+  }
+
+  el.innerHTML = data.map(z => `
+    <div style="background:#fff; padding:15px; margin-bottom:10px; border-radius:10px;">
+      <b>${z.Tytuł}</b><br>
+      ${z.Miasto}<br>
+      ${z.Opis || ""}
     </div>
+  `).join("");
+}
 
-    <script>
-        const SUPABASE_URL = 'https://uodwrtpaesemcizdhcht.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_WVkoJLfkTfUD95EeSZMDQQ_VEhzlW6n';
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+load();
+</script>
 
-        async function fetchZlecenia() {
-            const { data, error } = await supabaseClient
-                .from('Zlecenia')
-                .select('*')
-                .order('id', { ascending: false });
-
-            const list = document.getElementById('zlecenia-list');
-            
-            if (error) {
-                list.innerHTML = `<div class="bg-red-100 p-4 rounded-xl text-red-700 text-center">Błąd: ${error.message}</div>`;
-                return;
-            }
-
-            if (!data || data.length === 0) {
-                list.innerHTML = '<p class="text-center text-gray-400 py-10 text-lg italic">Brak zleceń w bazie.</p>';
-                return;
-            }
-
-            list.innerHTML = data.map(z => `
-                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center">
-                    <div>
-                        <span class="text-[10px] font-bold text-blue-600 uppercase bg-blue-50 px-2 py-1 rounded">Zlecenie</span>
-                        <h3 class="text-xl font-bold text-gray-900 mt-2">${z.Tytuł || 'Bez tytułu'}</h3>
-                        <p class="text-gray-500 text-sm"><i class="fas fa-map-marker-alt mr-2"></i>${z.Miasto || 'Nieznane'}</p>
-                        <p class="text-gray-700 mt-3 text-sm border-t pt-2">${z.Opis || ''}</p>
-                    </div>
-                    <div class="mt-4 md:mt-0">
-                        <button class="border-2 border-blue-600 text-blue-600 px-6 py-2 rounded-lg font-bold hover:bg-blue-600 hover:text-white transition shadow-sm">Wyślij ofertę</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        document.getElementById('orderForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('submitBtn');
-            btn.disabled = true;
-            btn.innerText = 'Wysyłanie...';
-
-            const payload = {
-                Tytuł: document.getElementById('tytulInput').value,
-                Miasto: document.getElementById('miastoInput').value,
-                Opis: document.getElementById('opisInput').value
-            };
-
-            const { error } = await supabaseClient.from('Zlecenia').insert([payload]);
-
-            if (error) {
-                alert("Błąd: " + error.message);
-            } else {
-                document.getElementById('modal').classList.add('hidden');
-                document.getElementById('orderForm').reset();
-                fetchZlecenia();
-            }
-            btn.disabled = false;
-            btn.innerText = 'Opublikuj teraz';
-        });
-
-        fetchZlecenia();
-    </script>
 </body>
 </html>
