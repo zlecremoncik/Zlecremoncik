@@ -3,80 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zlecremoncik - Dodaj Zlecenie</title>
+    <title>Zlecremoncik - Twoje Zlecenia</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Biblioteka Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body class="bg-gray-50 font-sans">
 
-    <nav class="bg-white shadow-sm py-4 px-6 mb-10">
-        <div class="max-w-6xl mx-auto flex justify-between items-center">
-            <div class="text-2xl font-bold text-blue-600">Zlecremoncik</div>
-            <a href="index.html" class="text-gray-600">Powrót</a>
+    <!-- Nawigacja (Styl pierwotny) -->
+    <nav class="bg-white shadow-sm py-4 px-6 flex justify-between items-center">
+        <div class="text-2xl font-bold text-blue-600">Zlecremoncik</div>
+        <div class="space-x-4">
+            <button onclick="document.getElementById('modal').classList.remove('hidden')" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-bold">Dodaj zlecenie</button>
         </div>
     </nav>
 
-    <div class="max-w-xl mx-auto bg-white p-8 rounded-2xl shadow-xl">
-        <h2 class="text-2xl font-bold mb-6 text-gray-800">Dodaj nowe zlecenie</h2>
-        
-        <form id="orderForm" class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Co jest do zrobienia?</label>
-                <input type="text" id="tytul" required placeholder="np. Remont łazienki 5m2" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Miasto</label>
-                <input type="text" id="miasto" required placeholder="np. Warszawa" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Opis szczegółowy</label>
-                <textarea id="opis" rows="4" placeholder="Opisz dokładnie zakres prac..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
-            </div>
-            <button type="submit" id="submitBtn" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition">Opublikuj zlecenie</button>
-        </form>
-        
-        <div id="status" class="mt-4 text-center hidden"></div>
+    <!-- Hero Section (Ten duży niebieski z początku) -->
+    <header class="bg-blue-600 py-16 px-6 text-center text-white">
+        <h1 class="text-4xl md:text-5xl font-extrabold mb-4">Znajdź najlepszego wykonawcę</h1>
+        <p class="text-xl mb-8 text-blue-100">Aktualne zapytania ofertowe z Twojej okolicy</p>
+    </header>
+
+    <!-- Lista zleceń (Styl kart z pierwszej wersji) -->
+    <section class="max-w-6xl mx-auto py-12 px-6">
+        <h2 class="text-2xl font-bold mb-8 text-gray-800">Najnowsze zlecenia w bazie:</h2>
+        <div id="zlecenia-list" class="space-y-4">
+            <p class="text-center text-gray-500 italic">Ładowanie zleceń...</p>
+        </div>
+    </section>
+
+    <!-- Modal Formularza -->
+    <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-[100]">
+        <div class="bg-white rounded-xl w-full max-w-md p-8 relative shadow-2xl">
+            <button onclick="document.getElementById('modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            <h2 class="text-2xl font-bold mb-6 text-gray-800 text-center">Dodaj zlecenie</h2>
+            
+            <form id="orderForm" class="space-y-4">
+                <input type="text" id="tytulInput" required placeholder="Co jest do zrobienia?" class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:border-blue-500">
+                <input type="text" id="miastoInput" required placeholder="Miasto" class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:border-blue-500">
+                <textarea id="opisInput" rows="4" placeholder="Opisz szczegóły..." class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:border-blue-500"></textarea>
+                <button type="submit" id="submitBtn" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-lg transition text-lg">Opublikuj teraz</button>
+            </form>
+        </div>
     </div>
 
     <script>
-        // --- KONFIGURACJA SUPABASE ---
-        // PODMIEŃ PONIŻSZE DANE NA TWOJE Z SUPABASE:
+        // TWOJE DANE API
         const SUPABASE_URL = 'https://uodwrtpaesemcizdhcht.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_WVkoJLfkTfUD95EeSZMDQQ_VEhzlW6n';
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const SUPABASE_KEY = 'sb_publishable_WVkkoJLfkTfUD95EeSZMDQQ_VEhzlW6n';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        const form = document.getElementById('orderForm');
-        const statusDiv = document.getElementById('status');
+        // 1. POBIERANIE ZLECEŃ
+        async function fetchZlecenia() {
+            const { data, error } = await supabaseClient
+                .from('Zlecenia')
+                .select('*')
+                .order('id', { ascending: false });
 
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const submitBtn = document.getElementById('submitBtn');
-            submitBtn.disabled = true;
-            submitBtn.innerText = 'Wysyłanie...';
-
-            const tytul = document.getElementById('tytul').value;
-            const miasto = document.getElementById('miasto').value;
-            const opis = document.getElementById('opis').value;
-
-            // WYSYŁANIE DO BAZY
-            const { data, error } = await supabase
-                .from('zlecenia')
-                .insert([{ tytul, miasto, opis }]);
-
-            statusDiv.classList.remove('hidden');
-            if (error) {
-                statusDiv.innerText = 'Błąd: ' + error.message;
-                statusDiv.className = 'mt-4 text-center text-red-600';
-            } else {
-                statusDiv.innerText = 'Sukces! Zlecenie zostało dodane.';
-                statusDiv.className = 'mt-4 text-center text-green-600';
-                form.reset();
-            }
+            const list = document.getElementById('zlecenia-list');
             
-            submitBtn.disabled = false;
-            submitBtn.innerText = 'Opublikuj zlecenie';
+            if (error) {
+                list.innerHTML = `<p class="text-red-500 text-center font-bold">Błąd: ${error.message}</p>`;
+                return;
+            }
+
+            list.innerHTML = data.map(z => `
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center">
+                    <div>
+                        <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">Zlecenie</span>
+                        <h3 class="text-xl font-bold text-gray-900 mt-1">${z.Tytuł}</h3>
+                        <p class="text-gray-500"><i class="fas fa-map-marker-alt mr-2"></i>${z.Miasto}</p>
+                        <p class="text-gray-600 mt-2 text-sm italic">${z.Opis || ''}</p>
+                    </div>
+                    <div class="mt-4 md:mt-0">
+                        <button class="border-2 border-blue-600 text-blue-600 px-6 py-2 rounded-lg font-bold hover:bg-blue-600 hover:text-white transition">Wyślij ofertę</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 2. DODAWANIE ZLECENIA
+        document.getElementById('orderForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.innerText = 'Wysyłanie...';
+
+            const payload = {
+                Tytuł: document.getElementById('tytulInput').value,
+                Miasto: document.getElementById('miastoInput').value,
+                Opis: document.getElementById('opisInput').value
+            };
+
+            const { error } = await supabaseClient.from('Zlecenia').insert([payload]);
+
+            if (error) {
+                alert("Błąd: " + error.message);
+            } else {
+                document.getElementById('modal').classList.add('hidden');
+                document.getElementById('orderForm').reset();
+                fetchZlecenia();
+            }
+            btn.disabled = false;
+            btn.innerText = 'Opublikuj teraz';
         });
+
+        fetchZlecenia();
     </script>
 </body>
 </html>
