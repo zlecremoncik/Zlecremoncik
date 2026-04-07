@@ -13,7 +13,7 @@
     <!-- Nawigacja -->
     <nav class="bg-white shadow-sm py-4 px-6 flex justify-between items-center">
         <div class="text-2xl font-bold text-blue-600">Zlecremoncik</div>
-        <button onclick="document.getElementById('modal').classList.remove('hidden')" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-bold">Dodaj zlecenie</button>
+        <button onclick="document.getElementById('modal').classList.remove('hidden')" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-bold shadow-md transition">Dodaj zlecenie</button>
     </nav>
 
     <!-- Hero Section -->
@@ -34,23 +34,26 @@
     <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-[100]">
         <div class="bg-white rounded-xl w-full max-w-md p-8 relative shadow-2xl">
             <button onclick="document.getElementById('modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-800 text-2xl">&times;</button>
-            <h2 class="text-2xl font-bold mb-6 text-gray-800 text-center">Dodaj zlecenie</h2>
+            <h2 class="text-2xl font-bold mb-6 text-gray-800 text-center text-xl">Co chcesz zlecić?</h2>
             
             <form id="orderForm" class="space-y-4">
-                <input type="text" id="tytulInput" required placeholder="Co jest do zrobienia?" class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:border-blue-500">
+                <input type="text" id="tytulInput" required placeholder="Tytuł (np. Malowanie pokoju)" class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:border-blue-500">
                 <input type="text" id="miastoInput" required placeholder="Miasto" class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:border-blue-500">
-                <textarea id="opisInput" rows="4" placeholder="Opisz szczegóły..." class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:border-blue-500"></textarea>
-                <button type="submit" id="submitBtn" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-lg transition text-lg">Opublikuj teraz</button>
+                <textarea id="opisInput" rows="4" placeholder="Opis zlecenia..." class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:border-blue-500"></textarea>
+                <button type="submit" id="submitBtn" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-lg transition text-lg shadow-md">Opublikuj teraz</button>
             </form>
         </div>
     </div>
 
     <script>
-        // TWOJE DANE API - POPRAWIONE
-        const SUPABASE_URL = 'https://uodwrtpaesemcizdhcht.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_WVkkoJLfkTfUD95EeSZMDQQ_VEhzlW6n';
+        // TWOJE DANE API - DOKŁADNIE TAKIE JAK PODAŁEŚ
+        const SUPABASE_URL = 'https://uodwrtpaesemcizdhcht.supabase.com';
+        const SUPABASE_KEY = 'sb_publishable_WVkoJLfkTfUD95EeSZMDQQ_VEhzlW6n';
+        
+        // Inicjalizacja klienta
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        // 1. POBIERANIE ZLECEŃ
         async function fetchZlecenia() {
             const { data, error } = await supabaseClient
                 .from('Zlecenia')
@@ -60,22 +63,22 @@
             const list = document.getElementById('zlecenia-list');
             
             if (error) {
-                list.innerHTML = `<p class="text-red-500 text-center font-bold">Błąd: ${error.message}</p>`;
+                list.innerHTML = `<p class="text-red-500 text-center font-bold">Błąd API: ${error.message}</p>`;
                 return;
             }
 
-            if (data.length === 0) {
-                list.innerHTML = '<p class="text-center text-gray-500">Brak zleceń w bazie.</p>';
+            if (!data || data.length === 0) {
+                list.innerHTML = '<p class="text-center text-gray-500">Baza jest pusta. Dodaj pierwsze zlecenie!</p>';
                 return;
             }
 
             list.innerHTML = data.map(z => `
-                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center">
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center hover:border-blue-300 transition">
                     <div>
-                        <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">Zlecenie</span>
-                        <h3 class="text-xl font-bold text-gray-900 mt-1">${z.Tytuł}</h3>
-                        <p class="text-gray-500"><i class="fas fa-map-marker-alt mr-2"></i>${z.Miasto}</p>
-                        <p class="text-gray-600 mt-2 text-sm italic">${z.Opis || ''}</p>
+                        <span class="text-[10px] font-bold text-blue-600 uppercase tracking-widest bg-blue-50 px-2 py-1 rounded">Zlecenie</span>
+                        <h3 class="text-xl font-bold text-gray-900 mt-2">${z.Tytuł}</h3>
+                        <p class="text-gray-500 text-sm"><i class="fas fa-map-marker-alt mr-2"></i>${z.Miasto}</p>
+                        <p class="text-gray-700 mt-3 text-sm border-t pt-2">${z.Opis || ''}</p>
                     </div>
                     <div class="mt-4 md:mt-0">
                         <button class="border-2 border-blue-600 text-blue-600 px-6 py-2 rounded-lg font-bold hover:bg-blue-600 hover:text-white transition shadow-sm">Wyślij ofertę</button>
@@ -84,6 +87,7 @@
             `).join('');
         }
 
+        // 2. DODAWANIE ZLECENIA
         document.getElementById('orderForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('submitBtn');
@@ -109,8 +113,8 @@
             btn.innerText = 'Opublikuj teraz';
         });
 
+        // Start
         fetchZlecenia();
     </script>
 </body>
 </html>
-
