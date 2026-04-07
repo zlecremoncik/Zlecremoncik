@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zlecremoncik - Konto</title>
+    <title>Zlecremoncik - Zdjęcia i Konta</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -11,46 +11,48 @@
 
 <div class="bg-white shadow-md p-4 flex justify-between items-center sticky top-0 z-50">
     <b class="text-blue-600 text-2xl tracking-tighter">ZLECREMONCIK</b>
-    <div id="user-info" class="text-xs font-bold text-gray-500"></div>
+    <div id="user-info" class="text-[10px] font-bold text-gray-500 uppercase"></div>
 </div>
 
 <div class="max-w-3xl mx-auto p-4">
-    
+
     <div id="auth-panel" class="bg-white p-8 rounded-3xl shadow-lg mb-8 border-2 border-blue-100">
-        <h2 class="text-2xl font-black mb-6 text-center text-gray-800">Moje Konto</h2>
-        
+        <h2 class="text-2xl font-black mb-6 text-center text-gray-800 italic">Witaj w Zlecremoncik!</h2>
         <div class="space-y-4">
             <input id="email" type="email" placeholder="Twój e-mail" class="w-full border-2 border-gray-100 p-3 rounded-xl outline-none focus:border-blue-400">
             <input id="password" type="password" placeholder="Hasło (min. 6 znaków)" class="w-full border-2 border-gray-100 p-3 rounded-xl outline-none focus:border-blue-400">
-            
-            <div class="flex flex-col md:flex-row gap-3 pt-2">
-                <button onclick="signIn()" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition-all text-lg shadow-lg">Zaloguj się</button>
-                <button onclick="signUp()" class="flex-1 bg-white text-blue-600 border-2 border-blue-600 py-3 rounded-xl font-bold hover:bg-blue-50 transition-all text-lg">Załóż konto</button>
+            <div class="flex gap-3">
+                <button onclick="signIn()" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 shadow-lg transition-all">Zaloguj</button>
+                <button onclick="signUp()" class="flex-1 border-2 border-blue-600 text-blue-600 py-3 rounded-xl font-bold hover:bg-blue-50 transition-all">Załóż konto</button>
             </div>
         </div>
-        <p class="text-[10px] text-gray-400 text-center mt-4 uppercase font-bold tracking-widest">Wymagane potwierdzenie e-mail przy rejestracji</p>
     </div>
 
-    <div id="add-panel" class="hidden bg-white p-8 rounded-3xl shadow-lg mb-8 border-4 border-green-400">
-        <h2 class="text-2xl font-black mb-6 text-green-600 uppercase italic">Dodaj nowe zlecenie 🚀</h2>
+    <div id="add-panel" class="hidden bg-white p-8 rounded-3xl shadow-lg mb-8 border-t-8 border-green-500">
+        <h2 class="text-2xl font-black mb-6 text-gray-800 uppercase">Dodaj zlecenie ze zdjęciem</h2>
         <div class="space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input id="t" placeholder="Co jest do zrobienia?" class="border-2 border-gray-100 p-3 rounded-xl focus:border-blue-400 outline-none">
+                <input id="t" placeholder="Co trzeba zrobić?" class="border-2 border-gray-100 p-3 rounded-xl focus:border-blue-400 outline-none">
                 <input id="m" placeholder="Miasto" class="border-2 border-gray-100 p-3 rounded-xl focus:border-blue-400 outline-none">
             </div>
             
-            <select id="k" class="w-full border-2 border-gray-100 p-3 rounded-xl bg-gray-50 outline-none focus:border-blue-400">
+            <select id="k" class="w-full border-2 border-gray-100 p-3 rounded-xl bg-gray-50 outline-none">
                 <option value="Remont">Remont</option>
                 <option value="Budowa">Budowa</option>
                 <option value="Ogród">Ogród</option>
                 <option value="Inne">Inne</option>
             </select>
 
-            <textarea id="o" placeholder="Opisz szczegóły..." class="w-full border-2 border-gray-100 p-3 rounded-xl h-32 focus:border-blue-400 outline-none"></textarea>
-            <input id="p" type="tel" placeholder="Twój numer telefonu" class="w-full border-2 border-gray-100 p-3 rounded-xl focus:border-blue-400 outline-none">
+            <textarea id="o" placeholder="Opisz zlecenie..." class="w-full border-2 border-gray-100 p-3 rounded-xl h-24 focus:border-blue-400 outline-none"></textarea>
+            <input id="p" type="tel" placeholder="Nr telefonu" class="w-full border-2 border-gray-100 p-3 rounded-xl focus:border-blue-400 outline-none">
             
-            <button onclick="add()" class="w-full bg-green-600 text-white py-4 rounded-2xl font-black text-xl shadow-xl hover:bg-green-700 hover:scale-[1.02] transition-all uppercase">Opublikuj ogłoszenie</button>
-            <button onclick="signOut()" class="w-full mt-4 text-xs text-gray-400 font-bold uppercase underline tracking-tighter hover:text-red-500 transition-colors">Wyloguj mnie bezpiecznie</button>
+            <div>
+                <label class="text-[10px] font-black text-gray-400 uppercase ml-1">📸 Wybierz zdjęcie</label>
+                <input id="img-input" type="file" accept="image/*" class="w-full border-2 border-dashed border-gray-200 p-4 rounded-xl text-sm text-gray-400">
+            </div>
+
+            <button onclick="add()" id="add-btn" class="w-full bg-green-600 text-white py-4 rounded-2xl font-black text-xl shadow-xl hover:bg-green-700 transition-all uppercase">Opublikuj teraz</button>
+            <button onclick="signOut()" class="w-full mt-4 text-xs text-gray-400 font-bold underline">Wyloguj</button>
         </div>
     </div>
 
@@ -62,79 +64,61 @@ const SUPABASE_URL = "https://uodwrtpaesemcizdhcht.supabase.co";
 const SUPABASE_KEY = "sb_publishable_WVkoJLfkTfUD95EeSZMDQQ_VEhzlW6n";
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// 1. REJESTRACJA
+// 1. AUTH - REJESTRACJA I LOGOWANIE
 async function signUp() {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
-    if (password.length < 6) { alert("Hasło musi mieć min. 6 znaków!"); return; }
-    
     const { error } = await db.auth.signUp({ email, password });
-    if (error) alert("Błąd rejestracji: " + error.message);
-    else alert("Konto utworzone! Sprawdź e-mail, aby potwierdzić rejestrację.");
+    if (error) alert(error.message);
+    else alert("Konto utworzone! Jeśli włączyłeś potwierdzenie, sprawdź maila.");
 }
 
-// 2. LOGOWANIE
 async function signIn() {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
-    
     const { error } = await db.auth.signInWithPassword({ email, password });
-    if (error) alert("Błąd logowania: " + error.message);
+    if (error) alert("Błąd: " + error.message);
 }
 
-// 3. WYLOGOWANIE
-async function signOut() {
-    await db.auth.signOut();
-    location.reload();
-}
+async function signOut() { await db.auth.signOut(); location.reload(); }
 
-// 4. MONITOROWANIE STANU UŻYTKOWNIKA
+// MONITOROWANIE STANU
 db.auth.onAuthStateChange((event, session) => {
     const authPanel = document.getElementById('auth-panel');
     const addPanel = document.getElementById('add-panel');
     const userInfo = document.getElementById('user-info');
-
     if (session) {
         authPanel.classList.add('hidden');
         addPanel.classList.remove('hidden');
-        userInfo.innerHTML = `Zalogowany: <b class="text-blue-600">${session.user.email}</b>`;
+        userInfo.innerText = `Zalogowany: ${session.user.email}`;
     } else {
         authPanel.classList.remove('hidden');
         addPanel.classList.add('hidden');
-        userInfo.innerHTML = "";
     }
 });
 
-// 5. ŁADOWANIE LISTY
-async function load() {
-    const { data } = await db.from("Zlecenia").select("*").order("id", { ascending: false });
-    const el = document.getElementById("list");
-    if (!data) return;
-
-    el.innerHTML = data.map(z => `
-        <div class="bg-white p-6 rounded-3xl shadow-sm border-2 border-white relative overflow-hidden group hover:shadow-xl transition-all">
-            <div class="absolute top-0 left-0 w-2 h-full bg-blue-500"></div>
-            <div class="flex justify-between items-start mb-2">
-                <span class="text-[10px] font-black bg-blue-50 text-blue-500 px-3 py-1 rounded-full uppercase">${z.Kategoria || 'Inne'}</span>
-                <span class="text-[10px] font-bold text-gray-400">📅 ${z.created_at ? new Date(z.created_at).toLocaleDateString() : 'Niedawno'}</span>
-            </div>
-            <h3 class="text-xl font-black text-gray-800 mb-1 leading-tight">${z.Tytuł || 'Bez tytułu'}</h3>
-            <div class="text-blue-600 font-bold text-sm mb-3">📍 ${z.Miasto || 'Polska'}</div>
-            <p class="text-gray-600 text-sm mb-4 leading-relaxed italic">"${z.Opis || ''}"</p>
-            ${z.Telefon ? `
-                <div class="pt-4 border-t border-gray-50 flex items-center justify-between">
-                    <span class="text-[10px] font-bold text-gray-400 uppercase">Kontakt:</span>
-                    <a href="tel:${z.Telefon}" class="bg-green-500 text-white px-5 py-2 rounded-xl font-black text-xs hover:bg-green-600 transition-all">📞 ${z.Telefon}</a>
-                </div>
-            ` : ''}
-        </div>
-    `).join("");
-}
-
-// 6. DODAWANIE ZLECENIA
+// 2. DODAWANIE ZDJĘCIA I ZLECENIA
 async function add() {
+    const btn = document.getElementById('add-btn');
     const { data: { user } } = await db.auth.getUser();
     if (!user) return;
+
+    btn.innerText = "Wysyłanie... Czekaj...";
+    btn.disabled = true;
+
+    const fileInput = document.getElementById('img-input');
+    const file = fileInput.files[0];
+    let photoUrl = "";
+
+    if (file) {
+        const fileName = `${Date.now()}_${file.name}`;
+        const { data, error: uploadError } = await db.storage.from('zdjecia').upload(fileName, file);
+        
+        if (!uploadError) {
+            const { data: urlData } = db.storage.from('zdjecia').getPublicUrl(fileName);
+            photoUrl = urlData.publicUrl;
+        }
+    }
 
     const { error } = await db.from("Zlecenia").insert([{
         Tytuł: document.getElementById("t").value,
@@ -142,11 +126,43 @@ async function add() {
         Opis: document.getElementById("o").value,
         Telefon: document.getElementById("p").value,
         Kategoria: document.getElementById("k").value,
-        user_email: user.email
+        user_email: user.email,
+        zdjecie_url: photoUrl
     }]);
 
     if (error) alert(error.message);
-    else { alert("Brawo! Ogłoszenie dodane."); location.reload(); }
+    else location.reload();
+}
+
+// 3. ŁADOWANIE LISTY
+async function load() {
+    const { data } = await db.from("Zlecenia").select("*").order("id", { ascending: false });
+    const el = document.getElementById("list");
+    if (!data) return;
+
+    el.innerHTML = data.map(z => {
+        const d = z.created_at ? new Date(z.created_at).toLocaleString('pl-PL', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'}) : "Niedawno";
+        return `
+            <div class="bg-white rounded-3xl shadow-sm border-2 border-white overflow-hidden hover:shadow-xl transition-all">
+                ${z.zdjecie_url ? `<img src="${z.zdjecie_url}" class="w-full h-56 object-cover shadow-inner">` : ''}
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-[9px] font-black bg-blue-600 text-white px-3 py-1 rounded-full uppercase">${z.Kategoria || 'Inne'}</span>
+                        <span class="text-[10px] font-bold text-gray-400">📅 ${d}</span>
+                    </div>
+                    <h3 class="text-2xl font-black text-gray-800 mb-1 leading-tight">${z.Tytuł || 'Bez tytułu'}</h3>
+                    <div class="text-blue-600 font-bold text-sm mb-4 italic">📍 ${z.Miasto || 'Polska'}</div>
+                    <p class="text-gray-600 text-sm leading-relaxed mb-6">"${z.Opis || ''}"</p>
+                    ${z.Telefon ? `
+                        <div class="pt-4 border-t border-gray-50 flex items-center justify-between">
+                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Kontakt:</span>
+                            <a href="tel:${z.Telefon}" class="bg-green-500 text-white px-5 py-2 rounded-xl font-black text-sm hover:bg-green-600 transition-all shadow-md">📞 ${z.Telefon}</a>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }).join("");
 }
 
 load();
