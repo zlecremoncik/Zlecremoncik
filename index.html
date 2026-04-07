@@ -1,141 +1,197 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Zlecremoncik</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zlecremoncik - Twoi Fachowcy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
 <body class="bg-gray-100 font-sans">
 
-<div class="bg-white shadow p-4 flex justify-between items-center flex-wrap gap-4">
-  <b class="text-blue-600 text-xl">ZLECREMONCIK</b>
-  
-  <div class="flex items-center gap-2">
-    <span class="text-sm text-gray-500">Pokaż:</span>
-    <select id="f" onchange="load()" class="border p-2 rounded-lg text-sm bg-gray-50">
-      <option value="Wszystkie">Wszystkie</option>
-      <option value="Remont">Remont</option>
-      <option value="Budowa">Budowa</option>
-      <option value="Ogród">Ogród</option>
-      <option value="Inne">Inne</option>
-    </select>
-  </div>
-
-  <button onclick="openModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold">+ Dodaj zlecenie</button>
-</div>
-
-<div class="bg-blue-600 text-white text-center py-12">
-  <h1 class="text-3xl font-bold">Znajdź fachowca w Twojej okolicy</h1>
-  <p class="text-blue-100 mt-2">Filtruj ogłoszenia i sprawdzaj daty</p>
-</div>
-
-<div id="list" class="max-w-3xl mx-auto p-4 space-y-4">
-  <p class="text-center text-gray-500">Ładowanie...</p>
-</div>
-
-<div id="modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4">
-  <div class="bg-white p-6 rounded-xl w-full max-w-md">
-    <h2 class="text-xl font-bold mb-4">Dodaj zlecenie</h2>
-
-    <input id="t" placeholder="Tytuł (np. Malowanie ścian)" class="w-full border p-2 mb-2 rounded">
-    <input id="m" placeholder="Miasto" class="w-full border p-2 mb-2 rounded">
+<div class="bg-white shadow-md p-4 flex flex-col md:flex-row justify-between items-center gap-4 sticky top-0 z-50">
+    <b class="text-blue-600 text-2xl tracking-tighter">ZLECREMONCIK</b>
     
-    <label class="text-xs text-gray-500">Wybierz kategorię:</label>
-    <select id="k" class="w-full border p-2 mb-2 rounded bg-gray-50">
-      <option value="Remont">Remont</option>
-      <option value="Budowa">Budowa</option>
-      <option value="Ogród">Ogród</option>
-      <option value="Inne">Inne</option>
-    </select>
+    <div class="flex items-center gap-2">
+        <span class="text-xs font-bold text-gray-400">FILTRUJ:</span>
+        <select id="f" onchange="load()" class="border-2 border-blue-100 p-2 rounded-xl text-sm bg-blue-50 outline-none focus:border-blue-400 transition-all">
+            <option value="Wszystkie">Wszystkie ogłoszenia</option>
+            <option value="Remont">Remonty</option>
+            <option value="Budowa">Budowa</option>
+            <option value="Ogród">Ogród</option>
+            <option value="Inne">Inne</option>
+        </select>
+    </div>
 
-    <textarea id="o" placeholder="Opis zlecenia..." class="w-full border p-2 mb-2 rounded"></textarea>
-    <input id="p" type="tel" placeholder="Numer telefonu" class="w-full border p-2 mb-4 rounded">
+    <button onclick="openModal()" class="bg-blue-600 text-white px-6 py-2 rounded-xl font-bold shadow-lg hover:scale-105 transition-transform">+ Dodaj zlecenie</button>
+</div>
 
-    <button onclick="add()" class="bg-green-600 text-white w-full py-2 rounded-lg font-bold">Opublikuj</button>
-    <button onclick="closeModal()" class="mt-2 text-gray-500 w-full text-sm text-center">Anuluj</button>
-  </div>
+<div class="bg-blue-600 text-white text-center py-12 px-4">
+    <h1 class="text-4xl font-black mb-2">Znajdź fachowca w okolicy</h1>
+    <p class="text-blue-100 opacity-80">Szybko, prosto i bez zbędnych formalności.</p>
+</div>
+
+<div id="list" class="max-w-3xl mx-auto p-4 space-y-6">
+    <p class="text-center text-gray-500 animate-pulse">Ładowanie zleceń...</p>
+</div>
+
+<div id="modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex justify-center items-center p-4 z-[100]">
+    <div class="bg-white p-8 rounded-3xl w-full max-w-md shadow-2xl overflow-y-auto max-h-[90vh]">
+        <h2 class="text-2xl font-black mb-6 text-gray-800 border-b pb-2">Nowe ogłoszenie</h2>
+
+        <div class="space-y-4">
+            <div>
+                <label class="text-[10px] font-black text-gray-400 uppercase ml-1">Tytuł zlecenia</label>
+                <input id="t" placeholder="np. Malowanie mieszkania 50m2" class="w-full border-2 border-gray-100 p-3 rounded-xl focus:border-blue-400 outline-none transition-all">
+            </div>
+
+            <div>
+                <label class="text-[10px] font-black text-gray-400 uppercase ml-1">Miasto</label>
+                <input id="m" placeholder="np. Warszawa" class="w-full border-2 border-gray-100 p-3 rounded-xl focus:border-blue-400 outline-none transition-all">
+            </div>
+            
+            <div>
+                <label class="text-[10px] font-black text-gray-400 uppercase ml-1">Kategoria</label>
+                <select id="k" class="w-full border-2 border-gray-100 p-3 rounded-xl bg-gray-50 outline-none focus:border-blue-400 transition-all">
+                    <option value="Remont">Remont</option>
+                    <option value="Budowa">Budowa</option>
+                    <option value="Ogród">Ogród</option>
+                    <option value="Inne">Inne</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="text-[10px] font-black text-gray-400 uppercase ml-1">Opis prac</label>
+                <textarea id="o" placeholder="Opisz dokładnie co jest do zrobienia..." class="w-full border-2 border-gray-100 p-3 rounded-xl h-28 focus:border-blue-400 outline-none transition-all"></textarea>
+            </div>
+
+            <div>
+                <label class="text-[10px] font-black text-gray-400 uppercase ml-1">Numer telefonu</label>
+                <input id="p" type="tel" placeholder="np. 500 600 700" class="w-full border-2 border-gray-100 p-3 rounded-xl focus:border-blue-400 outline-none transition-all">
+            </div>
+        </div>
+
+        <button onclick="add()" class="bg-green-600 text-white w-full py-4 rounded-2xl font-black text-lg shadow-xl hover:bg-green-700 mt-6 transition-colors">OPUBLIKUJ TERAZ</button>
+        <button onclick="closeModal()" class="mt-4 text-gray-400 w-full text-sm font-bold hover:text-gray-600 transition-colors text-center">Anuluj i wróć</button>
+    </div>
 </div>
 
 <script>
+// POŁĄCZENIE Z BAZĄ
 const SUPABASE_URL = "https://uodwrtpaesemcizdhcht.supabase.co";
 const SUPABASE_KEY = "sb_publishable_WVkoJLfkTfUD95EeSZMDQQ_VEhzlW6n";
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// FUNKCJA POBIERANIA
 async function load() {
-  const filtr = document.getElementById("f").value;
-  
-  // Budujemy zapytanie do bazy
-  let query = db.from("Zlecenia").select("*").order("id", { ascending: false });
+    const filtr = document.getElementById("f").value;
+    let query = db.from("Zlecenia").select("*").order("id", { ascending: false });
 
-  // Jeśli wybraliśmy coś innego niż "Wszystkie", filtrujemy
-  if (filtr !== "Wszystkie") {
-    query = query.eq("Kategoria", filtr);
-  }
+    if (filtr !== "Wszystkie") {
+        query = query.eq("Kategoria", filtr);
+    }
 
-  const { data, error } = await query;
-  const el = document.getElementById("list");
+    const { data, error } = await query;
+    const el = document.getElementById("list");
 
-  if (error) { el.innerHTML = `<div class="bg-red-200 p-4 rounded">${error.message}</div>`; return; }
-  if (!data || data.length === 0) { el.innerHTML = `<p class="text-center text-gray-400">Brak zleceń</p>`; return; }
+    if (error) { 
+        el.innerHTML = `<div class="bg-red-100 text-red-600 p-4 rounded-xl text-center">Błąd bazy: ${error.message}</div>`; 
+        return; 
+    }
+    
+    if (!data || data.length === 0) { 
+        el.innerHTML = `<div class="text-center py-20"><p class="text-gray-400 font-bold text-lg">Brak zleceń w tej kategorii 🔍</p></div>`; 
+        return; 
+    }
 
-  el.innerHTML = data.map(z => {
-    // Formatowanie daty na polski format (DD.MM.RRRR)
-    const dataTekst = z.created_at ? new Date(z.created_at).toLocaleDateString('pl-PL') : '';
+    el.innerHTML = data.map(z => {
+        // Obsługa daty (jeśli NULL to wyświetlamy "Niedawno")
+        const dateObj = z.created_at ? new Date(z.created_at) : null;
+        const dataTekst = dateObj ? dateObj.toLocaleDateString('pl-PL') : "Niedawno";
 
-    return `
-      <div class="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500 relative">
-        <span class="absolute top-2 right-4 text-[10px] text-gray-400 font-mono">${dataTekst}</span>
-        
-        <div class="font-bold text-lg text-gray-800">${z.Tytuł || ''}</div>
-        
-        <div class="flex gap-2 items-center mb-2">
-          <div class="text-blue-600 text-sm font-semibold">${z.Miasto || ''}</div>
-          <span class="text-[10px] bg-blue-50 text-blue-500 px-2 rounded-full uppercase font-bold">${z.Kategoria || 'Inne'}</span>
-        </div>
+        return `
+            <div class="bg-white p-6 rounded-3xl shadow-sm hover:shadow-xl transition-shadow border-2 border-white relative overflow-hidden group">
+                <div class="absolute top-0 left-0 w-2 h-full bg-blue-500"></div>
+                
+                <div class="flex justify-between items-start mb-2">
+                    <span class="text-[10px] font-black bg-gray-100 text-gray-500 px-3 py-1 rounded-full uppercase tracking-widest">
+                        📅 ${dataTekst}
+                    </span>
+                    <span class="text-[10px] font-black bg-blue-600 text-white px-3 py-1 rounded-full uppercase tracking-widest">
+                        ${z.Kategoria || 'Inne'}
+                    </span>
+                </div>
 
-        <div class="mt-2 text-gray-700 text-sm">${z.Opis || ''}</div>
-        
-        ${z.Telefon ? `
-          <div class="mt-3 pt-2 border-t flex items-center justify-between">
-            <span class="text-xs text-gray-500 italic">Kontakt:</span>
-            <a href="tel:${z.Telefon}" class="bg-green-100 text-green-700 px-3 py-1 rounded-md font-bold text-sm">
-              📞 ${z.Telefon}
-            </a>
-          </div>
-        ` : ''}
-      </div>
-    `;
-  }).join("");
+                <h3 class="text-2xl font-black text-gray-800 mb-1 leading-tight group-hover:text-blue-600 transition-colors">
+                    ${z.Tytuł || 'Bez tytułu'}
+                </h3>
+                
+                <div class="flex items-center gap-1 text-blue-600 font-bold text-sm mb-4">
+                    <span class="text-lg">📍</span> ${z.Miasto || 'Cała Polska'}
+                </div>
+
+                <p class="text-gray-600 text-sm leading-relaxed mb-6 italic">
+                    "${z.Opis || 'Brak dodatkowego opisu...'}"
+                </p>
+
+                ${z.Telefon ? `
+                    <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                        <span class="text-[10px] font-bold text-gray-400 uppercase">Kontakt bezpośredni:</span>
+                        <a href="tel:${z.Telefon}" class="bg-green-500 text-white px-5 py-2 rounded-xl font-black text-sm shadow-md hover:bg-green-600 active:scale-95 transition-all">
+                           📞 ${z.Telefon}
+                        </a>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }).join("");
 }
 
+// FUNKCJA DODAWANIA
 async function add() {
-  const { error } = await db.from("Zlecenia").insert([{
-    Tytuł: document.getElementById("t").value,
-    Miasto: document.getElementById("m").value,
-    Opis: document.getElementById("o").value,
-    Telefon: document.getElementById("p").value,
-    Kategoria: document.getElementById("k").value // WYSYŁANIE KATEGORII
-  }]);
+    const t = document.getElementById("t").value;
+    const m = document.getElementById("m").value;
+    const o = document.getElementById("o").value;
+    const p = document.getElementById("p").value;
+    const k = document.getElementById("k").value;
 
-  if (error) {
-    alert("Błąd: " + error.message);
-  } else {
-    document.getElementById("t").value = "";
-    document.getElementById("m").value = "";
-    document.getElementById("o").value = "";
-    document.getElementById("p").value = "";
-    closeModal();
-    load();
-  }
+    if(!t || !m) { alert("Podaj chociaż tytuł i miasto!"); return; }
+
+    const { error } = await db.from("Zlecenia").insert([{
+        Tytuł: t,
+        Miasto: m,
+        Opis: o,
+        Telefon: p,
+        Kategoria: k
+    }]);
+
+    if (error) {
+        alert("Wystąpił błąd: " + error.message);
+    } else {
+        // Czyścimy wszystko
+        document.getElementById("t").value = "";
+        document.getElementById("m").value = "";
+        document.getElementById("o").value = "";
+        document.getElementById("p").value = "";
+        closeModal();
+        load(); // Odśwież listę
+    }
 }
 
-function openModal() { document.getElementById("modal").classList.remove("hidden"); }
-function closeModal() { document.getElementById("modal").classList.add("hidden"); }
+// STEROWANIE MODALEM
+function openModal() { 
+    document.getElementById("modal").classList.remove("hidden");
+    document.body.style.overflow = "hidden"; // Blokada przewijania tła
+}
+function closeModal() { 
+    document.getElementById("modal").classList.add("hidden"); 
+    document.body.style.overflow = "auto";
+}
 
+// START
 load();
 </script>
+
 </body>
 </html>
