@@ -4,10 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Zlecremoncik</title>
-
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 </head>
 
 <body class="bg-gray-100 font-sans">
@@ -30,26 +28,26 @@
 </div>
 
 <!-- MODAL -->
-<div id="modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center">
+<div id="modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4">
   <div class="bg-white p-6 rounded-xl w-full max-w-md">
     <h2 class="text-xl font-bold mb-4">Dodaj zlecenie</h2>
 
-    <input id="t" placeholder="Tytuł" class="w-full border p-2 mb-2 rounded">
+    <input id="t" placeholder="Tytuł (np. Malowanie ścian)" class="w-full border p-2 mb-2 rounded">
     <input id="m" placeholder="Miasto" class="w-full border p-2 mb-2 rounded">
-    <textarea id="o" placeholder="Opis" class="w-full border p-2 mb-2 rounded"></textarea>
+    <textarea id="o" placeholder="Opis zlecenia..." class="w-full border p-2 mb-2 rounded"></textarea>
+    <!-- NOWE POLE -->
+    <input id="p" type="tel" placeholder="Numer telefonu" class="w-full border p-2 mb-4 rounded">
 
-    <button onclick="add()" class="bg-green-600 text-white w-full py-2 rounded-lg">Dodaj</button>
-    <button onclick="closeModal()" class="mt-2 text-gray-500 w-full">Anuluj</button>
+    <button onclick="add()" class="bg-green-600 text-white w-full py-2 rounded-lg font-bold">Opublikuj</button>
+    <button onclick="closeModal()" class="mt-2 text-gray-500 w-full text-sm">Anuluj</button>
   </div>
 </div>
 
 <script>
 const SUPABASE_URL = "https://uodwrtpaesemcizdhcht.supabase.co";
 const SUPABASE_KEY = "sb_publishable_WVkoJLfkTfUD95EeSZMDQQ_VEhzlW6n";
-
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// 🔄 POBIERANIE
 async function load() {
   const { data, error } = await db
     .from("Zlecenia")
@@ -57,54 +55,52 @@ async function load() {
     .order("id", { ascending: false });
 
   const el = document.getElementById("list");
-
-  if (error) {
-    el.innerHTML = `<div class="bg-red-200 p-4 rounded">${error.message}</div>`;
-    return;
-  }
-
-  if (!data || data.length === 0) {
-    el.innerHTML = `<p class="text-center text-gray-400">Brak zleceń</p>`;
-    return;
-  }
+  if (error) { el.innerHTML = `<div class="bg-red-200 p-4 rounded">${error.message}</div>`; return; }
+  if (!data || data.length === 0) { el.innerHTML = `<p class="text-center text-gray-400">Brak zleceń</p>`; return; }
 
   el.innerHTML = data.map(z => `
-    <div class="bg-white p-4 rounded-lg shadow">
-      <div class="font-bold text-lg">${z.Tytuł || ''}</div>
-      <div class="text-gray-500">${z.Miasto || ''}</div>
-      <div class="mt-2">${z.Opis || ''}</div>
+    <div class="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500">
+      <div class="font-bold text-lg text-gray-800">${z.Tytuł || ''}</div>
+      <div class="text-blue-600 text-sm font-semibold">${z.Miasto || ''}</div>
+      <div class="mt-2 text-gray-700">${z.Opis || ''}</div>
+      <!-- WYŚWIETLANIE TELEFONU -->
+      ${z.Telefon ? `
+        <div class="mt-3 pt-2 border-t flex items-center justify-between">
+          <span class="text-sm text-gray-500 italic">Kontakt:</span>
+          <a href="tel:${z.Telefon}" class="bg-green-100 text-green-700 px-3 py-1 rounded-md font-bold text-sm">
+            📞 ${z.Telefon}
+          </a>
+        </div>
+      ` : ''}
     </div>
   `).join("");
 }
 
-// ➕ DODAWANIE
 async function add() {
   const { error } = await db.from("Zlecenia").insert([{
     Tytuł: document.getElementById("t").value,
     Miasto: document.getElementById("m").value,
-    Opis: document.getElementById("o").value
+    Opis: document.getElementById("o").value,
+    Telefon: document.getElementById("p").value // WYSYŁANIE TELEFONU
   }]);
 
   if (error) {
     alert("Błąd: " + error.message);
   } else {
+    // Czyścimy pola
+    document.getElementById("t").value = "";
+    document.getElementById("m").value = "";
+    document.getElementById("o").value = "";
+    document.getElementById("p").value = "";
     closeModal();
     load();
   }
 }
 
-// 📦 MODAL
-function openModal() {
-  document.getElementById("modal").classList.remove("hidden");
-}
+function openModal() { document.getElementById("modal").classList.remove("hidden"); }
+function closeModal() { document.getElementById("modal").classList.add("hidden"); }
 
-function closeModal() {
-  document.getElementById("modal").classList.add("hidden");
-}
-
-// 🚀 START
 load();
 </script>
-
 </body>
 </html>
