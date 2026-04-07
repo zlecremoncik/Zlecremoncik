@@ -9,46 +9,100 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 </head>
-<body class="bg-gray-100">
 
-<h1 style="text-align:center; margin-top:40px;">Zlecenia</h1>
+<body class="bg-gray-100 font-sans">
 
-<div id="list" style="max-width:600px; margin:20px auto;"></div>
+<!-- NAV -->
+<div class="bg-white shadow p-4 flex justify-between items-center">
+  <b class="text-blue-600 text-xl">ZLECREMONCIK</b>
+  <button onclick="openModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg">+ Dodaj zlecenie</button>
+</div>
+
+<!-- HEADER -->
+<div class="bg-blue-600 text-white text-center py-12">
+  <h1 class="text-3xl font-bold">Znajdź fachowca w Twojej okolicy</h1>
+  <p class="text-blue-100 mt-2">Najnowsze zlecenia</p>
+</div>
+
+<!-- LISTA -->
+<div id="list" class="max-w-3xl mx-auto p-4 space-y-4">
+  <p class="text-center text-gray-500">Ładowanie...</p>
+</div>
+
+<!-- MODAL -->
+<div id="modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center">
+  <div class="bg-white p-6 rounded-xl w-full max-w-md">
+    <h2 class="text-xl font-bold mb-4">Dodaj zlecenie</h2>
+
+    <input id="t" placeholder="Tytuł" class="w-full border p-2 mb-2 rounded">
+    <input id="m" placeholder="Miasto" class="w-full border p-2 mb-2 rounded">
+    <textarea id="o" placeholder="Opis" class="w-full border p-2 mb-2 rounded"></textarea>
+
+    <button onclick="add()" class="bg-green-600 text-white w-full py-2 rounded-lg">Dodaj</button>
+    <button onclick="closeModal()" class="mt-2 text-gray-500 w-full">Anuluj</button>
+  </div>
+</div>
 
 <script>
 const SUPABASE_URL = "https://uodwrtpaesemcizdhcht.supabase.co";
+const SUPABASE_KEY = "sb_publishable_WVkoJLfkTfUD95EeSZMDQQ_VEhzlW6n";
 
-// 🔴 TU WKLEJ SWÓJ ANON KEY
-const SUPABASE_KEY = "TU_WKLEJ_ANON_KEY";
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
+// 🔄 POBIERANIE
 async function load() {
-  const { data, error } = await supabaseClient
+  const { data, error } = await db
     .from("Zlecenia")
-    .select("*");
+    .select("*")
+    .order("id", { ascending: false });
 
   const el = document.getElementById("list");
 
   if (error) {
-    el.innerHTML = "Błąd: " + error.message;
+    el.innerHTML = `<div class="bg-red-200 p-4 rounded">${error.message}</div>`;
     return;
   }
 
-  if (!data.length) {
-    el.innerHTML = "Brak danych";
+  if (!data || data.length === 0) {
+    el.innerHTML = `<p class="text-center text-gray-400">Brak zleceń</p>`;
     return;
   }
 
   el.innerHTML = data.map(z => `
-    <div style="background:#fff; padding:15px; margin-bottom:10px; border-radius:10px;">
-      <b>${z.Tytuł}</b><br>
-      ${z.Miasto}<br>
-      ${z.Opis || ""}
+    <div class="bg-white p-4 rounded-lg shadow">
+      <div class="font-bold text-lg">${z.Tytuł || ''}</div>
+      <div class="text-gray-500">${z.Miasto || ''}</div>
+      <div class="mt-2">${z.Opis || ''}</div>
     </div>
   `).join("");
 }
 
+// ➕ DODAWANIE
+async function add() {
+  const { error } = await db.from("Zlecenia").insert([{
+    Tytuł: document.getElementById("t").value,
+    Miasto: document.getElementById("m").value,
+    Opis: document.getElementById("o").value
+  }]);
+
+  if (error) {
+    alert("Błąd: " + error.message);
+  } else {
+    closeModal();
+    load();
+  }
+}
+
+// 📦 MODAL
+function openModal() {
+  document.getElementById("modal").classList.remove("hidden");
+}
+
+function closeModal() {
+  document.getElementById("modal").classList.add("hidden");
+}
+
+// 🚀 START
 load();
 </script>
 
