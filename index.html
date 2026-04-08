@@ -29,26 +29,28 @@
     </div>
 </nav>
 
-<!-- MODAL RESETU HASŁA -->
 <div id="recovery-panel" class="hidden fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
     <div class="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full">
         <h2 class="text-2xl font-black mb-2 text-slate-800">Nowe hasło</h2>
         <input id="new-password" type="password" placeholder="Min. 6 znaków" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl outline-none focus:border-blue-400 mb-4 text-slate-800">
-        <button onclick="updatePassword()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold hover:bg-blue-700 shadow-lg">Zmień hasło</button>
+        <button onclick="updatePassword()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold hover:bg-blue-700 shadow-lg transition-all">Zmień hasło i zaloguj</button>
     </div>
 </div>
 
-<header class="relative pt-20 pb-28 px-4 text-center overflow-hidden bg-slate-800">
+<header class="relative pt-24 pb-32 px-4 text-center overflow-hidden">
+    <div class="absolute inset-0 z-0">
+        <img src="kuchnia.png" alt="Tło" class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-[1px]"></div>
+    </div>
     <div class="relative z-10 max-w-3xl mx-auto text-white">
-        <h1 class="text-4xl md:text-5xl font-extrabold mb-4 tracking-tight uppercase italic">Potrzebujesz fachowca?</h1>
+        <h1 class="text-4xl md:text-6xl font-extrabold mb-4 tracking-tight drop-shadow-2xl uppercase italic">Potrzebujesz fachowca?</h1>
         <p class="text-blue-100 opacity-90 font-medium text-lg">Zleć remont w 30 sekund.</p>
     </div>
 </header>
 
 <main class="max-w-3xl mx-auto px-4 -mt-10 relative z-20">
-    <!-- LOGOWANIE -->
     <div id="auth-panel" class="bg-white p-8 rounded-3xl card-shadow mb-12 border border-slate-100">
-        <h2 class="text-xl font-bold mb-6 text-slate-800">Zaloguj się</h2>
+        <h2 class="text-xl font-bold mb-6 text-slate-800 uppercase tracking-tight">Zaloguj się</h2>
         <div class="space-y-4">
             <input id="email" type="email" placeholder="Twój e-mail" class="w-full bg-slate-50 border-2 border-slate-50 p-4 rounded-2xl outline-none focus:border-blue-400 text-slate-800">
             <input id="password" type="password" placeholder="Hasło" class="w-full bg-slate-50 border-2 border-slate-50 p-4 rounded-2xl outline-none focus:border-blue-400 text-slate-800">
@@ -60,7 +62,6 @@
         </div>
     </div>
 
-    <!-- DODAWANIE OGŁOSZENIA -->
     <div id="add-panel" class="hidden bg-white p-8 rounded-3xl card-shadow mb-12 border-2 border-blue-50">
         <h2 class="text-2xl font-black italic uppercase tracking-tighter mb-8 text-slate-800">Dodaj zlecenie</h2>
         <div class="space-y-5">
@@ -79,7 +80,6 @@
         </div>
     </div>
 
-    <!-- LISTA OGŁOSZEŃ -->
     <div id="list" class="space-y-8 pb-20"></div>
 </main>
 
@@ -125,7 +125,7 @@ async function signUp() {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     const { error } = await db.auth.signUp({ email, password });
-    if (error) alert(error.message); else alert("Konto utworzone!");
+    if (error) alert(error.message); else alert("Potwierdź e-mail!");
 }
 
 async function signOut() { await db.auth.signOut(); window.location.reload(); }
@@ -140,7 +140,7 @@ async function resetPasswordRequest() {
 async function updatePassword() {
     const newPass = document.getElementById('new-password').value;
     const { error } = await db.auth.updateUser({ password: newPass });
-    if (error) alert(error.message); else { alert("Zmienione!"); location.reload(); }
+    if (error) alert(error.message); else { alert("Hasło zmienione!"); location.reload(); }
 }
 
 async function add() {
@@ -160,7 +160,7 @@ async function add() {
     let photoUrl = "";
     if (file) {
         const fileName = `${Date.now()}_img`;
-        const { data } = await db.storage.from('zdjecia').upload(fileName, file);
+        const { data, error: storageError } = await db.storage.from('zdjecia').upload(fileName, file);
         if (data) {
             const { data: urlData } = db.storage.from('zdjecia').getPublicUrl(fileName);
             photoUrl = urlData.publicUrl;
@@ -186,7 +186,7 @@ async function load() {
 
         return `
             <div class="bg-white rounded-[2rem] card-shadow overflow-hidden border border-slate-100 mb-6 fade-in">
-                ${z.zdjecie_url ? `<img src="${z.zdjecie_url}" class="w-full h-64 object-cover">` : ''}
+                ${z.zdjecie_url ? `<img src="${z.zdjecie_url}" class="w-full h-72 object-cover bg-slate-50 shadow-inner">` : ''}
                 <div class="p-8">
                     <div class="flex justify-between items-center mb-3">
                         <span class="text-[10px] font-extrabold bg-blue-50 text-blue-600 px-3 py-1 rounded-full uppercase">${z.Kategoria}</span>
