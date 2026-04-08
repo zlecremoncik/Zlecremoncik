@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ZlećRemoncik - Fachowcy od ręki</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
@@ -16,12 +16,16 @@
 </head>
 <body class="text-slate-900">
 
+<!-- NAWIGACJA Z WYLOGOWANIEM -->
 <nav class="bg-white/90 backdrop-blur-md sticky top-0 z-50 border-b border-slate-100">
     <div class="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
         <div class="text-2xl font-extrabold tracking-tighter text-slate-800">
             Zleć<span class="text-blue-600">Remoncik</span>
         </div>
-        <div id="user-info" class="text-[10px] font-bold text-slate-400 bg-slate-50 px-3 py-1 rounded-full uppercase tracking-wider"></div>
+        <div id="user-info-area" class="flex items-center gap-3">
+            <span id="user-info" class="text-[10px] font-bold text-slate-400 bg-slate-50 px-3 py-1 rounded-full uppercase tracking-wider"></span>
+            <button id="logout-btn" onclick="signOut()" class="hidden text-[10px] font-bold text-red-400 hover:text-red-600 uppercase tracking-wider">Wyloguj</button>
+        </div>
     </div>
 </nav>
 
@@ -40,6 +44,7 @@
     </div>
 </header>
 
+<!-- FILTRY -->
 <div class="sticky top-[60px] z-40 bg-white border-b border-slate-100 py-3 shadow-sm">
     <div class="max-w-3xl mx-auto px-4 flex items-center justify-between text-slate-800">
         <span class="text-sm font-bold text-slate-500 uppercase tracking-widest">Kategorie:</span>
@@ -55,23 +60,24 @@
 
 <div class="max-w-3xl mx-auto px-4 -mt-8 relative z-20">
     
+    <!-- LOGOWANIE I RESET HASŁA -->
     <div id="auth-panel" class="bg-white p-8 rounded-3xl card-shadow mb-12 border border-slate-100">
-        <h2 class="text-xl font-bold mb-6 text-slate-800">Zaloguj się</h2>
+        <h2 class="text-xl font-bold mb-6 text-slate-800">Panel użytkownika</h2>
         <div class="space-y-4">
-            <input id="email" type="email" placeholder="E-mail" class="w-full bg-slate-50 border-2 border-slate-50 p-4 rounded-2xl outline-none focus:border-blue-400 focus:bg-white transition-all">
+            <input id="email" type="email" placeholder="E-mail" class="w-full bg-slate-50 border-2 border-slate-50 p-4 rounded-2xl outline-none focus:border-blue-400 focus:bg-white transition-all text-slate-800">
             <input id="password" type="password" placeholder="Hasło" class="w-full bg-slate-50 border-2 border-slate-50 p-4 rounded-2xl outline-none focus:border-blue-400 focus:bg-white transition-all text-slate-800">
+            
             <div class="grid grid-cols-2 gap-4">
                 <button onclick="signIn()" class="bg-blue-600 text-white py-4 rounded-2xl font-bold hover:bg-blue-700 shadow-lg transition-all">Zaloguj się</button>
                 <button onclick="signUp()" class="bg-white text-slate-600 border-2 border-slate-100 py-4 rounded-2xl font-bold text-sm">Nowe konto</button>
             </div>
+            <button onclick="resetPassword()" class="w-full text-xs text-slate-400 hover:text-blue-500 font-medium transition-colors">Zapomniałeś hasła? Kliknij tutaj.</button>
         </div>
     </div>
 
+    <!-- DODAWANIE OGŁOSZENIA -->
     <div id="add-panel" class="hidden bg-white p-8 rounded-3xl card-shadow mb-12 border-2 border-blue-100 text-slate-800">
-        <div class="flex items-center justify-between mb-8">
-            <h2 class="text-2xl font-extrabold italic uppercase tracking-tighter">Nowe Ogłoszenie</h2>
-            <button onclick="signOut()" class="text-xs font-bold text-slate-400 hover:text-red-500 uppercase">Wyloguj</button>
-        </div>
+        <h2 class="text-2xl font-extrabold italic uppercase tracking-tighter mb-8">Nowe Ogłoszenie</h2>
         <div class="space-y-5">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <input id="t" placeholder="Tytuł usługi" class="w-full bg-slate-50 border-2 border-slate-50 p-3 rounded-xl focus:border-blue-400 outline-none">
@@ -88,10 +94,11 @@
                 <input id="p" type="tel" maxlength="9" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="Numer telefonu (9 cyfr)" class="w-full bg-slate-50 border-2 border-slate-50 p-3 rounded-xl focus:border-blue-400 outline-none">
                 <input id="img-input" type="file" accept="image/*" class="w-full text-xs text-slate-400 file:py-3 file:px-4 file:rounded-xl file:bg-blue-50 file:text-blue-700 file:border-0 cursor-pointer">
             </div>
-            <button onclick="add()" id="add-btn" class="w-full bg-blue-600 text-white py-5 rounded-2xl font-extrabold text-lg shadow-xl hover:bg-blue-700 uppercase tracking-tight mt-4 transition-all">Opublikuj ogłoszenie</button>
+            <button onclick="add()" id="add-btn" class="w-full bg-blue-600 text-white py-5 rounded-2xl font-extrabold text-lg shadow-xl hover:bg-blue-700 uppercase tracking-tight mt-4">Opublikuj ogłoszenie</button>
         </div>
     </div>
 
+    <!-- LISTA OGŁOSZEŃ -->
     <div id="list" class="space-y-8 pb-20 mt-10">
         <p class="text-center text-slate-400 animate-pulse font-bold uppercase tracking-widest text-xs">Pobieranie ofert...</p>
     </div>
@@ -102,12 +109,12 @@ const SUPABASE_URL = "https://uodwrtpaesemcizdhcht.supabase.co";
 const SUPABASE_KEY = "sb_publishable_WVkoJLfkTfUD95EeSZMDQQ_VEhzlW6n";
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// AUTH
+// AUTH FUNCTIONS
 async function signUp() {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     const { error } = await db.auth.signUp({ email, password });
-    if (error) alert(error.message); else alert("Konto założone!");
+    if (error) alert(error.message); else alert("Konto założone! Sprawdź e-mail, aby potwierdzić.");
 }
 async function signIn() {
     const email = document.getElementById('email').value;
@@ -117,29 +124,39 @@ async function signIn() {
 }
 async function signOut() { await db.auth.signOut(); location.reload(); }
 
+async function resetPassword() {
+    const email = document.getElementById('email').value;
+    if (!email) { alert("Wpisz swój adres e-mail w polu powyżej!"); return; }
+    const { error } = await db.auth.resetPasswordForEmail(email);
+    if (error) alert(error.message); else alert("Link do resetowania hasła został wysłany na Twój e-mail!");
+}
+
+// OBSŁUGA STANU LOGOWANIA
 db.auth.onAuthStateChange((event, session) => {
     const authPanel = document.getElementById('auth-panel');
     const addPanel = document.getElementById('add-panel');
     const userInfo = document.getElementById('user-info');
+    const logoutBtn = document.getElementById('logout-btn');
     if (session) {
         authPanel.classList.add('hidden');
         addPanel.classList.remove('hidden');
         userInfo.innerText = session.user.email;
+        logoutBtn.classList.remove('hidden');
     } else {
         authPanel.classList.remove('hidden');
         addPanel.classList.add('hidden');
+        userInfo.innerText = "";
+        logoutBtn.classList.add('hidden');
     }
 });
 
-// FUNKCJA WALIDACJI
+// WALIDACJA NUMERU
 function isPhoneValid(num) {
-    const forbidden = ["123456789", "987654321", "000000000", "111111111", "222222222", "333333333", "444444444", "555555555", "666666666", "777777777", "888888888", "999999999"];
-    if (num.length !== 9) return false; // MUSI BYĆ DOKŁADNIE 9
-    if (forbidden.includes(num)) return false; // ŻARTY BLOKUJEMY
-    return true;
+    const forbidden = ["123456789", "987654321", "000000000", "111111111"];
+    return num.length === 9 && !forbidden.includes(num);
 }
 
-// DODAWANIE
+// DODAWANIE OGŁOSZENIA
 async function add() {
     const t = document.getElementById("t").value.trim();
     const m = document.getElementById("m").value.trim();
@@ -147,17 +164,8 @@ async function add() {
     const p = document.getElementById("p").value.trim();
     const btn = document.getElementById('add-btn');
 
-    // SPRAWDZANIE CZY WSZYSTKO JEST WPISANE
-    if (!t || !m || !o || !p) {
-        alert("Wypełnij wszystkie pola (Tytuł, Miasto, Opis i Telefon)!");
-        return;
-    }
-
-    // SPRAWDZANIE NUMERU
-    if (!isPhoneValid(p)) {
-        alert("Numer telefonu musi mieć dokładnie 9 cyfr i być prawdziwy!");
-        return;
-    }
+    if (!t || !m || !o || !p) { alert("Wypełnij wszystkie pola!"); return; }
+    if (!isPhoneValid(p)) { alert("Numer telefonu musi mieć dokładnie 9 cyfr!"); return; }
 
     const { data: { user } } = await db.auth.getUser();
     if (!user) return;
@@ -176,33 +184,23 @@ async function add() {
         }
     }
     const { error } = await db.from("Zlecenia").insert([{
-        Tytuł: t,
-        Miasto: m,
-        Opis: o,
-        Telefon: p,
+        Tytuł: t, Miasto: m, Opis: o, Telefon: p,
         Kategoria: document.getElementById("k").value,
-        user_email: user.email,
-        zdjecie_url: photoUrl
+        user_email: user.email, zdjecie_url: photoUrl
     }]);
     
-    if (error) { 
-        alert(error.message); 
-        btn.disabled = false; 
-        btn.innerText = "Opublikuj ogłoszenie"; 
-    } else {
-        location.reload();
-    }
+    if (error) { alert(error.message); btn.disabled = false; btn.innerText = "Opublikuj"; }
+    else location.reload();
 }
 
+// ŁADOWANIE LISTY
 async function load(kat = 'Wszystkie') {
     let q = db.from("Zlecenia").select("*").order("id", { ascending: false });
     if (kat !== 'Wszystkie') q = q.eq('Kategoria', kat);
     const { data } = await q;
     const el = document.getElementById("list");
-    if (!data || data.length === 0) { 
-        el.innerHTML = "<p class='text-center text-slate-400 py-10 font-bold'>Brak ogłoszeń.</p>"; 
-        return; 
-    }
+    if (!data || data.length === 0) { el.innerHTML = "<p class='text-center text-slate-400 py-10 font-bold'>Brak ogłoszeń.</p>"; return; }
+    
     el.innerHTML = data.map(z => {
         const dataGodzina = z.created_at ? new Date(z.created_at).toLocaleString('pl-PL', {
             day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
@@ -215,9 +213,9 @@ async function load(kat = 'Wszystkie') {
                         <span class="text-[10px] font-extrabold bg-blue-50 text-blue-600 px-4 py-1.5 rounded-full uppercase tracking-widest">${z.Kategoria || 'Inne'}</span>
                         <span class="text-[10px] font-bold text-slate-300 uppercase">${dataGodzina}</span>
                     </div>
-                    <h3 class="text-2xl font-black mb-2 leading-tight">${z.Tytuł || 'Bez tytułu'}</h3>
-                    <div class="flex items-center text-blue-600 font-bold text-sm mb-4">📍 ${z.Miasto || 'Cała Polska'}</div>
-                    <p class="text-slate-600 text-sm leading-relaxed mb-8 bg-slate-50 p-5 rounded-2xl italic border-l-4 border-blue-400">"${z.Opis || ''}"</p>
+                    <h3 class="text-2xl font-black mb-2 leading-tight">${z.Tytuł}</h3>
+                    <div class="flex items-center text-blue-600 font-bold text-sm mb-4">📍 ${z.Miasto}</div>
+                    <p class="text-slate-600 text-sm leading-relaxed mb-8 bg-slate-50 p-5 rounded-2xl italic border-l-4 border-blue-400">"${z.Opis}"</p>
                     <a href="tel:${z.Telefon}" class="block w-full bg-green-500 text-white text-center py-4 rounded-2xl font-black text-sm hover:bg-green-600 shadow-lg transition-all flex items-center justify-center gap-2">
                         📞 ZADZWOŃ: ${z.Telefon}
                     </a>
