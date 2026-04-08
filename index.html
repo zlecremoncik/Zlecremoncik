@@ -4,21 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ZlećRemoncik - Fachowcy od ręki</title>
-
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&display=swap" rel="stylesheet">
-
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
         .card-shadow { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05); }
+        /* Animacja wejścia dla kart */
+        .fade-in { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-
 <body class="text-slate-900">
 
-<!-- NAV -->
-<nav class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-100">
+<nav class="bg-white/90 backdrop-blur-md sticky top-0 z-50 border-b border-slate-100">
     <div class="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
         <div class="text-2xl font-extrabold tracking-tighter text-slate-800">
             Zleć<span class="text-blue-600">Remoncik</span>
@@ -27,146 +26,203 @@
     </div>
 </nav>
 
-<!-- HEADER ZE ZDJĘCIEM -->
-<header class="pt-16 pb-24 px-4 text-center text-white relative overflow-hidden">
-
-    <!-- TŁO -->
-    <div class="absolute inset-0">
-        <img src="kuchnia.png" class="w-full h-full object-cover">
-        <div class="absolute inset-0 bg-black/50"></div>
+<!-- NAGŁÓWEK ZE ZDJĘCIEM TŁA -->
+<header class="relative pt-28 pb-36 px-4 text-center overflow-hidden">
+    <div class="absolute inset-0 z-0">
+        <!-- TWOJE ZDJĘCIE Z GITHUBA -->
+        <img src="kuchnia.png" alt="Tło" class="w-full h-full object-cover">
+        <!-- CIEMNY FILTR (OVERLAY) -->
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-[1px]"></div>
     </div>
 
-    <!-- TEKST -->
-    <div class="relative z-10">
-        <h1 class="text-4xl md:text-5xl font-extrabold mb-4 tracking-tight">
-            Znajdź fachowca, <br>który zna się na rzeczy
+    <div class="relative z-10 max-w-3xl mx-auto">
+        <h1 class="text-4xl md:text-6xl font-extrabold mb-4 tracking-tight text-white drop-shadow-2xl">
+            Znajdź fachowca, <br><span class="text-blue-400 font-black italic">który zna się na rzeczy</span>
         </h1>
-        <p class="text-blue-100 text-lg opacity-90 max-w-xl mx-auto">
-            Szybko, lokalnie i bez zbędnych formalności. Dodaj ogłoszenie w minutę.
+        <p class="text-blue-50 text-lg opacity-90 max-w-xl mx-auto drop-shadow-md font-medium text-balance">
+            Szybko, lokalnie i bez zbędnych formalności. <br>Twoja wymarzona kuchnia zaczyna się tutaj.
         </p>
     </div>
-
 </header>
 
-<div class="max-w-3xl mx-auto px-4 -mt-12">
-
-    <!-- LOGOWANIE -->
-    <div id="auth-panel" class="bg-white p-8 rounded-3xl card-shadow mb-12 border border-slate-100">
-        <h2 class="text-xl font-bold mb-6 text-slate-800">Zaloguj się, aby dodawać ogłoszenia</h2>
-
+<div class="max-w-3xl mx-auto px-4 -mt-16 relative z-20">
+    
+    <!-- PANEL LOGOWANIA -->
+    <div id="auth-panel" class="bg-white p-8 rounded-3xl card-shadow mb-12 border border-slate-100 fade-in">
+        <h2 class="text-xl font-bold mb-6 text-slate-800">Zaloguj się, aby dodać zlecenie</h2>
         <div class="space-y-4">
-            <input id="email" type="email" placeholder="E-mail" class="w-full bg-slate-50 p-4 rounded-2xl">
-            <input id="password" type="password" placeholder="Hasło" class="w-full bg-slate-50 p-4 rounded-2xl">
-
-            <div class="grid grid-cols-2 gap-4">
-                <button onclick="signIn()" class="bg-blue-600 text-white py-4 rounded-2xl font-bold">Zaloguj</button>
-                <button onclick="signUp()" class="bg-white border py-4 rounded-2xl font-bold">Rejestracja</button>
+            <input id="email" type="email" placeholder="E-mail" class="w-full bg-slate-50 border-2 border-slate-50 p-4 rounded-2xl outline-none focus:border-blue-400 focus:bg-white transition-all">
+            <input id="password" type="password" placeholder="Hasło" class="w-full bg-slate-50 border-2 border-slate-50 p-4 rounded-2xl outline-none focus:border-blue-400 focus:bg-white transition-all">
+            <div class="grid grid-cols-2 gap-4 pt-2">
+                <button onclick="signIn()" class="bg-blue-600 text-white py-4 rounded-2xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all">Zaloguj się</button>
+                <button onclick="signUp()" class="bg-white text-slate-600 border-2 border-slate-100 py-4 rounded-2xl font-bold hover:bg-slate-50 transition-all text-sm">Nowe konto</button>
             </div>
         </div>
     </div>
 
-    <!-- DODAWANIE -->
-    <div id="add-panel" class="hidden bg-white p-8 rounded-3xl card-shadow mb-12">
-
-        <div class="flex justify-between mb-6">
-            <h2 class="text-xl font-bold">Nowe ogłoszenie</h2>
-            <button onclick="signOut()">Wyloguj</button>
+    <!-- PANEL DODAWANIA -->
+    <div id="add-panel" class="hidden bg-white p-8 rounded-3xl card-shadow mb-12 border-2 border-blue-100 fade-in text-slate-800">
+        <div class="flex items-center justify-between mb-8">
+            <h2 class="text-2xl font-extrabold italic uppercase tracking-tighter">Opublikuj Ogłoszenie</h2>
+            <button onclick="signOut()" class="text-xs font-bold text-slate-400 hover:text-red-500 uppercase">Wyloguj</button>
         </div>
+        
+        <div class="space-y-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-slate-800">
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase ml-2 mb-1 block">Tytuł usługi</label>
+                    <input id="t" placeholder="Np. Malowanie ścian" class="w-full bg-slate-50 border-2 border-slate-50 p-3 rounded-xl focus:border-blue-400 outline-none transition-all">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase ml-2 mb-1 block">Twoje Miasto</label>
+                    <input id="m" placeholder="Np. Chełm" class="w-full bg-slate-50 border-2 border-slate-50 p-3 rounded-xl focus:border-blue-400 outline-none transition-all">
+                </div>
+            </div>
+            
+            <div>
+                <label class="text-[10px] font-bold text-slate-400 uppercase ml-2 mb-1 block">Kategoria</label>
+                <select id="k" class="w-full bg-slate-50 border-2 border-slate-50 p-3 rounded-xl outline-none appearance-none cursor-pointer">
+                    <option value="Remont">🏠 Remont / Wykończenia</option>
+                    <option value="Budowa">🏗️ Budowa</option>
+                    <option value="Ogród">🌱 Ogród</option>
+                    <option value="Inne">🛠️ Inne usługi</option>
+                </select>
+            </div>
 
-        <div class="space-y-4">
-            <input id="t" placeholder="Tytuł" class="w-full bg-slate-50 p-3 rounded-xl">
-            <input id="m" placeholder="Miasto" class="w-full bg-slate-50 p-3 rounded-xl">
+            <div>
+                <label class="text-[10px] font-bold text-slate-400 uppercase ml-2 mb-1 block text-slate-800">Opis prac</label>
+                <textarea id="o" placeholder="Napisz krótko co oferujesz..." class="w-full bg-slate-50 border-2 border-slate-50 p-3 rounded-xl h-28 focus:border-blue-400 outline-none transition-all"></textarea>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase ml-2 mb-1 block">Numer telefonu</label>
+                    <input id="p" type="tel" inputmode="numeric" placeholder="Np. 500600700" class="w-full bg-slate-50 border-2 border-slate-50 p-3 rounded-xl focus:border-blue-400 outline-none">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase ml-2 mb-1 block">Zdjęcie pracy</label>
+                    <input id="img-input" type="file" accept="image/*" class="w-full text-xs text-slate-400 file:mr-4 file:py-3 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                </div>
+            </div>
 
-            <textarea id="o" placeholder="Opis" class="w-full bg-slate-50 p-3 rounded-xl"></textarea>
-
-            <input id="p" placeholder="Telefon" class="w-full bg-slate-50 p-3 rounded-xl">
-
-            <input id="img-input" type="file">
-
-            <button onclick="add()" id="add-btn" class="w-full bg-black text-white py-4 rounded-xl">
-                Dodaj ogłoszenie
-            </button>
+            <button onclick="add()" id="add-btn" class="w-full bg-blue-600 text-white py-5 rounded-2xl font-extrabold text-lg shadow-xl hover:bg-blue-700 transition-all uppercase tracking-tight mt-4">Opublikuj ogłoszenie</button>
         </div>
     </div>
 
-    <!-- LISTA -->
-    <div id="list" class="space-y-6"></div>
-
+    <!-- LISTA ZLECEŃ -->
+    <div id="list" class="space-y-8 pb-20">
+        <p class="text-center text-slate-400 animate-pulse">Ładowanie ofert...</p>
+    </div>
 </div>
 
 <script>
+// --- KONFIGURACJA ---
 const SUPABASE_URL = "https://uodwrtpaesemcizdhcht.supabase.co";
 const SUPABASE_KEY = "sb_publishable_WVkoJLfkTfUD95EeSZMDQQ_VEhzlW6n";
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// AUTH
+// --- AUTH ---
 async function signUp() {
-    const { error } = await db.auth.signUp({
-        email: email.value,
-        password: password.value
-    });
-    if (!error) alert("Konto utworzone");
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const { error } = await db.auth.signUp({ email, password });
+    if (error) alert(error.message); else alert("Konto założone! Sprawdź email lub zaloguj się.");
 }
-
 async function signIn() {
-    const { error } = await db.auth.signInWithPassword({
-        email: email.value,
-        password: password.value
-    });
-    if (error) alert("Błąd logowania");
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const { error } = await db.auth.signInWithPassword({ email, password });
+    if (error) alert("Błąd: " + error.message);
 }
+async function signOut() { await db.auth.signOut(); location.reload(); }
 
-async function signOut() {
-    await db.auth.signOut();
-    location.reload();
-}
-
-db.auth.onAuthStateChange((e, session) => {
-    auth-panel.classList.toggle("hidden", !!session);
-    add-panel.classList.toggle("hidden", !session);
+db.auth.onAuthStateChange((event, session) => {
+    const authPanel = document.getElementById('auth-panel');
+    const addPanel = document.getElementById('add-panel');
+    const userInfo = document.getElementById('user-info');
+    if (session) {
+        authPanel.classList.add('hidden');
+        addPanel.classList.remove('hidden');
+        userInfo.innerText = `Konto: ${session.user.email}`;
+    } else {
+        authPanel.classList.remove('hidden');
+        addPanel.classList.add('hidden');
+        userInfo.innerText = "";
+    }
 });
 
-// DODAWANIE
+// --- DODAWANIE ---
 async function add() {
+    const btn = document.getElementById('add-btn');
     const { data: { user } } = await db.auth.getUser();
     if (!user) return;
 
-    let file = document.getElementById("img-input").files[0];
-    let url = "";
+    let phone = document.getElementById("p").value.replace(/\D/g, '');
+    if (phone.length < 9) { alert("Wpisz poprawny numer!"); return; }
+
+    btn.innerText = "Trwa publikowanie...";
+    btn.disabled = true;
+
+    const file = document.getElementById('img-input').files[0];
+    let photoUrl = "";
 
     if (file) {
-        let name = Date.now() + file.name;
-        await db.storage.from("zdjecia").upload(name, file);
-        url = db.storage.from("zdjecia").getPublicUrl(name).data.publicUrl;
+        const fileName = `${Date.now()}_${file.name}`;
+        const { data, error: uploadError } = await db.storage.from('zdjecia').upload(fileName, file);
+        if (!uploadError) {
+            const { data: urlData } = db.storage.from('zdjecia').getPublicUrl(fileName);
+            photoUrl = urlData.publicUrl;
+        }
     }
 
-    await db.from("Zlecenia").insert([{
-        Tytuł: t.value,
-        Miasto: m.value,
-        Opis: o.value,
-        Telefon: p.value,
-        zdjecie_url: url
+    const { error } = await db.from("Zlecenia").insert([{
+        Tytuł: document.getElementById("t").value,
+        Miasto: document.getElementById("m").value,
+        Opis: document.getElementById("o").value,
+        Telefon: phone,
+        Kategoria: document.getElementById("k").value,
+        user_email: user.email,
+        zdjecie_url: photoUrl
     }]);
 
-    location.reload();
+    if (error) { alert(error.message); btn.disabled = false; btn.innerText = "Opublikuj ogłoszenie"; }
+    else location.reload();
 }
 
-// LISTA
+// --- POBIERANIE ---
 async function load() {
     const { data } = await db.from("Zlecenia").select("*").order("id", { ascending: false });
+    const el = document.getElementById("list");
+    if (!data || data.length === 0) { el.innerHTML = "<p class='text-center text-slate-400'>Brak ogłoszeń. Bądź pierwszy!</p>"; return; }
 
-    list.innerHTML = data.map(z => `
-        <div class="bg-white p-4 rounded-2xl shadow">
-            ${z.zdjecie_url ? `<img src="${z.zdjecie_url}" class="w-full h-48 object-cover rounded-xl mb-3">` : ""}
-            <h3 class="font-bold text-lg">${z.Tytuł}</h3>
-            <p>${z.Opis}</p>
-            <a href="tel:${z.Telefon}" class="text-green-600 font-bold">${z.Telefon}</a>
-        </div>
-    `).join("");
+    el.innerHTML = data.map(z => {
+        const d = z.created_at ? new Date(z.created_at).toLocaleDateString('pl-PL') : "Dzisiaj";
+        return `
+            <div class="bg-white rounded-[2rem] card-shadow overflow-hidden border border-slate-50 transition-all hover:shadow-xl fade-in">
+                ${z.zdjecie_url ? `<img src="${z.zdjecie_url}" class="w-full h-72 object-cover bg-slate-50">` : ''}
+                <div class="p-8">
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="text-[10px] font-extrabold bg-blue-50 text-blue-600 px-4 py-1.5 rounded-full uppercase tracking-widest">${z.Kategoria || 'Inne'}</span>
+                        <span class="text-[10px] font-bold text-slate-300 uppercase">${d}</span>
+                    </div>
+                    <h3 class="text-2xl font-black text-slate-800 mb-2 leading-tight">${z.Tytuł || 'Bez tytułu'}</h3>
+                    <div class="flex items-center text-blue-600 font-bold text-sm mb-4">
+                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path></svg>
+                        ${z.Miasto || 'Cała Polska'}
+                    </div>
+                    <p class="text-slate-600 text-sm leading-relaxed mb-8 bg-slate-50 p-5 rounded-2xl italic border-l-4 border-blue-400">"${z.Opis || ''}"</p>
+                    
+                    <a href="tel:${z.Telefon}" class="block w-full bg-green-500 text-white text-center py-4 rounded-2xl font-black text-sm hover:bg-green-600 shadow-lg shadow-green-100 transition-all flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                        ZADZWOŃ: ${z.Telefon}
+                    </a>
+                </div>
+            </div>
+        `;
+    }).join("");
 }
 
 load();
 </script>
-
 </body>
 </html>
