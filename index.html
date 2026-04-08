@@ -31,7 +31,7 @@
         <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-[1px]"></div>
     </div>
     <div class="relative z-10 max-w-3xl mx-auto text-white">
-        <h1 class="text-4xl md:text-6xl font-extrabold mb-4 tracking-tight drop-shadow-2xl text-white">
+        <h1 class="text-4xl md:text-6xl font-extrabold mb-4 tracking-tight drop-shadow-2xl">
             Znajdź fachowca, <br><span class="text-blue-400 italic">który zna się na rzeczy</span>
         </h1>
         <p class="text-blue-50 text-lg opacity-90 max-w-xl mx-auto font-medium">
@@ -88,7 +88,7 @@
                 <input id="p" type="tel" maxlength="9" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="Numer telefonu (9 cyfr)" class="w-full bg-slate-50 border-2 border-slate-50 p-3 rounded-xl focus:border-blue-400 outline-none">
                 <input id="img-input" type="file" accept="image/*" class="w-full text-xs text-slate-400 file:py-3 file:px-4 file:rounded-xl file:bg-blue-50 file:text-blue-700 file:border-0 cursor-pointer">
             </div>
-            <button onclick="add()" id="add-btn" class="w-full bg-blue-600 text-white py-5 rounded-2xl font-extrabold text-lg shadow-xl hover:bg-blue-700 uppercase tracking-tight mt-4">Opublikuj ogłoszenie</button>
+            <button onclick="add()" id="add-btn" class="w-full bg-blue-600 text-white py-5 rounded-2xl font-extrabold text-lg shadow-xl hover:bg-blue-700 uppercase tracking-tight mt-4 transition-all">Opublikuj ogłoszenie</button>
         </div>
     </div>
 
@@ -131,21 +131,31 @@ db.auth.onAuthStateChange((event, session) => {
     }
 });
 
-// FUNKCJA SPRAWDZAJĄCA NUMER
+// FUNKCJA WALIDACJI
 function isPhoneValid(num) {
     const forbidden = ["123456789", "987654321", "000000000", "111111111", "222222222", "333333333", "444444444", "555555555", "666666666", "777777777", "888888888", "999999999"];
-    if (num.length !== 9) return false;
-    if (forbidden.includes(num)) return false;
+    if (num.length !== 9) return false; // MUSI BYĆ DOKŁADNIE 9
+    if (forbidden.includes(num)) return false; // ŻARTY BLOKUJEMY
     return true;
 }
 
 // DODAWANIE
 async function add() {
+    const t = document.getElementById("t").value.trim();
+    const m = document.getElementById("m").value.trim();
+    const o = document.getElementById("o").value.trim();
+    const p = document.getElementById("p").value.trim();
     const btn = document.getElementById('add-btn');
-    const phoneInput = document.getElementById('p').value;
 
-    if (!isPhoneValid(phoneInput)) {
-        alert("Podaj prawdziwy, 9-cyfrowy polski numer telefonu!");
+    // SPRAWDZANIE CZY WSZYSTKO JEST WPISANE
+    if (!t || !m || !o || !p) {
+        alert("Wypełnij wszystkie pola (Tytuł, Miasto, Opis i Telefon)!");
+        return;
+    }
+
+    // SPRAWDZANIE NUMERU
+    if (!isPhoneValid(p)) {
+        alert("Numer telefonu musi mieć dokładnie 9 cyfr i być prawdziwy!");
         return;
     }
 
@@ -166,16 +176,22 @@ async function add() {
         }
     }
     const { error } = await db.from("Zlecenia").insert([{
-        Tytuł: document.getElementById("t").value,
-        Miasto: document.getElementById("m").value,
-        Opis: document.getElementById("o").value,
-        Telefon: phoneInput,
+        Tytuł: t,
+        Miasto: m,
+        Opis: o,
+        Telefon: p,
         Kategoria: document.getElementById("k").value,
         user_email: user.email,
         zdjecie_url: photoUrl
     }]);
-    if (error) { alert(error.message); btn.disabled = false; btn.innerText = "Opublikuj ogłoszenie"; }
-    else location.reload();
+    
+    if (error) { 
+        alert(error.message); 
+        btn.disabled = false; 
+        btn.innerText = "Opublikuj ogłoszenie"; 
+    } else {
+        location.reload();
+    }
 }
 
 async function load(kat = 'Wszystkie') {
@@ -201,7 +217,7 @@ async function load(kat = 'Wszystkie') {
                     </div>
                     <h3 class="text-2xl font-black mb-2 leading-tight">${z.Tytuł || 'Bez tytułu'}</h3>
                     <div class="flex items-center text-blue-600 font-bold text-sm mb-4">📍 ${z.Miasto || 'Cała Polska'}</div>
-                    <p class="text-slate-600 text-sm leading-relaxed mb-8 bg-slate-50 p-5 rounded-2xl italic border-l-4 border-blue-400 text-slate-800">"${z.Opis || ''}"</p>
+                    <p class="text-slate-600 text-sm leading-relaxed mb-8 bg-slate-50 p-5 rounded-2xl italic border-l-4 border-blue-400">"${z.Opis || ''}"</p>
                     <a href="tel:${z.Telefon}" class="block w-full bg-green-500 text-white text-center py-4 rounded-2xl font-black text-sm hover:bg-green-600 shadow-lg transition-all flex items-center justify-center gap-2">
                         📞 ZADZWOŃ: ${z.Telefon}
                     </a>
