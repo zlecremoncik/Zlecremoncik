@@ -12,8 +12,6 @@
         .card-shadow { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05); }
         .fade-in { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="text-slate-900">
@@ -27,10 +25,9 @@
     </div>
 </nav>
 
-<!-- NAGŁÓWEK -->
 <header class="relative pt-24 pb-32 px-4 text-center overflow-hidden">
     <div class="absolute inset-0 z-0">
-        <img src="Kuchnia.png" alt="Tło" class="w-full h-full object-cover">
+        <img src="kuchnia.png" alt="Tło" class="w-full h-full object-cover">
         <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-[1px]"></div>
     </div>
     <div class="relative z-10 max-w-3xl mx-auto text-white">
@@ -43,20 +40,23 @@
     </div>
 </header>
 
-<!-- FILTROWANIE -->
-<div class="sticky top-[60px] z-40 bg-white/80 backdrop-blur-md border-b border-slate-100 py-4 shadow-sm overflow-x-auto no-scrollbar">
-    <div class="max-w-3xl mx-auto px-4 flex space-x-2">
-        <button onclick="load('Wszystkie')" class="px-5 py-2 rounded-full bg-blue-600 text-white font-bold text-xs shadow-md transition-all">Wszystkie</button>
-        <button onclick="load('Remont')" class="px-5 py-2 rounded-full bg-white border border-slate-200 text-slate-600 font-bold text-xs hover:bg-slate-50 transition-all whitespace-nowrap">🏠 Remonty</button>
-        <button onclick="load('Budowa')" class="px-5 py-2 rounded-full bg-white border border-slate-200 text-slate-600 font-bold text-xs hover:bg-slate-50 transition-all whitespace-nowrap">🏗️ Budowa</button>
-        <button onclick="load('Ogród')" class="px-5 py-2 rounded-full bg-white border border-slate-200 text-slate-600 font-bold text-xs hover:bg-slate-50 transition-all whitespace-nowrap">🌱 Ogród</button>
-        <button onclick="load('Inne')" class="px-5 py-2 rounded-full bg-white border border-slate-200 text-slate-600 font-bold text-xs hover:bg-slate-50 transition-all whitespace-nowrap">🛠️ Inne</button>
+<div class="sticky top-[60px] z-40 bg-white border-b border-slate-100 py-3 shadow-sm">
+    <div class="max-w-3xl mx-auto px-4 flex items-center justify-between">
+        <span class="text-sm font-bold text-slate-500 uppercase tracking-widest">Kategorie:</span>
+        <div class="relative inline-block text-left">
+            <select onchange="load(this.value)" class="bg-blue-50 text-blue-700 font-bold py-2 px-4 rounded-xl border-none outline-none cursor-pointer hover:bg-blue-100 transition-all">
+                <option value="Wszystkie">🔍 Filtruj: Wszystkie</option>
+                <option value="Remont">🏠 Remonty</option>
+                <option value="Budowa">🏗️ Budowa</option>
+                <option value="Ogród">🌱 Ogród</option>
+                <option value="Inne">🛠️ Inne</option>
+            </select>
+        </div>
     </div>
 </div>
 
 <div class="max-w-3xl mx-auto px-4 -mt-8 relative z-20">
     
-    <!-- PANEL LOGOWANIA -->
     <div id="auth-panel" class="bg-white p-8 rounded-3xl card-shadow mb-12 border border-slate-100">
         <h2 class="text-xl font-bold mb-6">Zaloguj się</h2>
         <div class="space-y-4">
@@ -69,7 +69,6 @@
         </div>
     </div>
 
-    <!-- PANEL DODAWANIA -->
     <div id="add-panel" class="hidden bg-white p-8 rounded-3xl card-shadow mb-12 border-2 border-blue-100">
         <div class="flex items-center justify-between mb-8">
             <h2 class="text-2xl font-extrabold italic uppercase tracking-tighter">Nowe Ogłoszenie</h2>
@@ -95,7 +94,6 @@
         </div>
     </div>
 
-    <!-- LISTA ZLECEŃ -->
     <div id="list" class="space-y-8 pb-20 mt-10">
         <p class="text-center text-slate-400 animate-pulse font-bold uppercase tracking-widest text-xs">Pobieranie ofert...</p>
     </div>
@@ -140,13 +138,10 @@ async function add() {
     const btn = document.getElementById('add-btn');
     const { data: { user } } = await db.auth.getUser();
     if (!user) return;
-
     btn.innerText = "Trwa publikowanie...";
     btn.disabled = true;
-
     const file = document.getElementById('img-input').files[0];
     let photoUrl = "";
-
     if (file) {
         const fileName = `${Date.now()}_${file.name}`;
         const { data, error: uploadError } = await db.storage.from('zdjecia').upload(fileName, file);
@@ -155,7 +150,6 @@ async function add() {
             photoUrl = urlData.publicUrl;
         }
     }
-
     const { error } = await db.from("Zlecenia").insert([{
         Tytuł: document.getElementById("t").value,
         Miasto: document.getElementById("m").value,
@@ -165,34 +159,23 @@ async function add() {
         user_email: user.email,
         zdjecie_url: photoUrl
     }]);
-
     if (error) { alert(error.message); btn.disabled = false; btn.innerText = "Opublikuj ogłoszenie"; }
     else location.reload();
 }
 
 // POBIERANIE Z FILTROWANIEM I PEŁNĄ DATĄ
 async function load(kat = 'Wszystkie') {
-    // Styling buttons
-    const btns = document.querySelectorAll('button[onclick^="load"]');
-    btns.forEach(b => {
-        if (b.getAttribute('onclick').includes(kat)) {
-            b.classList.add('bg-blue-600', 'text-white');
-            b.classList.remove('bg-white', 'text-slate-600');
-        } else {
-            b.classList.remove('bg-blue-600', 'text-white');
-            b.classList.add('bg-white', 'text-slate-600');
-        }
-    });
-
     let q = db.from("Zlecenia").select("*").order("id", { ascending: false });
     if (kat !== 'Wszystkie') q = q.eq('Kategoria', kat);
 
     const { data } = await q;
     const el = document.getElementById("list");
-    if (!data || data.length === 0) { el.innerHTML = "<p class='text-center text-slate-400 py-10'>Brak ogłoszeń w tej kategorii.</p>"; return; }
+    if (!data || data.length === 0) { 
+        el.innerHTML = "<p class='text-center text-slate-400 py-10 font-bold'>Brak ogłoszeń w kategorii " + kat + "</p>"; 
+        return; 
+    }
 
     el.innerHTML = data.map(z => {
-        // TUTAJ POPRAWIONA DATA Z GODZINĄ
         const dataGodzina = z.created_at ? new Date(z.created_at).toLocaleString('pl-PL', {
             day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
         }) : "Przed chwilą";
