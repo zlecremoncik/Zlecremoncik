@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ZlećRemoncik - Fachowcy od ręki</title>
-    <!-- Ładowanie Supabase z konkretnej wersji dla stabilności -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&display=swap" rel="stylesheet">
@@ -12,6 +11,8 @@
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; margin: 0; padding: 0; }
         .card-shadow { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); }
         .hidden { display: none !important; }
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="text-slate-900">
@@ -28,39 +29,38 @@
     </div>
 </nav>
 
-<!-- PANEL RESTEOWANIA HASŁA (OVERLAY) -->
+<!-- MODAL RESETU HASŁA -->
 <div id="recovery-panel" class="hidden fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
     <div class="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full">
         <h2 class="text-2xl font-black mb-2 text-slate-800">Nowe hasło</h2>
-        <p class="text-sm text-slate-500 mb-6">Wpisz nowe, bezpieczne hasło.</p>
-        <input id="new-password" type="password" placeholder="Min. 6 znaków" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl outline-none focus:border-blue-400 mb-4 text-slate-800">
-        <button onclick="updatePassword()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg">Zmień hasło i zaloguj</button>
+        <input id="new-password" type="password" placeholder="Min. 6 znaków" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl outline-none focus:border-blue-400 mb-4">
+        <button onclick="updatePassword()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold hover:bg-blue-700 shadow-lg">Zmień hasło</button>
     </div>
 </div>
 
 <header class="relative pt-20 pb-28 px-4 text-center overflow-hidden bg-slate-800">
     <div class="relative z-10 max-w-3xl mx-auto text-white">
         <h1 class="text-4xl md:text-5xl font-extrabold mb-4 tracking-tight">Potrzebujesz fachowca?</h1>
-        <p class="text-blue-100 opacity-90 font-medium">Zleć remont w 30 sekund.</p>
+        <p class="text-blue-100 opacity-90 font-medium italic">Widzisz ogłoszenia, ale numery tylko dla zalogowanych.</p>
     </div>
 </header>
 
 <main class="max-w-3xl mx-auto px-4 -mt-10 relative z-20">
-    <!-- PANEL LOGOWANIA -->
+    <!-- LOGOWANIE -->
     <div id="auth-panel" class="bg-white p-8 rounded-3xl card-shadow mb-12 border border-slate-100">
         <h2 class="text-xl font-bold mb-6">Zaloguj się</h2>
         <div class="space-y-4">
-            <input id="email" type="email" placeholder="Twój e-mail" class="w-full bg-slate-50 border-2 border-slate-50 p-4 rounded-2xl outline-none focus:border-blue-400 text-slate-800">
-            <input id="password" type="password" placeholder="Hasło" class="w-full bg-slate-50 border-2 border-slate-50 p-4 rounded-2xl outline-none focus:border-blue-400 text-slate-800">
+            <input id="email" type="email" placeholder="Twój e-mail" class="w-full bg-slate-50 border-2 border-slate-50 p-4 rounded-2xl outline-none focus:border-blue-400">
+            <input id="password" type="password" placeholder="Hasło" class="w-full bg-slate-50 border-2 border-slate-50 p-4 rounded-2xl outline-none focus:border-blue-400">
             <div class="grid grid-cols-2 gap-4">
                 <button onclick="signIn()" class="bg-blue-600 text-white py-4 rounded-2xl font-bold hover:bg-blue-700 shadow-md transition-all">Zaloguj</button>
-                <button onclick="signUp()" class="bg-white text-slate-500 border-2 border-slate-100 py-4 rounded-2xl font-bold hover:bg-slate-50 transition-all">Dołącz</button>
+                <button onclick="signUp()" class="bg-white text-slate-500 border-2 border-slate-100 py-4 rounded-2xl font-bold hover:bg-slate-50 transition-all">Załóż konto</button>
             </div>
             <button onclick="resetPasswordRequest()" class="w-full text-xs text-slate-400 hover:text-blue-500 font-medium">Zapomniałeś hasła?</button>
         </div>
     </div>
 
-    <!-- PANEL DODAWANIA OGŁOSZENIA -->
+    <!-- DODAWANIE -->
     <div id="add-panel" class="hidden bg-white p-8 rounded-3xl card-shadow mb-12 border-2 border-blue-50">
         <h2 class="text-2xl font-black italic uppercase tracking-tighter mb-8 text-slate-800">Dodaj zlecenie</h2>
         <div class="space-y-5">
@@ -74,34 +74,33 @@
             </select>
             <textarea id="o" placeholder="Opisz szczegóły..." class="w-full bg-slate-50 border-2 border-slate-50 p-3 rounded-xl h-28 focus:border-blue-400 outline-none"></textarea>
             <input id="p" type="tel" maxlength="9" placeholder="Telefon (9 cyfr)" class="w-full bg-slate-50 border-2 border-slate-50 p-3 rounded-xl focus:border-blue-400 outline-none">
-            <input id="img-input" type="file" accept="image/*" class="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-blue-50 file:text-blue-700">
+            <input id="img-input" type="file" accept="image/*" class="w-full text-xs text-slate-400">
             <button onclick="add()" id="add-btn" class="w-full bg-blue-600 text-white py-5 rounded-2xl font-black text-lg shadow-xl uppercase hover:bg-blue-700 transition-all">Opublikuj ogłoszenie</button>
         </div>
     </div>
 
-    <!-- LISTA -->
+    <!-- LISTA OGŁOSZEŃ -->
     <div id="list" class="space-y-8 pb-20"></div>
 </main>
 
 <script>
-// Konfiguracja
 const SUPABASE_URL = "https://uodwrtpaesemcizdhcht.supabase.co";
 const SUPABASE_KEY = "sb_publishable_WVkoJLfkTfUD95EeSZMDQQ_VEhzlW6n";
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// 1. ZARZĄDZANIE SESJĄ I RECOVERY
-db.auth.onAuthStateChange((event, session) => {
-    console.log("Event:", event); // Do debugowania w konsoli
+let currentUser = null;
+
+// OBSŁUGA STANU LOGOWANIA I ODŚWIEŻANIE LISTY
+db.auth.onAuthStateChange(async (event, session) => {
+    currentUser = session?.user || null;
+    
     const recoveryPanel = document.getElementById('recovery-panel');
     const authPanel = document.getElementById('auth-panel');
     const addPanel = document.getElementById('add-panel');
     const userInfo = document.getElementById('user-info');
     const logoutBtn = document.getElementById('logout-btn');
 
-    // Wykrywanie trybu resetu hasła
-    if (event === "PASSWORD_RECOVERY") {
-        recoveryPanel.classList.remove('hidden');
-    }
+    if (event === "PASSWORD_RECOVERY") recoveryPanel.classList.remove('hidden');
 
     if (session) {
         authPanel.classList.add('hidden');
@@ -114,21 +113,24 @@ db.auth.onAuthStateChange((event, session) => {
         userInfo.innerText = "";
         logoutBtn.classList.add('hidden');
     }
+    
+    // Odśwież listę przy każdej zmianie stanu (zalogowany/wylogowany)
+    load();
 });
 
-// 2. FUNKCJE AUTH
-async function signUp() {
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    const { error } = await db.auth.signUp({ email, password });
-    if (error) alert(error.message); else alert("Konto utworzone! Potwierdź e-mail (sprawdź SPAM).");
-}
-
+// LOGIKA AUTH (SignIn, SignUp, Reset)
 async function signIn() {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     const { error } = await db.auth.signInWithPassword({ email, password });
-    if (error) alert("Błąd logowania: " + error.message);
+    if (error) alert(error.message);
+}
+
+async function signUp() {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const { error } = await db.auth.signUp({ email, password });
+    if (error) alert(error.message); else alert("Konto utworzone! Potwierdź e-mail.");
 }
 
 async function signOut() { 
@@ -136,33 +138,21 @@ async function signOut() {
     window.location.reload(); 
 }
 
-// 3. RESET I ZMIANA HASŁA
 async function resetPasswordRequest() {
     const email = document.getElementById('email').value;
-    if (!email) { alert("Wpisz e-mail w polu logowania!"); return; }
-    
-    const { error } = await db.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + window.location.pathname,
-    });
-    
-    if (error) alert(error.message); 
-    else alert("Link do zmiany hasła wysłany na Twój e-mail!");
+    if (!email) { alert("Podaj e-mail!"); return; }
+    const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo: window.location.href });
+    if (error) alert(error.message); else alert("Link wysłany!");
 }
 
 async function updatePassword() {
     const newPass = document.getElementById('new-password').value;
-    if (newPass.length < 6) { alert("Hasło za krótkie!"); return; }
-
     const { error } = await db.auth.updateUser({ password: newPass });
-    if (error) {
-        alert("Błąd: " + error.message);
-    } else {
-        alert("Hasło zmienione pomyślnie! Możesz teraz korzystać z serwisu.");
-        document.getElementById('recovery-panel').classList.add('hidden');
-    }
+    if (error) alert(error.message); 
+    else { alert("Hasło zmienione!"); document.getElementById('recovery-panel').classList.add('hidden'); }
 }
 
-// 4. DODAWANIE ZLECENIA
+// DODAWANIE OGŁOSZENIA
 async function add() {
     const t = document.getElementById("t").value;
     const m = document.getElementById("m").value;
@@ -171,64 +161,50 @@ async function add() {
     const k = document.getElementById("k").value;
     const btn = document.getElementById('add-btn');
 
-    if (!t || !m || !o || p.length !== 9) {
-        alert("Wypełnij wszystkie pola poprawnie!");
-        return;
-    }
-
+    if (!t || !m || !o || p.length !== 9) { alert("Wypełnij wszystko!"); return; }
     btn.disabled = true;
-    btn.innerText = "Wysyłanie...";
 
     const file = document.getElementById('img-input').files[0];
     let photoUrl = "";
-
     if (file) {
         const fileName = `${Date.now()}_img`;
-        const { data: upData, error: upErr } = await db.storage.from('zdjecia').upload(fileName, file);
-        if (!upErr) {
-            const { data: urlData } = db.storage.from('zdjecia').getPublicUrl(fileName);
-            photoUrl = urlData.publicUrl;
-        }
+        const { data } = await db.storage.from('zdjecia').upload(fileName, file);
+        if (data) photoUrl = db.storage.from('zdjecia').getPublicUrl(fileName).data.publicUrl;
     }
 
-    const { error } = await db.from("Zlecenia").insert([{
-        Tytuł: t, Miasto: m, Opis: o, Telefon: p, Kategoria: k, zdjecie_url: photoUrl
-    }]);
-
-    if (error) {
-        alert("Błąd bazy: " + error.message);
-        btn.disabled = false;
-        btn.innerText = "Opublikuj ogłoszenie";
-    } else {
-        window.location.reload();
-    }
+    await db.from("Zlecenia").insert([{ Tytuł: t, Miasto: m, Opis: o, Telefon: p, Kategoria: k, zdjecie_url: photoUrl }]);
+    window.location.reload();
 }
 
-// 5. ŁADOWANIE LISTY
+// ŁADOWANIE LISTY Z UKRYWANIEM NUMERU
 async function load() {
-    const { data, error } = await db.from("Zlecenia").select("*").order("id", { ascending: false });
-    if (error) { console.error(error); return; }
-    
+    const { data } = await db.from("Zlecenia").select("*").order("id", { ascending: false });
     const listEl = document.getElementById("list");
-    listEl.innerHTML = data.map(z => `
-        <div class="bg-white rounded-[2rem] card-shadow overflow-hidden border border-slate-100 mb-6">
-            ${z.zdjecie_url ? `<img src="${z.zdjecie_url}" class="w-full h-64 object-cover bg-slate-100">` : ''}
-            <div class="p-8">
-                <div class="flex justify-between items-center mb-3">
-                    <span class="text-[10px] font-extrabold bg-blue-50 text-blue-600 px-3 py-1 rounded-full uppercase">${z.Kategoria}</span>
-                    <span class="text-[10px] text-slate-300 font-bold">${new Date(z.created_at).toLocaleDateString()}</span>
-                </div>
-                <h3 class="text-2xl font-black mb-1 text-slate-800">${z.Tytuł}</h3>
-                <div class="text-blue-500 font-bold text-sm mb-4 italic">📍 ${z.Miasto}</div>
-                <p class="text-slate-600 text-sm bg-slate-50 p-4 rounded-2xl mb-6">"${z.Opis}"</p>
-                <a href="tel:${z.Telefon}" class="block w-full bg-green-500 text-white text-center py-4 rounded-xl font-black shadow-lg hover:bg-green-600 transition-all">ZADZWOŃ: ${z.Telefon}</a>
-            </div>
-        </div>
-    `).join("");
-}
+    if (!data) return;
 
-// Start aplikacji
-load();
+    listEl.innerHTML = data.map(z => {
+        // Tu dzieje się magia ukrywania numeru
+        const contactSection = currentUser 
+            ? `<a href="tel:${z.Telefon}" class="block w-full bg-green-500 text-white text-center py-4 rounded-xl font-black shadow-lg hover:bg-green-600 transition-all">📞 ZADZWOŃ: ${z.Telefon}</a>`
+            : `<button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="block w-full bg-slate-200 text-slate-500 text-center py-4 rounded-xl font-bold border-2 border-dashed border-slate-300 hover:bg-slate-300 transition-all">🔒 Zaloguj się, aby zobaczyć numer</button>`;
+
+        return `
+            <div class="bg-white rounded-[2rem] card-shadow overflow-hidden border border-slate-100 mb-6 fade-in">
+                ${z.zdjecie_url ? `<img src="${z.zdjecie_url}" class="w-full h-64 object-cover bg-slate-100">` : ''}
+                <div class="p-8">
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="text-[10px] font-extrabold bg-blue-50 text-blue-600 px-3 py-1 rounded-full uppercase">${z.Kategoria}</span>
+                        <span class="text-[10px] text-slate-300 font-bold">${new Date(z.created_at).toLocaleDateString()}</span>
+                    </div>
+                    <h3 class="text-2xl font-black mb-1 text-slate-800">${z.Tytuł}</h3>
+                    <div class="text-blue-500 font-bold text-sm mb-4 italic">📍 ${z.Miasto}</div>
+                    <p class="text-slate-600 text-sm bg-slate-50 p-4 rounded-2xl mb-6">"${z.Opis}"</p>
+                    ${contactSection}
+                </div>
+            </div>
+        `;
+    }).join("");
+}
 </script>
 </body>
 </html>
