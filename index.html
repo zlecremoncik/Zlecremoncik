@@ -31,7 +31,7 @@
         <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-[1px]"></div>
     </div>
     <div class="relative z-10 max-w-3xl mx-auto text-white">
-        <h1 class="text-4xl md:text-6xl font-extrabold mb-4 tracking-tight drop-shadow-2xl">
+        <h1 class="text-4xl md:text-6xl font-extrabold mb-4 tracking-tight drop-shadow-2xl text-white">
             Znajdź fachowca, <br><span class="text-blue-400 italic">który zna się na rzeczy</span>
         </h1>
         <p class="text-blue-50 text-lg opacity-90 max-w-xl mx-auto font-medium">
@@ -41,27 +41,25 @@
 </header>
 
 <div class="sticky top-[60px] z-40 bg-white border-b border-slate-100 py-3 shadow-sm">
-    <div class="max-w-3xl mx-auto px-4 flex items-center justify-between">
+    <div class="max-w-3xl mx-auto px-4 flex items-center justify-between text-slate-800">
         <span class="text-sm font-bold text-slate-500 uppercase tracking-widest">Kategorie:</span>
-        <div class="relative inline-block text-left">
-            <select onchange="load(this.value)" class="bg-blue-50 text-blue-700 font-bold py-2 px-4 rounded-xl border-none outline-none cursor-pointer hover:bg-blue-100 transition-all">
-                <option value="Wszystkie">🔍 Filtruj: Wszystkie</option>
-                <option value="Remont">🏠 Remonty</option>
-                <option value="Budowa">🏗️ Budowa</option>
-                <option value="Ogród">🌱 Ogród</option>
-                <option value="Inne">🛠️ Inne</option>
-            </select>
-        </div>
+        <select onchange="load(this.value)" class="bg-blue-50 text-blue-700 font-bold py-2 px-4 rounded-xl border-none outline-none cursor-pointer hover:bg-blue-100 transition-all">
+            <option value="Wszystkie">🔍 Wszystkie</option>
+            <option value="Remont">🏠 Remonty</option>
+            <option value="Budowa">🏗️ Budowa</option>
+            <option value="Ogród">🌱 Ogród</option>
+            <option value="Inne">🛠️ Inne</option>
+        </select>
     </div>
 </div>
 
 <div class="max-w-3xl mx-auto px-4 -mt-8 relative z-20">
     
     <div id="auth-panel" class="bg-white p-8 rounded-3xl card-shadow mb-12 border border-slate-100">
-        <h2 class="text-xl font-bold mb-6">Zaloguj się</h2>
+        <h2 class="text-xl font-bold mb-6 text-slate-800">Zaloguj się</h2>
         <div class="space-y-4">
             <input id="email" type="email" placeholder="E-mail" class="w-full bg-slate-50 border-2 border-slate-50 p-4 rounded-2xl outline-none focus:border-blue-400 focus:bg-white transition-all">
-            <input id="password" type="password" placeholder="Hasło" class="w-full bg-slate-50 border-2 border-slate-50 p-4 rounded-2xl outline-none focus:border-blue-400 focus:bg-white transition-all">
+            <input id="password" type="password" placeholder="Hasło" class="w-full bg-slate-50 border-2 border-slate-50 p-4 rounded-2xl outline-none focus:border-blue-400 focus:bg-white transition-all text-slate-800">
             <div class="grid grid-cols-2 gap-4">
                 <button onclick="signIn()" class="bg-blue-600 text-white py-4 rounded-2xl font-bold hover:bg-blue-700 shadow-lg transition-all">Zaloguj się</button>
                 <button onclick="signUp()" class="bg-white text-slate-600 border-2 border-slate-100 py-4 rounded-2xl font-bold text-sm">Nowe konto</button>
@@ -69,7 +67,7 @@
         </div>
     </div>
 
-    <div id="add-panel" class="hidden bg-white p-8 rounded-3xl card-shadow mb-12 border-2 border-blue-100">
+    <div id="add-panel" class="hidden bg-white p-8 rounded-3xl card-shadow mb-12 border-2 border-blue-100 text-slate-800">
         <div class="flex items-center justify-between mb-8">
             <h2 class="text-2xl font-extrabold italic uppercase tracking-tighter">Nowe Ogłoszenie</h2>
             <button onclick="signOut()" class="text-xs font-bold text-slate-400 hover:text-red-500 uppercase">Wyloguj</button>
@@ -87,7 +85,7 @@
             </select>
             <textarea id="o" placeholder="Opis prac..." class="w-full bg-slate-50 border-2 border-slate-50 p-3 rounded-xl h-28 focus:border-blue-400 outline-none"></textarea>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input id="p" type="tel" placeholder="Numer telefonu" class="w-full bg-slate-50 border-2 border-slate-50 p-3 rounded-xl focus:border-blue-400 outline-none">
+                <input id="p" type="tel" maxlength="9" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="Numer telefonu (9 cyfr)" class="w-full bg-slate-50 border-2 border-slate-50 p-3 rounded-xl focus:border-blue-400 outline-none">
                 <input id="img-input" type="file" accept="image/*" class="w-full text-xs text-slate-400 file:py-3 file:px-4 file:rounded-xl file:bg-blue-50 file:text-blue-700 file:border-0 cursor-pointer">
             </div>
             <button onclick="add()" id="add-btn" class="w-full bg-blue-600 text-white py-5 rounded-2xl font-extrabold text-lg shadow-xl hover:bg-blue-700 uppercase tracking-tight mt-4">Opublikuj ogłoszenie</button>
@@ -104,7 +102,7 @@ const SUPABASE_URL = "https://uodwrtpaesemcizdhcht.supabase.co";
 const SUPABASE_KEY = "sb_publishable_WVkoJLfkTfUD95EeSZMDQQ_VEhzlW6n";
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// LOGOWANIE
+// AUTH
 async function signUp() {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
@@ -133,13 +131,30 @@ db.auth.onAuthStateChange((event, session) => {
     }
 });
 
+// FUNKCJA SPRAWDZAJĄCA NUMER
+function isPhoneValid(num) {
+    const forbidden = ["123456789", "987654321", "000000000", "111111111", "222222222", "333333333", "444444444", "555555555", "666666666", "777777777", "888888888", "999999999"];
+    if (num.length !== 9) return false;
+    if (forbidden.includes(num)) return false;
+    return true;
+}
+
 // DODAWANIE
 async function add() {
     const btn = document.getElementById('add-btn');
+    const phoneInput = document.getElementById('p').value;
+
+    if (!isPhoneValid(phoneInput)) {
+        alert("Podaj prawdziwy, 9-cyfrowy polski numer telefonu!");
+        return;
+    }
+
     const { data: { user } } = await db.auth.getUser();
     if (!user) return;
+    
     btn.innerText = "Trwa publikowanie...";
     btn.disabled = true;
+
     const file = document.getElementById('img-input').files[0];
     let photoUrl = "";
     if (file) {
@@ -154,7 +169,7 @@ async function add() {
         Tytuł: document.getElementById("t").value,
         Miasto: document.getElementById("m").value,
         Opis: document.getElementById("o").value,
-        Telefon: document.getElementById("p").value.replace(/\D/g, ''),
+        Telefon: phoneInput,
         Kategoria: document.getElementById("k").value,
         user_email: user.email,
         zdjecie_url: photoUrl
@@ -163,34 +178,30 @@ async function add() {
     else location.reload();
 }
 
-// POBIERANIE Z FILTROWANIEM I PEŁNĄ DATĄ
 async function load(kat = 'Wszystkie') {
     let q = db.from("Zlecenia").select("*").order("id", { ascending: false });
     if (kat !== 'Wszystkie') q = q.eq('Kategoria', kat);
-
     const { data } = await q;
     const el = document.getElementById("list");
     if (!data || data.length === 0) { 
-        el.innerHTML = "<p class='text-center text-slate-400 py-10 font-bold'>Brak ogłoszeń w kategorii " + kat + "</p>"; 
+        el.innerHTML = "<p class='text-center text-slate-400 py-10 font-bold'>Brak ogłoszeń.</p>"; 
         return; 
     }
-
     el.innerHTML = data.map(z => {
         const dataGodzina = z.created_at ? new Date(z.created_at).toLocaleString('pl-PL', {
             day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
         }) : "Przed chwilą";
-
         return `
-            <div class="bg-white rounded-[2rem] card-shadow overflow-hidden border border-slate-50 fade-in">
+            <div class="bg-white rounded-[2rem] card-shadow overflow-hidden border border-slate-50 fade-in text-slate-800">
                 ${z.zdjecie_url ? `<img src="${z.zdjecie_url}" class="w-full h-72 object-cover bg-slate-50">` : ''}
-                <div class="p-8 text-slate-800">
+                <div class="p-8">
                     <div class="flex justify-between items-center mb-4">
                         <span class="text-[10px] font-extrabold bg-blue-50 text-blue-600 px-4 py-1.5 rounded-full uppercase tracking-widest">${z.Kategoria || 'Inne'}</span>
                         <span class="text-[10px] font-bold text-slate-300 uppercase">${dataGodzina}</span>
                     </div>
                     <h3 class="text-2xl font-black mb-2 leading-tight">${z.Tytuł || 'Bez tytułu'}</h3>
                     <div class="flex items-center text-blue-600 font-bold text-sm mb-4">📍 ${z.Miasto || 'Cała Polska'}</div>
-                    <p class="text-slate-600 text-sm leading-relaxed mb-8 bg-slate-50 p-5 rounded-2xl italic border-l-4 border-blue-400">"${z.Opis || ''}"</p>
+                    <p class="text-slate-600 text-sm leading-relaxed mb-8 bg-slate-50 p-5 rounded-2xl italic border-l-4 border-blue-400 text-slate-800">"${z.Opis || ''}"</p>
                     <a href="tel:${z.Telefon}" class="block w-full bg-green-500 text-white text-center py-4 rounded-2xl font-black text-sm hover:bg-green-600 shadow-lg transition-all flex items-center justify-center gap-2">
                         📞 ZADZWOŃ: ${z.Telefon}
                     </a>
@@ -199,7 +210,6 @@ async function load(kat = 'Wszystkie') {
         `;
     }).join("");
 }
-
 load();
 </script>
 </body>
