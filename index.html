@@ -33,15 +33,15 @@
 <div id="recovery-panel" class="hidden fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
     <div class="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full">
         <h2 class="text-2xl font-black mb-2 text-slate-800">Nowe hasło</h2>
-        <input id="new-password" type="password" placeholder="Min. 6 znaków" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl outline-none focus:border-blue-400 mb-4">
+        <input id="new-password" type="password" placeholder="Min. 6 znaków" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl outline-none focus:border-blue-400 mb-4 text-slate-800">
         <button onclick="updatePassword()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold hover:bg-blue-700 shadow-lg">Zmień hasło</button>
     </div>
 </div>
 
 <header class="relative pt-20 pb-28 px-4 text-center overflow-hidden bg-slate-800">
     <div class="relative z-10 max-w-3xl mx-auto text-white">
-        <h1 class="text-4xl md:text-5xl font-extrabold mb-4 tracking-tight">Potrzebujesz fachowca?</h1>
-        <p class="text-blue-100 opacity-90 font-medium italic">Zaloguj się, aby zobaczyć numery telefonów.</p>
+        <h1 class="text-4xl md:text-5xl font-extrabold mb-4 tracking-tight uppercase italic">Potrzebujesz fachowca?</h1>
+        <p class="text-blue-100 opacity-90 font-medium text-lg">Zleć remont w 30 sekund.</p>
     </div>
 </header>
 
@@ -50,19 +50,19 @@
     <div id="auth-panel" class="bg-white p-8 rounded-3xl card-shadow mb-12 border border-slate-100">
         <h2 class="text-xl font-bold mb-6 text-slate-800">Zaloguj się</h2>
         <div class="space-y-4">
-            <input id="email" type="email" placeholder="Twój e-mail" class="w-full bg-slate-50 border-2 border-slate-50 p-4 rounded-2xl outline-none focus:border-blue-400">
-            <input id="password" type="password" placeholder="Hasło" class="w-full bg-slate-50 border-2 border-slate-50 p-4 rounded-2xl outline-none focus:border-blue-400">
+            <input id="email" type="email" placeholder="Twój e-mail" class="w-full bg-slate-50 border-2 border-slate-50 p-4 rounded-2xl outline-none focus:border-blue-400 text-slate-800">
+            <input id="password" type="password" placeholder="Hasło" class="w-full bg-slate-50 border-2 border-slate-50 p-4 rounded-2xl outline-none focus:border-blue-400 text-slate-800">
             <div class="grid grid-cols-2 gap-4">
-                <button onclick="signIn()" class="bg-blue-600 text-white py-4 rounded-2xl font-bold hover:bg-blue-700 shadow-md transition-all">Zaloguj</button>
-                <button onclick="signUp()" class="bg-white text-slate-500 border-2 border-slate-100 py-4 rounded-2xl font-bold hover:bg-slate-50 transition-all">Załóż konto</button>
+                <button onclick="signIn()" class="bg-blue-600 text-white py-4 rounded-2xl font-bold hover:bg-blue-700 shadow-md transition-all uppercase text-sm">Zaloguj</button>
+                <button onclick="signUp()" class="bg-white text-slate-500 border-2 border-slate-100 py-4 rounded-2xl font-bold hover:bg-slate-50 transition-all uppercase text-sm">Dołącz</button>
             </div>
             <button onclick="resetPasswordRequest()" class="w-full text-xs text-slate-400 hover:text-blue-500 font-medium">Zapomniałeś hasła?</button>
         </div>
     </div>
 
-    <!-- DODAWANIE -->
+    <!-- DODAWANIE OGŁOSZENIA -->
     <div id="add-panel" class="hidden bg-white p-8 rounded-3xl card-shadow mb-12 border-2 border-blue-50">
-        <h2 class="text-2xl font-black italic uppercase mb-8 text-slate-800">Dodaj zlecenie</h2>
+        <h2 class="text-2xl font-black italic uppercase tracking-tighter mb-8 text-slate-800">Dodaj zlecenie</h2>
         <div class="space-y-5">
             <input id="t" placeholder="Co jest do zrobienia?" class="w-full bg-slate-50 border-2 border-slate-50 p-3 rounded-xl focus:border-blue-400 outline-none">
             <input id="m" placeholder="Miasto" class="w-full bg-slate-50 border-2 border-slate-50 p-3 rounded-xl focus:border-blue-400 outline-none">
@@ -74,11 +74,12 @@
             </select>
             <textarea id="o" placeholder="Opisz szczegóły..." class="w-full bg-slate-50 border-2 border-slate-50 p-3 rounded-xl h-28 focus:border-blue-400 outline-none"></textarea>
             <input id="p" type="tel" maxlength="9" placeholder="Telefon (9 cyfr)" class="w-full bg-slate-50 border-2 border-slate-50 p-3 rounded-xl focus:border-blue-400 outline-none">
-            <input id="img-input" type="file" accept="image/*" class="w-full text-xs text-slate-400">
+            <input id="img-input" type="file" accept="image/*" class="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-blue-50 file:text-blue-700">
             <button onclick="add()" id="add-btn" class="w-full bg-blue-600 text-white py-5 rounded-2xl font-black text-lg shadow-xl uppercase hover:bg-blue-700 transition-all">Opublikuj ogłoszenie</button>
         </div>
     </div>
 
+    <!-- LISTA OGŁOSZEŃ -->
     <div id="list" class="space-y-8 pb-20"></div>
 </main>
 
@@ -124,7 +125,7 @@ async function signUp() {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     const { error } = await db.auth.signUp({ email, password });
-    if (error) alert(error.message); else alert("Konto utworzone! Potwierdź e-mail jeśli wymagane.");
+    if (error) alert(error.message); else alert("Konto utworzone!");
 }
 
 async function signOut() { await db.auth.signOut(); window.location.reload(); }
@@ -133,13 +134,13 @@ async function resetPasswordRequest() {
     const email = document.getElementById('email').value;
     if(!email) { alert("Wpisz email!"); return; }
     const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo: window.location.href });
-    if (error) alert(error.message); else alert("Link wysłany na e-mail!");
+    if (error) alert(error.message); else alert("Link wysłany!");
 }
 
 async function updatePassword() {
     const newPass = document.getElementById('new-password').value;
     const { error } = await db.auth.updateUser({ password: newPass });
-    if (error) alert(error.message); else { alert("Hasło zmienione!"); location.reload(); }
+    if (error) alert(error.message); else { alert("Zmienione!"); location.reload(); }
 }
 
 async function add() {
@@ -150,7 +151,7 @@ async function add() {
     const k = document.getElementById("k").value;
     const btn = document.getElementById('add-btn');
 
-    if (!t || !m || !o || p.length !== 9) { alert("Wypełnij poprawnie wszystkie pola!"); return; }
+    if (!t || !m || !o || p.length !== 9) { alert("Wypełnij wszystko!"); return; }
 
     btn.disabled = true;
     btn.innerText = "Publikowanie...";
@@ -160,7 +161,10 @@ async function add() {
     if (file) {
         const fileName = `${Date.now()}_img`;
         const { data } = await db.storage.from('zdjecia').upload(fileName, file);
-        if (data) photoUrl = db.storage.from('zdjecia').getPublicUrl(fileName).data.publicUrl;
+        if (data) {
+            const { data: urlData } = db.storage.from('zdjecia').getPublicUrl(fileName);
+            photoUrl = urlData.publicUrl;
+        }
     }
 
     const { error } = await db.from("Zlecenia").insert([{ Tytuł: t, Miasto: m, Opis: o, Telefon: p, Kategoria: k, zdjecie_url: photoUrl }]);
@@ -173,18 +177,16 @@ async function load() {
     if (!data) return;
 
     listEl.innerHTML = data.map(z => {
-        // DATA I GODZINA
         const d = new Date(z.created_at);
         const dataGodzina = d.toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
-        // UKRYWANIE NUMERU
         const contactSection = currentUser 
-            ? `<a href="tel:${z.Telefon}" class="block w-full bg-green-500 text-white text-center py-4 rounded-xl font-black shadow-lg hover:bg-green-600 transition-all">📞 ZADZWOŃ: ${z.Telefon}</a>`
+            ? `<a href="tel:${z.Telefon}" class="block w-full bg-green-500 text-white text-center py-4 rounded-xl font-black shadow-lg">📞 ZADZWOŃ: ${z.Telefon}</a>`
             : `<button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="block w-full bg-slate-200 text-slate-500 text-center py-4 rounded-xl font-bold border-2 border-dashed border-slate-300">🔒 Zaloguj się, aby zobaczyć numer</button>`;
 
         return `
             <div class="bg-white rounded-[2rem] card-shadow overflow-hidden border border-slate-100 mb-6 fade-in">
-                ${z.zdjecie_url ? `<img src="${z.zdjecie_url}" class="w-full h-64 object-cover bg-slate-50">` : ''}
+                ${z.zdjecie_url ? `<img src="${z.zdjecie_url}" class="w-full h-64 object-cover">` : ''}
                 <div class="p-8">
                     <div class="flex justify-between items-center mb-3">
                         <span class="text-[10px] font-extrabold bg-blue-50 text-blue-600 px-3 py-1 rounded-full uppercase">${z.Kategoria}</span>
