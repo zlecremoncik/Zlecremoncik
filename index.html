@@ -1,132 +1,209 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ZlećRemoncik</title>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.tailwindcss.com"></script>
-
-<style>
-body { font-family: Arial; background:#f8fafc; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZlećRemoncik - Fachowcy i Zlecenia</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+        .card-shadow { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); }
+        .hidden { display: none !important; }
+        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #3b82f6; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
 </head>
+<body class="text-slate-900">
 
-<body>
-
-<!-- HEADER -->
-<div style="position:relative;height:250px;color:white;text-align:center;">
-    <img src="kuchnia.png" style="position:absolute;width:100%;height:100%;object-fit:cover;">
-    <div style="position:absolute;width:100%;height:100%;background:rgba(0,0,0,0.6);"></div>
-    <div style="position:relative;top:70px;">
-        <h1 style="font-size:30px;font-weight:bold;">Zleć remont</h1>
+<nav class="bg-white/90 backdrop-blur-md sticky top-0 z-50 border-b border-slate-100">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
+        <div class="text-2xl font-extrabold tracking-tighter text-slate-800">Zleć<span class="text-blue-600">Remoncik</span></div>
+        <div class="flex items-center gap-3">
+            <span id="user-info" class="text-[10px] font-bold text-slate-400 bg-slate-50 px-3 py-1 rounded-full uppercase"></span>
+            <button id="logout-btn" onclick="signOut()" class="hidden text-[10px] font-bold text-red-400 hover:text-red-600 uppercase">Wyloguj</button>
+        </div>
     </div>
-</div>
+</nav>
 
-<div style="max-width:500px;margin:auto;padding:20px;">
+<main class="max-w-3xl mx-auto px-4 mt-10 relative z-20">
+    <!-- LOGOWANIE -->
+    <div id="auth-panel" class="bg-white p-8 rounded-3xl card-shadow mb-8 border border-slate-100">
+        <div class="space-y-4">
+            <input id="email" type="email" placeholder="E-mail" class="w-full bg-slate-50 border-2 p-4 rounded-2xl outline-none focus:border-blue-400">
+            <input id="password" type="password" placeholder="Hasło" class="w-full bg-slate-50 border-2 p-4 rounded-2xl outline-none focus:border-blue-400">
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="signIn()" class="bg-blue-600 text-white py-4 rounded-2xl font-bold uppercase text-xs">Zaloguj</button>
+                <button onclick="signUp()" class="bg-slate-800 text-white py-4 rounded-2xl font-bold uppercase text-xs">Rejestruj</button>
+            </div>
+        </div>
+    </div>
 
-<!-- LOGOWANIE -->
-<div id="auth">
-<input id="email" placeholder="email" style="width:100%;padding:10px;margin-bottom:10px;">
-<input id="password" type="password" placeholder="hasło" style="width:100%;padding:10px;margin-bottom:10px;">
-<button onclick="login()" style="width:100%;padding:10px;background:blue;color:white;">Zaloguj</button>
-</div>
+    <!-- PANEL DODAWANIA -->
+    <div id="add-panel" class="hidden bg-white p-8 rounded-3xl card-shadow mb-12 border-2 border-blue-50">
+        <div class="space-y-4">
+            <div class="p-1 bg-slate-100 rounded-2xl flex gap-1 mb-4">
+                <button id="role-klient" onclick="setRole('klient')" class="flex-1 py-3 rounded-xl text-[10px] font-black bg-white shadow-sm uppercase">Szukam Pomocy</button>
+                <button id="role-wykonawca" onclick="setRole('wykonawca')" class="flex-1 py-3 rounded-xl text-[10px] font-black text-slate-500 uppercase">Jestem Fachowcem</button>
+            </div>
+            
+            <input id="t" placeholder="Tytuł ogłoszenia" class="w-full bg-slate-50 border-2 p-3 rounded-xl outline-none focus:border-blue-300">
+            <div class="grid grid-cols-2 gap-4">
+                <input id="m" placeholder="Miasto" class="w-full bg-slate-50 border-2 p-3 rounded-xl outline-none focus:border-blue-300">
+                <select id="k" class="w-full bg-slate-50 border-2 p-3 rounded-xl outline-none font-bold text-sm">
+                    <option value="Remont">🏠 Remont</option>
+                    <option value="Budowa">🏗️ Budowa</option>
+                    <option value="Ogród">🌱 Ogród</option>
+                </select>
+            </div>
+            <textarea id="o" placeholder="Opis..." class="w-full bg-slate-50 border-2 p-3 rounded-xl h-24 outline-none focus:border-blue-300"></textarea>
+            <input id="p" type="tel" maxlength="9" placeholder="Telefon (9 cyfr)" class="w-full bg-slate-50 border-2 p-3 rounded-xl outline-none focus:border-blue-300">
+            
+            <div class="flex items-center gap-4 p-3 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
+                <input id="img-input" type="file" accept="image/*" class="text-[10px] flex-1">
+                <div id="upload-spinner" class="hidden loader"></div>
+            </div>
 
-<!-- DODAWANIE -->
-<div id="add" style="display:none;">
-<input id="t" placeholder="Tytuł" style="width:100%;padding:10px;margin-top:10px;">
-<input id="m" placeholder="Miasto" style="width:100%;padding:10px;margin-top:10px;">
-<textarea id="o" placeholder="Opis" style="width:100%;padding:10px;margin-top:10px;"></textarea>
-<input id="p" placeholder="Telefon" style="width:100%;padding:10px;margin-top:10px;">
-<input id="img" type="file" style="margin-top:10px;">
-<button onclick="addPost()" id="btn" style="width:100%;padding:10px;background:black;color:white;margin-top:10px;">Dodaj</button>
-</div>
+            <button onclick="add()" id="add-btn" class="w-full bg-blue-600 text-white py-5 rounded-2xl font-black text-lg shadow-xl uppercase transition-all">Dodaj ogłoszenie</button>
+        </div>
+    </div>
 
-<!-- LISTA -->
-<div id="list"></div>
+    <!-- FILTRY WIDOKU -->
+    <div class="mb-8 flex flex-wrap gap-2 justify-center">
+        <button onclick="setView('wszystko')" id="v-all" class="px-6 py-2 bg-blue-600 text-white rounded-full text-[10px] font-black uppercase">Wszystko</button>
+        <button onclick="setView('klient')" id="v-klient" class="px-6 py-2 bg-white border border-slate-200 rounded-full text-[10px] font-black uppercase">Zlecenia</button>
+        <button onclick="setView('wykonawca')" id="v-wykonawca" class="px-6 py-2 bg-white border border-slate-200 rounded-full text-[10px] font-black uppercase">Fachowcy</button>
+    </div>
 
-</div>
+    <div id="list" class="space-y-6 pb-20"></div>
+</main>
 
 <script>
-const db = supabase.createClient(
-"https://uodwrtpaesemcizdhcht.supabase.co",
-"sb_publishable_WVkoJLfkTfUD95EeSZMDQQ_VEhzlW6n"
-);
+const SUPABASE_URL = "https://uodwrtpaesemcizdhcht.supabase.co";
+const SUPABASE_KEY = "sb_publishable_WVkoJLfkTfUD95EeSZMDQQ_VEhzlW6n";
 
-// LOGIN
-async function login(){
-    await db.auth.signInWithPassword({
-        email: email.value,
-        password: password.value
-    });
-}
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: { persistSession: true, autoRefreshToken: true }
+});
 
-// SESSION
-db.auth.onAuthStateChange((e,s)=>{
-    if(s){
-        auth.style.display="none";
-        add.style.display="block";
-    }
+let currentUser = null;
+let selectedRole = 'klient';
+let currentView = 'wszystko';
+
+// MONITOROWANIE SESJI (Naprawia wylogowywanie)
+db.auth.onAuthStateChange((event, session) => {
+    currentUser = session?.user || null;
+    document.getElementById('auth-panel').classList.toggle('hidden', !!session);
+    document.getElementById('add-panel').classList.toggle('hidden', !session);
+    document.getElementById('logout-btn').classList.toggle('hidden', !session);
+    document.getElementById('user-info').innerText = session ? session.user.email : "";
     load();
 });
 
-// DODAWANIE (NAPRAWIONE)
-async function addPost(){
-    let btn = document.getElementById("btn");
-    btn.innerText="Dodawanie...";
-    btn.disabled=true;
+function setRole(role) {
+    selectedRole = role;
+    document.getElementById('role-klient').className = role === 'klient' ? 'flex-1 py-3 rounded-xl text-[10px] font-black bg-white shadow-sm uppercase' : 'flex-1 py-3 rounded-xl text-[10px] font-black text-slate-500 uppercase';
+    document.getElementById('role-wykonawca').className = role === 'wykonawca' ? 'flex-1 py-3 rounded-xl text-[10px] font-black bg-white shadow-sm uppercase' : 'flex-1 py-3 rounded-xl text-[10px] font-black text-slate-500 uppercase';
+}
 
-    let photo="";
+function setView(view) {
+    currentView = view;
+    ['v-all', 'v-klient', 'v-wykonawca'].forEach(id => {
+        document.getElementById(id).className = "px-6 py-2 bg-white border border-slate-200 rounded-full text-[10px] font-black uppercase";
+    });
+    document.getElementById('v-' + (view === 'wszystko' ? 'all' : view)).className = "px-6 py-2 bg-blue-600 text-white rounded-full text-[10px] font-black uppercase shadow-md";
+    load();
+}
 
-    try{
-        let file = document.getElementById("img").files[0];
+async function signIn() {
+    const { error } = await db.auth.signInWithPassword({ email: email.value, password: password.value });
+    if (error) alert(error.message);
+}
 
-        if(file){
-            let name = Date.now()+file.name;
+async function signUp() {
+    const { error } = await db.auth.signUp({ email: email.value, password: password.value });
+    if (error) alert(error.message); else alert("Rejestracja OK! Możesz się zalogować.");
+}
 
-            let upload = await db.storage
-                .from("zdjecia")
-                .upload(name,file);
+async function signOut() { await db.auth.signOut(); window.location.reload(); }
 
-            if(!upload.error){
-                photo = db.storage
-                    .from("zdjecia")
-                    .getPublicUrl(name).data.publicUrl;
-            }
+async function add() {
+    const tVal = document.getElementById("t").value;
+    const pVal = document.getElementById("p").value;
+    if (!tVal || pVal.length !== 9) { alert("Podaj tytuł i 9 cyfr telefonu!"); return; }
+    if (!currentUser) { alert("Zaloguj się ponownie!"); return; }
+
+    const btn = document.getElementById('add-btn');
+    const spinner = document.getElementById('upload-spinner');
+    btn.disabled = true;
+    btn.innerText = "Trwa publikowanie...";
+    spinner.classList.remove('hidden');
+
+    try {
+        const file = document.getElementById('img-input').files[0];
+        let photoUrl = "";
+
+        if (file) {
+            const fileName = `${Date.now()}_img.jpg`;
+            const { data: upData, error: stErr } = await db.storage.from('ZDJECIA').upload(fileName, file);
+            if (stErr) throw stErr;
+            photoUrl = db.storage.from('ZDJECIA').getPublicUrl(fileName).data.publicUrl;
         }
-    }catch(e){
-        console.log("bez zdjęcia");
+
+        const { error: dbErr } = await db.from("Zlecenia").insert([{ 
+            Tytuł: tVal, Miasto: m.value, Opis: o.value, 
+            Telefon: pVal, Kategoria: k.value, zdjecie_url: photoUrl,
+            user_id: currentUser.id, typ_wpisu: selectedRole, views: 0 
+        }]);
+
+        if (dbErr) throw dbErr;
+        window.location.reload();
+
+    } catch (err) {
+        alert("BŁĄD: " + err.message);
+        console.error(err);
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "Dodaj ogłoszenie";
+        spinner.classList.add('hidden');
     }
-
-    await db.from("Zlecenia").insert([{
-        Tytuł:t.value,
-        Miasto:m.value,
-        Opis:o.value,
-        Telefon:p.value,
-        zdjecie_url:photo
-    }]);
-
-    location.reload();
 }
 
-// LISTA
-async function load(){
-    let {data} = await db.from("Zlecenia").select("*").order("id",{ascending:false});
+async function load() {
+    let query = db.from("Zlecenia").select("*").order("id", { ascending: false });
+    if (currentView !== 'wszystko') query = query.eq('typ_wpisu', currentView);
+    
+    const { data } = await query;
+    const listEl = document.getElementById("list");
+    if (!data) return;
 
-    list.innerHTML = data.map(x=>`
-        <div style="background:white;margin-top:20px;padding:10px;">
-            ${x.zdjecie_url ? `<img src="${x.zdjecie_url}" style="width:100%;">` : ""}
-            <b>${x.Tytuł}</b><br>
-            ${x.Miasto}<br>
-            ${x.Opis}<br>
-            <a href="tel:${x.Telefon}" style="color:green;">${x.Telefon}</a>
-        </div>
-    `).join("");
+    listEl.innerHTML = data.map(z => {
+        const isOwner = currentUser && z.user_id === currentUser.id;
+        const isPro = z.typ_wpisu === 'wykonawca';
+        return `
+            <div class="bg-white rounded-[2rem] card-shadow overflow-hidden border-2 ${isPro ? 'border-amber-100' : 'border-blue-50'}">
+                ${z.zdjecie_url ? `<img src="${z.zdjecie_url}" class="w-full h-48 object-cover">` : ''}
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-[9px] font-black px-2 py-1 rounded bg-slate-100 uppercase">${z.Kategoria}</span>
+                        <span class="text-[9px] font-bold ${isPro ? 'text-amber-600' : 'text-blue-600'} uppercase">${isPro ? '⭐ Fachowiec' : '📝 Zlecenie'}</span>
+                    </div>
+                    <h3 class="text-xl font-black mb-1">${z.Tytuł}</h3>
+                    <p class="text-blue-500 font-bold text-xs mb-3 italic">📍 ${z.Miasto}</p>
+                    <p class="text-slate-600 text-sm mb-4 line-clamp-3 leading-relaxed">${z.Opis}</p>
+                    ${currentUser 
+                        ? `<a href="tel:${z.Telefon}" class="block w-full ${isPro ? 'bg-amber-500' : 'bg-green-500'} text-white text-center py-3 rounded-xl font-black uppercase text-sm">Zadzwoń: ${z.Telefon}</a>`
+                        : `<p class="text-center text-slate-400 text-[10px] italic py-2">Zaloguj się, by zobaczyć numer</p>`
+                    }
+                    ${isOwner ? `<button onclick="del(${z.id})" class="w-full mt-3 text-[9px] text-red-400 font-bold uppercase">Usuń moje</button>` : ''}
+                </div>
+            </div>
+        `;
+    }).join("");
 }
 
-load();
+async function del(id) { if(confirm("Usunąć?")) { await db.from("Zlecenia").delete().eq('id', id); load(); } }
 </script>
-
 </body>
 </html>
