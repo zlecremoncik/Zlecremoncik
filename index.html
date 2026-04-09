@@ -91,15 +91,29 @@ let currentUser = null;
 let selectedRole = 'klient';
 let currentView = 'wszystko';
 
-// MONITOROWANIE SESJI (Naprawia wylogowywanie)
-db.auth.onAuthStateChange((event, session) => {
+// --- POPRAWKA: FUNKCJA OBSŁUGI STANU ZALOGOWANIA ---
+async function checkUser() {
+    const { data: { session } } = await db.auth.getSession();
+    updateUI(session);
+}
+
+function updateUI(session) {
     currentUser = session?.user || null;
     document.getElementById('auth-panel').classList.toggle('hidden', !!session);
     document.getElementById('add-panel').classList.toggle('hidden', !session);
     document.getElementById('logout-btn').classList.toggle('hidden', !session);
     document.getElementById('user-info').innerText = session ? session.user.email : "";
     load();
+}
+
+// MONITOROWANIE ZMIAN (np. po zalogowaniu/wylogowaniu)
+db.auth.onAuthStateChange((event, session) => {
+    updateUI(session);
 });
+
+// URUCHOMIENIE SPRAWDZANIA PRZY STARTU STRONY
+checkUser();
+// ------------------------------------------------
 
 function setRole(role) {
     selectedRole = role;
@@ -117,16 +131,25 @@ function setView(view) {
 }
 
 async function signIn() {
-    const { error } = await db.auth.signInWithPassword({ email: email.value, password: password.value });
+    const { error } = await db.auth.signInWithPassword({ 
+        email: document.getElementById('email').value, 
+        password: document.getElementById('password').value 
+    });
     if (error) alert(error.message);
 }
 
 async function signUp() {
-    const { error } = await db.auth.signUp({ email: email.value, password: password.value });
+    const { error } = await db.auth.signUp({ 
+        email: document.getElementById('email').value, 
+        password: document.getElementById('password').value 
+    });
     if (error) alert(error.message); else alert("Rejestracja OK! Możesz się zalogować.");
 }
 
-async function signOut() { await db.auth.signOut(); window.location.reload(); }
+async function signOut() { 
+    await db.auth.signOut(); 
+    window.location.reload(); 
+}
 
 async function add() {
     const tVal = document.getElementById("t").value;
@@ -152,13 +175,19 @@ async function add() {
         }
 
         const { error: dbErr } = await db.from("Zlecenia").insert([{ 
-            Tytuł: tVal, Miasto: m.value, Opis: o.value, 
-            Telefon: pVal, Kategoria: k.value, zdjecie_url: photoUrl,
+            Tytuł: tVal, Miasto: document.getElementById('m').value, Opis: document.getElementById('o').value, 
+            Telefon: pVal, Kategoria: document.getElementById('k').value, zdjecie_url: photoUrl,
             user_id: currentUser.id, typ_wpisu: selectedRole, views: 0 
         }]);
 
         if (dbErr) throw dbErr;
-        window.location.reload();
+        
+        // Reset formularza zamiast reloadu dla płynności
+        document.getElementById("t").value = "";
+        document.getElementById("o").value = "";
+        document.getElementById("p").value = "";
+        alert("Dodano pomyślnie!");
+        load();
 
     } catch (err) {
         alert("BŁĄD: " + err.message);
