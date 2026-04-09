@@ -10,11 +10,11 @@
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
         .card-shadow { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); }
-        .hidden { display: none !important; }
         .loader { border-top-color: #3b82f6; animation: spinner 0.6s linear infinite; }
         @keyframes spinner { to { transform: rotate(360deg); } }
         .pro-card { border-left: 8px solid #f59e0b; }
         .client-card { border-left: 8px solid #3b82f6; }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body class="text-slate-900">
@@ -23,93 +23,98 @@
     <div class="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
         <div class="text-2xl font-extrabold tracking-tighter text-slate-800">Zleć<span class="text-blue-600">Remoncik</span></div>
         <div class="flex items-center gap-3">
-            <span id="user-info" class="text-[10px] font-bold text-slate-400 bg-slate-50 px-3 py-1 rounded-full uppercase"></span>
+            <span id="user-info" class="text-[10px] font-bold text-slate-400 bg-slate-50 px-3 py-1 rounded-full uppercase tracking-widest"></span>
             <button id="logout-btn" onclick="signOut()" class="hidden text-[10px] font-bold text-red-400 hover:text-red-600 uppercase">Wyloguj</button>
         </div>
     </div>
 </nav>
 
-<header class="relative pt-24 pb-32 px-4 text-center overflow-hidden">
+<header class="relative pt-20 pb-28 px-4 text-center overflow-hidden">
     <div class="absolute inset-0 z-0">
         <img src="kuchnia.png" alt="Tło" class="w-full h-full object-cover">
-        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-[1px]"></div>
+        <div class="absolute inset-0 bg-slate-900/70 backdrop-blur-[2px]"></div>
     </div>
     <div class="relative z-10 max-w-3xl mx-auto text-white">
-        <h1 class="text-4xl md:text-6xl font-extrabold mb-4 tracking-tight uppercase italic">Potrzebujesz fachowca?</h1>
-        <p class="text-blue-100 opacity-90 font-medium text-lg">Zleć remont lub znajdź fachowca w 30 sekund.</p>
+        <h1 class="text-4xl md:text-5xl font-extrabold mb-4 uppercase italic tracking-tight">Potrzebujesz fachowca?</h1>
+        <p class="text-blue-100 opacity-90 font-medium">Zleć remont lub znajdź fachowca w 30 sekund.</p>
     </div>
 </header>
 
 <main class="max-w-3xl mx-auto px-4 -mt-10 relative z-20">
-    <!-- LOGOWANIE I REJESTRACJA -->
+    <!-- PANEL LOGOWANIA -->
     <div id="auth-panel" class="bg-white p-8 rounded-3xl card-shadow mb-12 border border-slate-100">
-        <h2 class="text-xl font-bold mb-4">Witaj w społeczności</h2>
+        <h2 class="text-xl font-bold mb-6 uppercase">Witaj w społeczności</h2>
         <div class="space-y-4">
             <input id="email" type="email" placeholder="E-mail" class="w-full bg-slate-50 border-2 p-4 rounded-2xl outline-none focus:border-blue-400">
             <input id="password" type="password" placeholder="Hasło" class="w-full bg-slate-50 border-2 p-4 rounded-2xl outline-none focus:border-blue-400">
-            
             <div class="p-1 bg-slate-100 rounded-2xl flex gap-1">
-                <button id="role-klient" onclick="setRole('klient')" class="flex-1 py-3 rounded-xl text-xs font-bold bg-white shadow-sm transition-all">SZUKAM POMOCY</button>
-                <button id="role-wykonawca" onclick="setRole('wykonawca')" class="flex-1 py-3 rounded-xl text-xs font-bold text-slate-500 transition-all">JESTEM FACHOWCEM</button>
+                <button id="role-klient" onclick="setRole('klient')" class="flex-1 py-3 rounded-xl text-[10px] font-black bg-white shadow-sm transition-all uppercase">Szukam Pomocy</button>
+                <button id="role-wykonawca" onclick="setRole('wykonawca')" class="flex-1 py-3 rounded-xl text-[10px] font-black text-slate-500 transition-all uppercase">Jestem Fachowcem</button>
             </div>
-
-            <div class="grid grid-cols-2 gap-4 pt-2">
-                <button onclick="signIn()" class="bg-blue-600 text-white py-4 rounded-2xl font-bold uppercase text-sm">Zaloguj</button>
-                <button onclick="signUp()" class="bg-slate-800 text-white py-4 rounded-2xl font-bold uppercase text-sm">Rejestruj</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- FILTRY WIDOKU -->
-    <div class="mb-8 flex flex-col items-center gap-4">
-        <div class="flex gap-2">
-            <button onclick="setView('wszystko')" id="v-all" class="px-6 py-2 bg-blue-600 text-white rounded-full text-xs font-bold shadow-lg">Wszystko</button>
-            <button onclick="setView('klient')" id="v-klient" class="px-6 py-2 bg-white border border-slate-200 rounded-full text-xs font-bold hover:bg-blue-100">Zlecenia</button>
-            <button onclick="setView('wykonawca')" id="v-wykonawca" class="px-6 py-2 bg-white border border-slate-200 rounded-full text-xs font-bold hover:bg-amber-100">Fachowcy</button>
-        </div>
-    </div>
-
-    <!-- FORMULARZ DODAWANIA -->
-    <div id="add-panel" class="hidden bg-white p-8 rounded-3xl card-shadow mb-12 border-2 border-blue-50">
-        <h2 id="form-title" class="text-2xl font-black italic uppercase mb-6 text-slate-800">Dodaj ogłoszenie</h2>
-        <div class="space-y-4">
-            <input id="t" placeholder="Tytuł..." class="w-full bg-slate-50 border-2 p-3 rounded-xl outline-none">
             <div class="grid grid-cols-2 gap-4">
-                <input id="m" placeholder="Miasto" class="w-full bg-slate-50 border-2 p-3 rounded-xl outline-none">
-                <select id="k" class="w-full bg-slate-50 border-2 p-3 rounded-xl outline-none">
+                <button onclick="signIn()" class="bg-blue-600 text-white py-4 rounded-2xl font-bold uppercase text-xs shadow-lg">Zaloguj</button>
+                <button onclick="signUp()" class="bg-slate-800 text-white py-4 rounded-2xl font-bold uppercase text-xs shadow-lg">Rejestruj</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FILTRY -->
+    <div class="mb-8 flex flex-wrap gap-2 justify-center">
+        <button onclick="setView('wszystko')" id="v-all" class="px-6 py-2 bg-blue-600 text-white rounded-full text-[10px] font-black shadow-lg uppercase">Wszystko</button>
+        <button onclick="setView('klient')" id="v-klient" class="px-6 py-2 bg-white border border-slate-200 rounded-full text-[10px] font-black uppercase">Zlecenia</button>
+        <button onclick="setView('wykonawca')" id="v-wykonawca" class="px-6 py-2 bg-white border border-slate-200 rounded-full text-[10px] font-black uppercase">Fachowcy</button>
+    </div>
+
+    <!-- DODAWANIE -->
+    <div id="add-panel" class="hidden bg-white p-8 rounded-3xl card-shadow mb-12 border-2 border-blue-50">
+        <h2 id="form-title" class="text-2xl font-black italic uppercase mb-6">Dodaj ogłoszenie</h2>
+        <div class="space-y-4">
+            <input id="t" placeholder="Tytuł..." class="w-full bg-slate-50 border-2 p-3 rounded-xl outline-none focus:border-blue-300">
+            <div class="grid grid-cols-2 gap-4">
+                <input id="m" placeholder="Miasto" class="w-full bg-slate-50 border-2 p-3 rounded-xl outline-none focus:border-blue-300">
+                <select id="k" class="w-full bg-slate-50 border-2 p-3 rounded-xl outline-none font-bold text-sm">
                     <option value="Remont">🏠 Remont</option>
                     <option value="Budowa">🏗️ Budowa</option>
                     <option value="Ogród">🌱 Ogród</option>
                     <option value="Inne">🛠️ Inne</option>
                 </select>
             </div>
-            <textarea id="o" placeholder="Opisz szczegóły..." class="w-full bg-slate-50 border-2 p-3 rounded-xl h-24 outline-none"></textarea>
-            <input id="p" type="tel" maxlength="9" placeholder="Telefon (9 cyfr)" class="w-full bg-slate-50 border-2 p-3 rounded-xl outline-none">
-            
+            <textarea id="o" placeholder="Opis..." class="w-full bg-slate-50 border-2 p-3 rounded-xl h-24 outline-none focus:border-blue-300"></textarea>
+            <input id="p" type="tel" maxlength="9" placeholder="Telefon (9 cyfr)" class="w-full bg-slate-50 border-2 p-3 rounded-xl outline-none focus:border-blue-300">
             <div class="flex items-center gap-4 p-3 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
-                <input id="img-input" type="file" accept="image/*" class="text-xs flex-1">
+                <input id="img-input" type="file" accept="image/*" class="text-[10px] flex-1">
                 <div id="upload-spinner" class="hidden loader w-5 h-5 border-2 rounded-full"></div>
             </div>
-
-            <button onclick="add()" id="add-btn" class="w-full bg-blue-600 text-white py-5 rounded-2xl font-black text-lg shadow-xl uppercase hover:bg-blue-700">Opublikuj jako <span id="btn-role-text">Klient</span></button>
+            <button onclick="add()" id="add-btn" class="w-full bg-blue-600 text-white py-5 rounded-2xl font-black text-lg shadow-xl uppercase">Opublikuj ogłoszenie</button>
         </div>
     </div>
 
-    <!-- LISTA OGŁOSZEŃ -->
+    <!-- LISTA -->
     <div id="list" class="space-y-8 pb-20"></div>
 </main>
 
 <script>
 const SUPABASE_URL = "https://uodwrtpaesemcizdhcht.supabase.co";
 const SUPABASE_KEY = "sb_publishable_WVkoJLfkTfUD95EeSZMDQQ_VEhzlW6n";
-const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// KLUCZOWE: Inicjalizacja z pamięcią sesji
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+    }
+});
 
 let currentUser = null;
 let currentView = 'wszystko';
 let selectedRole = 'klient';
 
-db.auth.onAuthStateChange(async (event, session) => {
+// Śledzenie sesji - naprawia wylogowywanie przy F5
+db.auth.onAuthStateChange((event, session) => {
     currentUser = session?.user || null;
+    console.log("Sesja:", event, currentUser?.email);
+    
     document.getElementById('auth-panel').classList.toggle('hidden', !!session);
     document.getElementById('add-panel').classList.toggle('hidden', !session);
     document.getElementById('logout-btn').classList.toggle('hidden', !session);
@@ -119,69 +124,79 @@ db.auth.onAuthStateChange(async (event, session) => {
 
 function setRole(role) {
     selectedRole = role;
-    document.getElementById('role-klient').className = role === 'klient' ? 'flex-1 py-3 rounded-xl text-xs font-bold bg-white shadow-sm' : 'flex-1 py-3 rounded-xl text-xs font-bold text-slate-500';
-    document.getElementById('role-wykonawca').className = role === 'wykonawca' ? 'flex-1 py-3 rounded-xl text-xs font-bold bg-white shadow-sm' : 'flex-1 py-3 rounded-xl text-xs font-bold text-slate-500';
-    document.getElementById('btn-role-text').innerText = role === 'klient' ? 'Klient' : 'Fachowiec';
-    document.getElementById('form-title').innerText = role === 'klient' ? 'Dodaj zlecenie' : 'Zaproponuj usługi';
+    document.getElementById('role-klient').className = role === 'klient' ? 'flex-1 py-3 rounded-xl text-[10px] font-black bg-white shadow-sm uppercase' : 'flex-1 py-3 rounded-xl text-[10px] font-black text-slate-500 uppercase';
+    document.getElementById('role-wykonawca').className = role === 'wykonawca' ? 'flex-1 py-3 rounded-xl text-[10px] font-black bg-white shadow-sm uppercase' : 'flex-1 py-3 rounded-xl text-[10px] font-black text-slate-500 uppercase';
 }
 
 function setView(view) {
     currentView = view;
     ['v-all', 'v-klient', 'v-wykonawca'].forEach(id => {
-        document.getElementById(id).className = "px-6 py-2 bg-white border border-slate-200 rounded-full text-xs font-bold hover:bg-slate-100";
+        document.getElementById(id).className = "px-6 py-2 bg-white border border-slate-200 rounded-full text-[10px] font-black uppercase";
     });
-    const active = document.getElementById('v-' + (view === 'wszystko' ? 'all' : view));
-    active.className = "px-6 py-2 bg-blue-600 text-white rounded-full text-xs font-bold shadow-lg";
+    document.getElementById('v-' + (view === 'wszystko' ? 'all' : view)).className = "px-6 py-2 bg-blue-600 text-white rounded-full text-[10px] font-black shadow-lg uppercase";
     load();
 }
 
 async function signIn() {
     const { error } = await db.auth.signInWithPassword({ email: email.value, password: password.value });
-    if (error) alert(error.message);
+    if (error) alert("Błąd logowania: " + error.message);
 }
 
 async function signUp() {
     const { error } = await db.auth.signUp({ email: email.value, password: password.value });
-    if (error) alert(error.message); else alert("Konto założone! Możesz się zalogować.");
+    if (error) alert("Błąd rejestracji: " + error.message); else alert("Konto założone! Zaloguj się.");
 }
 
-async function signOut() { await db.auth.signOut(); window.location.reload(); }
+async function signOut() { 
+    await db.auth.signOut(); 
+    window.location.reload(); 
+}
 
 async function add() {
-    if (!t.value || p.value.length !== 9) { alert("Wpisz tytuł i poprawny telefon!"); return; }
-    
+    const tVal = document.getElementById("t").value;
+    const pVal = document.getElementById("p").value;
     const btn = document.getElementById('add-btn');
     const spinner = document.getElementById('upload-spinner');
+
+    if (!tVal || pVal.length !== 9) { alert("Podaj tytuł i 9 cyfr telefonu!"); return; }
+    if (!currentUser) { alert("Sesja wygasła. Zaloguj się ponownie."); return; }
+
     btn.disabled = true;
+    btn.innerText = "Wysyłanie...";
     spinner.classList.remove('hidden');
 
-    const file = document.getElementById('img-input').files[0];
-    let photoUrl = "";
-    if (file) {
-        const fileName = `${Date.now()}_img`;
-        await db.storage.from('zdjecia').upload(fileName, file);
-        photoUrl = db.storage.from('zdjecia').getPublicUrl(fileName).data.publicUrl;
+    try {
+        const file = document.getElementById('img-input').files[0];
+        let photoUrl = "";
+
+        if (file) {
+            // NAZWA BUCKETU: ZDJECIA (jedno C, duże litery)
+            const fileName = `${Date.now()}_${file.name.replace(/\s/g, '_')}`;
+            const { data: upData, error: stErr } = await db.storage.from('ZDJECIA').upload(fileName, file);
+            
+            if (stErr) throw stErr;
+            
+            const { data: urlData } = db.storage.from('ZDJECIA').getPublicUrl(fileName);
+            photoUrl = urlData.publicUrl;
+        }
+
+        const { error: dbErr } = await db.from("Zlecenia").insert([{ 
+            Tytuł: tVal, Miasto: m.value, Opis: o.value, 
+            Telefon: pVal, Kategoria: k.value, zdjecie_url: photoUrl,
+            user_id: currentUser.id, typ_wpisu: selectedRole, views: 0 
+        }]);
+
+        if (dbErr) throw dbErr;
+        window.location.reload();
+
+    } catch (err) {
+        alert("Błąd: " + err.message);
+        console.error(err);
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "Opublikuj ogłoszenie";
+        spinner.classList.add('hidden');
     }
-
-    const { error } = await db.from("Zlecenia").insert([{ 
-        Tytuł: t.value, Miasto: m.value, Opis: o.value, 
-        Telefon: p.value, Kategoria: k.value, zdjecie_url: photoUrl,
-        user_id: currentUser.id, typ_wpisu: selectedRole, views: 0 
-    }]);
-
-    if (error) { alert(error.message); btn.disabled = false; spinner.classList.add('hidden'); }
-    else { window.location.reload(); }
-}
-
-async function deleteAd(id) {
-    if(confirm("Usunąć ogłoszenie?")) {
-        await db.from("Zlecenia").delete().eq('id', id);
-        load();
-    }
-}
-
-async function incrementView(id, curViews) {
-    await db.from("Zlecenia").update({ views: (curViews || 0) + 1 }).eq('id', id);
 }
 
 async function load() {
@@ -190,39 +205,35 @@ async function load() {
     
     const { data } = await query;
     const listEl = document.getElementById("list");
+    if (!data) return;
+
     listEl.innerHTML = data.map(z => {
         const isOwner = currentUser && z.user_id === currentUser.id;
         const isPro = z.typ_wpisu === 'wykonawca';
-        const d = new Date(z.created_at).toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit' });
-
         return `
             <div class="bg-white rounded-[2rem] card-shadow overflow-hidden mb-6 ${isPro ? 'pro-card border-amber-100' : 'client-card border-blue-100'}">
                 ${z.zdjecie_url ? `<img src="${z.zdjecie_url}" class="w-full h-64 object-cover">` : ''}
                 <div class="p-8">
-                    <div class="flex justify-between items-center mb-4">
-                        <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase ${isPro ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}">
-                            ${isPro ? '⭐ FACHOWIEC' : '📝 ZLECENIE'} - ${z.Kategoria}
-                        </span>
-                        <div class="text-right">
-                            <div class="text-[9px] text-slate-400 font-bold">${d}</div>
-                            <div class="text-[9px] text-blue-400 font-bold">👁️ ${z.views || 0}</div>
-                        </div>
+                    <div class="flex justify-between items-center mb-4 text-[9px] font-black uppercase">
+                        <span class="${isPro ? 'text-amber-600' : 'text-blue-600'}">${isPro ? '⭐ Fachowiec' : '📝 Zlecenie'}</span>
+                        <span class="text-slate-400">👁️ ${z.views || 0}</span>
                     </div>
-                    <h3 class="text-2xl font-black text-slate-800 mb-1">${z.Tytuł}</h3>
-                    <div class="text-blue-500 font-bold text-sm mb-4 italic">📍 ${z.Miasto}</div>
+                    <h3 class="text-2xl font-black text-slate-800 mb-1 leading-tight">${z.Tytuł}</h3>
+                    <div class="text-blue-500 font-bold text-xs mb-4 uppercase tracking-wider italic">📍 ${z.Miasto}</div>
                     <p class="bg-slate-50 p-4 rounded-2xl text-slate-600 text-sm mb-6">"${z.Opis}"</p>
-                    
                     ${currentUser 
-                        ? `<a href="tel:${z.Telefon}" onclick="incrementView(${z.id}, ${z.views})" class="block w-full ${isPro ? 'bg-amber-500' : 'bg-green-500'} text-white text-center py-4 rounded-xl font-black shadow-lg">📞 KONTAKT: ${z.Telefon}</a>`
-                        : `<button onclick="window.scrollTo(0,0)" class="block w-full bg-slate-100 text-slate-400 py-4 rounded-xl font-bold">🔒 Zaloguj się, aby zadzwonić</button>`
+                        ? `<a href="tel:${z.Telefon}" onclick="incView(${z.id}, ${z.views})" class="block w-full ${isPro ? 'bg-amber-500' : 'bg-green-500'} text-white text-center py-4 rounded-xl font-black shadow-lg uppercase">Zadzwoń: ${z.Telefon}</a>`
+                        : `<p class="text-center text-slate-400 text-xs italic">Zaloguj się, aby zobaczyć numer</p>`
                     }
-
-                    ${isOwner ? `<button onclick="deleteAd(${z.id})" class="w-full mt-4 text-[10px] text-red-400 font-bold uppercase tracking-widest">Usuń moje ogłoszenie</button>` : ''}
+                    ${isOwner ? `<button onclick="del(${z.id})" class="w-full mt-4 text-[9px] text-red-400 font-black uppercase hover:text-red-600">Usuń moje ogłoszenie</button>` : ''}
                 </div>
             </div>
         `;
     }).join("");
 }
+
+async function incView(id, v) { await db.from("Zlecenia").update({ views: (v || 0) + 1 }).eq('id', id); }
+async function del(id) { if(confirm("Usunąć?")) { await db.from("Zlecenia").delete().eq('id', id); load(); } }
 </script>
 </body>
 </html>
