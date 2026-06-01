@@ -57,9 +57,46 @@
             <div class="grid grid-cols-2 gap-4">
                 <input id="m" placeholder="Miasto" class="w-full bg-slate-50 border-2 p-3 rounded-xl outline-none focus:border-blue-300">
                 <select id="k" class="w-full bg-slate-50 border-2 p-3 rounded-xl outline-none font-bold text-sm">
-                    <option value="Remont">🏠 Remont</option>
-                    <option value="Budowa">🏗️ Budowa</option>
-                    <option value="Ogród">🌱 Ogród</option>
+                    <option value="">📁 Wybierz kategorię...</option>
+                    <optgroup label="🛠️ Generalne i Kompleksowe">
+                        <option value="Remonty kompleksowe">Remonty kompleksowe</option>
+                        <option value="Wykończenia wnętrz">Wykończenia wnętrz (stan deweloperski)</option>
+                        <option value="Remonty łazienek">Remonty łazienek (od A do Z)</option>
+                        <option value="Remonty kuchni">Remonty kuchni</option>
+                    </optgroup>
+                    <optgroup label="🧱 Ściany i Sufity">
+                        <option value="Malowanie i gładzie">Malowanie i gładzie</option>
+                        <option value="Glazura, płytki i gres">Glazura, płytki i gres</option>
+                        <option value="Sucha zabudowa i sufity G-K">Sucha zabudowa i sufity G-K</option>
+                        <option value="Tapetowanie i fototapety">Tapetowanie i fototapety</option>
+                        <option value="Tynki dekoracyjne">Tynki dekoracyjne i beton architektoniczny</option>
+                    </optgroup>
+                    <optgroup label="🪵 Podłogi">
+                        <option value="Podłogi i panele">Podłogi i panele (laminowane, winyle)</option>
+                        <option value="Parkiety i podłogi drewniane">Parkiety i podłogi drewniane</option>
+                        <option value="Cyklinowanie i renowacja">Cyklinowanie i renowacja podłóg</option>
+                        <option value="Listwy przypodłogowe">Listwy przypodłogowe</option>
+                    </optgroup>
+                    <optgroup label="⚡ Instalacje">
+                        <option value="Elektryka i oświetlenie">Elektryka i oświetlenie</option>
+                        <option value="Hydraulika i biały montaż">Hydraulika i biały montaż</option>
+                        <option value="Klimatyzacja i wentylacja">Klimatyzacja i wentylacja</option>
+                        <option value="Ogrzewanie">Ogrzewanie i technika grzewcza</option>
+                        <option value="Smart Home">Smart Home i automatyka domowa</option>
+                    </optgroup>
+                    <optgroup label="🪟 Stolarka i zabudowy">
+                        <option value="Montaż drzwi i okien">Montaż drzwi i okien</option>
+                        <option value="Meble na wymiar">Meble na wymiar i kuchnie</option>
+                        <option value="Montaż mebli z paczek">Montaż mebli z paczek (np. IKEA)</option>
+                        <option value="Schody i balustrady">Schody i balustrady</option>
+                    </optgroup>
+                    <optgroup label="🏡 Zewnętrzne i Przygotowawcze">
+                        <option value="Wyburzenia i skuwanie">Wyburzenia i skuwanie</option>
+                        <option value="Wywóz gruzu i sprzątanie">Wywóz gruzu i sprzątanie po remoncie</option>
+                        <option value="Ocieplenia i elewacje">Ocieplenia i elewacje</option>
+                        <option value="Remonty balkonów i tarasów">Remonty balkonów i tarasów</option>
+                        <option value="Izolacje i osuszanie">Izolacje i osuszanie ścian</option>
+                    </optgroup>
                 </select>
             </div>
             <textarea id="o" placeholder="Opis..." class="w-full bg-slate-50 border-2 p-3 rounded-xl h-24 outline-none focus:border-blue-300"></textarea>
@@ -74,10 +111,44 @@
         </div>
     </div>
 
-    <div class="mb-8 flex flex-wrap gap-2 justify-center">
-        <button onclick="setView('wszystko')" id="v-all" class="px-6 py-2 bg-blue-600 text-white rounded-full text-[10px] font-black uppercase">Wszystko</button>
-        <button onclick="setView('klient')" id="v-klient" class="px-6 py-2 bg-white border border-slate-200 rounded-full text-[10px] font-black uppercase">Zlecenia</button>
-        <button onclick="setView('wykonawca')" id="v-wykonawca" class="px-6 py-2 bg-white border border-slate-200 rounded-full text-[10px] font-black uppercase">Fachowcy</button>
+    <div class="mb-8 space-y-3">
+        <div class="flex flex-wrap gap-2 justify-center">
+            <button onclick="setView('wszystko')" id="v-all" class="px-6 py-2 bg-blue-600 text-white rounded-full text-[10px] font-black uppercase shadow-md">Wszystko</button>
+            <button onclick="setView('klient')" id="v-klient" class="px-6 py-2 bg-white border border-slate-200 rounded-full text-[10px] font-black uppercase">Zlecenia</button>
+            <button onclick="setView('wykonawca')" id="v-wykonawca" class="px-6 py-2 bg-white border border-slate-200 rounded-full text-[10px] font-black uppercase">Fachowcy</button>
+        </div>
+        <div class="max-w-xs mx-auto">
+            <select id="filter-kategoria" onchange="setCategoryFilter(this.value)" class="w-full bg-white border-2 border-slate-200 p-2.5 rounded-full outline-none font-bold text-xs text-center shadow-sm text-slate-700 focus:border-blue-400">
+                <option value="wszystkie">🔍 Wszystkie kategorie</option>
+                <option value="Remonty kompleksowe">Remonty kompleksowe</option>
+                <option value="Wykończenia wnętrz">Wykończenia wnętrz</option>
+                <option value="Remonty łazienek">Remonty łazienek</option>
+                <option value="Remonty kuchni">Remonty kuchni</option>
+                <option value="Malowanie i gładzie">Malowanie i gładzie</option>
+                <option value="Glazura, płytki i gres">Glazura, płytki i gres</option>
+                <option value="Sucha zabudowa i sufity G-K">Sucha zabudowa i sufity G-K</option>
+                <option value="Tapetowanie i fototapety">Tapetowanie i fototapety</option>
+                <option value="Tynki dekoracyjne">Tynki dekoracyjne</option>
+                <option value="Podłogi i panele">Podłogi i panele</option>
+                <option value="Parkiety i podłogi drewniane">Parkiety i podłogi drewniane</option>
+                <option value="Cyklinowanie i renowacja">Cyklinowanie i renowacja podłóg</option>
+                <option value="Listwy przypodłogowe">Listwy przypodłogowe</option>
+                <option value="Elektryka i oświetlenie">Elektryka i oświetlenie</option>
+                <option value="Hydraulika i biały montaż">Hydraulika i biały montaż</option>
+                <option value="Klimatyzacja i wentylacja">Klimatyzacja i wentylacja</option>
+                <option value="Ogrzewanie">Ogrzewanie i technika grzewcza</option>
+                <option value="Smart Home">Smart Home i automatyka</option>
+                <option value="Montaż drzwi i okien">Montaż drzwi i okien</option>
+                <option value="Meble na wymiar">Meble na wymiar i kuchnie</option>
+                <option value="Montaż mebli z paczek">Montaż mebli z paczek</option>
+                <option value="Schody i balustrady">Schody i balustrady</option>
+                <option value="Wyburzenia i skuwanie">Wyburzenia i skuwanie</option>
+                <option value="Wywóz gruzu i sprzątanie">Wywóz gruzu i sprzątanie</option>
+                <option value="Ocieplenia i elewacje">Ocieplenia i elewacje</option>
+                <option value="Remonty balkonów i tarasów">Remonty balkonów i tarasów</option>
+                <option value="Izolacje i osuszanie">Izolacje i osuszanie ścian</option>
+            </select>
+        </div>
     </div>
 
     <div id="list" class="space-y-6 pb-20"></div>
@@ -95,6 +166,7 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
 let currentUser = null;
 let selectedRole = 'klient';
 let currentView = 'wszystko';
+let currentCategoryFilter = 'wszystkie'; // Nowa zmienna do filtrowania branż
 
 // Funkcja sprawdzająca stan zalogowania użytkownika
 async function checkUser() {
@@ -132,6 +204,12 @@ function setView(view) {
     });
     document.getElementById('v-' + (view === 'wszystko' ? 'all' : view)).className = "px-6 py-2 bg-blue-600 text-white rounded-full text-[10px] font-black uppercase shadow-md";
     load();
+}
+
+// NOWA FUNKCJA: Obsługa zmiany filtra kategorii
+function setCategoryFilter(category) {
+    currentCategoryFilter = category;
+    load(); // Odświeżamy listę ogłoszeń z uwzględnieniem nowej kategorii
 }
 
 async function signIn() {
@@ -229,6 +307,8 @@ async function add() {
 async function load() {
     let query = db.from("Zlecenia").select("*").order("id", { ascending: false });
     if (currentView !== 'wszystko') query = query.eq('typ_wpisu', currentView);
+    // Jeśli wybrano konkretną kategorię, filtrujemy wyniki również po niej
+    if (currentCategoryFilter !== 'wszystkie') query = query.eq('Kategoria', currentCategoryFilter);
     
     const { data, error } = await query;
     if (error) {
