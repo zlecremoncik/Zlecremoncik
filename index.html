@@ -151,6 +151,12 @@
         </div>
     </div>
 
+    <!-- Kontener na szczegóły ogłoszenia, którego brakowało -->
+    <div id="details-view" class="hidden mb-12">
+        <button onclick="goBackToList()" class="mb-4 px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold text-xs uppercase hover:bg-slate-300">⬅ Powrót do listy</button>
+        <div id="details-content"></div>
+    </div>
+
     <div id="list" class="space-y-6 pb-20"></div>
 </main>
 
@@ -166,7 +172,7 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
 let currentUser = null;
 let selectedRole = 'klient';
 let currentView = 'wszystko';
-let currentCategoryFilter = 'wszystkie'; // Nowa zmienna do filtrowania branż
+let currentCategoryFilter = 'wszystkie';
 
 // Funkcja sprawdzająca stan zalogowania użytkownika
 async function checkUser() {
@@ -180,10 +186,10 @@ function updateUI(session) {
     document.getElementById('add-panel').classList.toggle('hidden', !session);
     document.getElementById('logout-btn').classList.toggle('hidden', !session);
     document.getElementById('user-info').innerText = session ? session.user.email : "";
-    load(); // Ładujemy ogłoszenia po ustaleniu stanu użytkownika
+    load();
 }
 
-// Monitorowanie dynamicznych zmian auth (zalogowanie/wylogowanie)
+// Monitorowanie zmian zalogowania
 db.auth.onAuthStateChange((event, session) => {
     updateUI(session);
 });
@@ -191,7 +197,7 @@ db.auth.onAuthStateChange((event, session) => {
 // Uruchomienie przy starcie strony
 checkUser();
 
-// NOWOŚĆ: Sprawdzamy adres URL za każdym razem, gdy użytkownik klika wstecz/dalej lub wpisuje link
+// Sprawdzanie adresu URL (czy oglądamy szczegóły)
 window.addEventListener('hashchange', checkUrlRoute);
 
 function setRole(role) {
@@ -209,10 +215,9 @@ function setView(view) {
     load();
 }
 
-// NOWA FUNKCJA: Obsługa zmiany filtra kategorii
 function setCategoryFilter(category) {
     currentCategoryFilter = category;
-    load(); // Odświeżamy listę ogłoszeń z uwzględnieniem nowej kategorii
+    load();
 }
 
 async function signIn() {
@@ -241,7 +246,6 @@ async function signUp() {
 
 async function signOut() { 
     await db.auth.signOut(); 
-    // updateUI() wywoła się automatycznie przez onAuthStateChange, nie trzeba przeładowywać okna.
 }
 
 async function add() {
@@ -274,20 +278,19 @@ async function add() {
         }
 
         const { error: dbErr } = await db.from("Zlecenia").insert([{ 
-    tytul: tVal, 
-    miasto: mVal, 
-    opis: oVal, 
-    telefon: pVal, 
-    kategoria: kVal, 
-    zdjecie_url: photoUrl,
-    user_id: currentUser.id, 
-    typ_wpisu: selectedRole, 
-    views: 0 
-}]);
+            tytul: tVal, 
+            miasto: mVal, 
+            opis: oVal, 
+            telefon: pVal, 
+            kategoria: kVal, 
+            zdjecie_url: photoUrl,
+            user_id: currentUser.id, 
+            typ_wpisu: selectedRole, 
+            views: 0 
+        }]);
 
         if (dbErr) throw dbErr;
         
-        // Reset formularza
         document.getElementById("t").value = "";
         document.getElementById("m").value = "";
         document.getElementById("o").value = "";
@@ -308,12 +311,8 @@ async function add() {
 }
 
 async function load() {
-    // 1. Nazwa tabeli "Zlecenia" jest OK (z dużej), ale sortujemy po id
     let query = db.from("Zlecenia").select("*").order("id", { ascending: false });
-    
     if (currentView !== 'wszystko') query = query.eq('typ_wpisu', currentView);
-    
-    // POPRAWKA: Zmiana z 'Kategoria' na 'kategoria' (z małej litery)
     if (currentCategoryFilter !== 'wszystkie') query = query.eq('kategoria', currentCategoryFilter);
     
     const { data, error } = await query;
@@ -328,12 +327,11 @@ async function load() {
         return;
     }
 
-    // POPRAWKA: Wewnątrz map() zmieniamy z.Tytuł na z.tytul, z.Miasto na z.miasto itd.
     listEl.innerHTML = data.map(z => {
         const isOwner = currentUser && z.user_id === currentUser.id;
         const isPro = z.typ_wpisu === 'wykonawca';
         return `
-            <div class="bg-white rounded-[2rem] card-shadow overflow-hidden border-2 ${isPro ? 'border-amber-100' : 'border-blue-50'}">
+            <div onclick="openDetails(${z.id})" class="bg-white rounded-[2rem] card-shadow overflow-hidden border-2 ${isPro ? 'border-amber-100' : 'border-blue-50'} cursor-pointer hover:scale-[1.01] transition-transform">
                 ${z.zdjecie_url ? `<img src="${z.zdjecie_url}" class="w-full h-48 object-cover" alt="Zdjęcie ogłoszenia">` : ''}
                 <div class="p-6">
                     <div class="flex justify-between items-center mb-2">
@@ -344,10 +342,10 @@ async function load() {
                     <p class="text-blue-500 font-bold text-xs mb-3 italic">📍 ${z.miasto || 'Brak lokalizacji'}</p>
                     <p class="text-slate-600 text-sm mb-4 line-clamp-3 leading-relaxed">${z.opis || 'Brak opisu...'}</p>
                     ${currentUser 
-                        ? `<a href="tel:${z.telefon}" class="block w-full ${isPro ? 'bg-amber-500' : 'bg-green-500'} text-white text-center py-3 rounded-xl font-black uppercase text-sm">Zadzwoń: ${z.telefon || ''}</a>`
+                        ? `<a href="tel:${z.telefon}" onclick="event.stopPropagation();" class="block w-full ${isPro ? 'bg-amber-500' : 'bg-green-500'} text-white text-center py-3 rounded-xl font-black uppercase text-sm">Zadzwoń: ${z.telefon || ''}</a>`
                         : `<p class="text-center text-slate-400 text-[10px] italic py-2">Zaloguj się, by zobaczyć numer</p>`
                     }
-                    ${isOwner ? `<button onclick="del(${z.id})" class="w-full mt-3 text-[9px] text-red-400 font-bold uppercase hover:text-red-600 transition-colors">Usuń moje</button>` : ''}
+                    ${isOwner ? `<button onclick="event.stopPropagation(); del(${z.id})" class="w-full mt-3 text-[9px] text-red-400 font-bold uppercase hover:text-red-600 transition-colors">Usuń moje</button>` : ''}
                 </div>
             </div>
         `;
@@ -358,74 +356,63 @@ async function del(id) {
     if(confirm("Czy na pewno chcesz usunąć to ogłoszenie?")) { 
         const { error } = await db.from("Zlecenia").delete().eq('id', id); 
         if (error) alert("Błąd usuwania: " + error.message);
-        // Po usunięciu wracamy bezpiecznie do czystej listy
         window.location.hash = "";
         load(); 
     } 
 }
 
-// NOWOŚĆ: Zmiana adresu URL po kliknięciu w ogłoszenie
 function openDetails(id) {
     window.location.hash = `ogloszenie-${id}`;
 }
 
-// NOWOŚĆ: Powrót z widoku szczegółów do listy głównej
 function goBackToList() {
     window.location.hash = "";
 }
 
-// NOWOŚĆ: Główny mózg operacji - sprawdza adres URL i decyduje co pokazać na ekranie
 async function checkUrlRoute() {
     const hash = window.location.hash;
     
-    // Jeśli adres zawiera "#ogloszenie-NUMER"
     if (hash.startsWith('#ogloszenie-')) {
         const id = hash.replace('#ogloszenie-', '');
         
-        // Ukrywamy filtry, formularz dodawania oraz listę główną
         document.getElementById('add-panel').classList.add('hidden');
         document.getElementById('auth-panel').classList.add('hidden');
-        // Ukrywamy cały blok filtrów i wyszukiwarki (to jest div nad listą)
         document.getElementById('filter-kategoria').parentElement.parentElement.classList.add('hidden');
         document.getElementById('list').classList.add('hidden');
         
-        // Pokazujemy kontener szczegółów
         const detailsView = document.getElementById('details-view');
         const detailsContent = document.getElementById('details-content');
         detailsView.classList.remove('hidden');
         detailsContent.innerHTML = `<p class="text-center text-slate-400 py-10">Ładowanie szczegółów ogłoszenia...</p>`;
 
-        // Pobieramy to jedno konkretne ogłoszenie bezpośrednio z Supabase
         const { data, error } = await db.from("Zlecenia").select("*").eq('id', id).single();
         
         if (error || !data) {
-            detailsContent.innerHTML = `<p class="text-center text-red-500 font-bold py-10">Nie znaleziono takiego ogłoszenia lub zostało usunięte.</p>`;
+            detailsContent.innerHTML = `<p class="text-center text-red-500 font-bold py-10">Nie znaleziono takiego ogłoszenia.</p>`;
             return;
         }
 
-        // Zwiększamy licznik wyświetleń (views) w bazie o +1 przy każdym wejściu w unikalny link
         await db.from("Zlecenia").update({ views: (data.views || 0) + 1 }).eq('id', id);
 
         const isOwner = currentUser && data.user_id === currentUser.id;
         const isPro = data.typ_wpisu === 'wykonawca';
 
-        // Renderujemy pełny, piękny i rozbudowany widok ogłoszenia
         detailsContent.innerHTML = `
-            <div class="bg-white rounded-[2.5rem] card-shadow overflow-hidden border border-slate-100 bg-slate-50/50">
+            <div class="bg-white rounded-[2.5rem] card-shadow overflow-hidden border border-slate-100">
                 ${data.zdjecie_url ? `<img src="${data.zdjecie_url}" class="w-full max-h-[450px] object-cover shadow-inner" alt="Zdjęcie szczegółów">` : ''}
                 <div class="p-8 md:p-12">
                     <div class="flex flex-wrap gap-2 items-center mb-4">
-                        <span class="text-xs font-black px-3 py-1.5 rounded-full bg-blue-50 text-blue-600 uppercase tracking-wider">${data.Kategoria || 'Inne'}</span>
+                        <span class="text-xs font-black px-3 py-1.5 rounded-full bg-blue-50 text-blue-600 uppercase tracking-wider">${data.kategoria || 'Inne'}</span>
                         <span class="text-xs font-black px-3 py-1.5 rounded-full ${isPro ? 'bg-amber-50 text-amber-600' : 'bg-green-50 text-green-600'} uppercase tracking-wider">${isPro ? '⭐ Fachowiec' : '📝 Zlecenie'}</span>
                         <span class="text-[11px] font-bold text-slate-400 ml-auto">👁️ Wyświetleń: ${(data.views || 0) + 1}</span>
                     </div>
                     
-                    <h1 class="text-3xl md:text-4xl font-black text-slate-900 mb-2 leading-tight">${data.Tytuł}</h1>
-                    <p class="text-blue-500 font-extrabold text-sm md:text-base mb-6 flex items-center gap-1">📍 Lokalizacja: ${data.Miasto || 'Brak lokalizacji'}</p>
+                    <h1 class="text-3xl md:text-4xl font-black text-slate-900 mb-2 leading-tight">${data.tytul || 'Bez tytułu'}</h1>
+                    <p class="text-blue-500 font-extrabold text-sm md:text-base mb-6 flex items-center gap-1">📍 Lokalizacja: ${data.miasto || 'Brak lokalizacji'}</p>
                     
                     <div class="border-t border-slate-100 pt-6 mb-8">
-                        <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Dokładny Opis Zlecenia</h4>
-                        <p class="text-slate-700 text-base md:text-lg leading-relaxed whitespace-pre-line">${data.Opis || 'Brak dodatkowego opisu...'}</p>
+                        <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Dokładny Opis</h4>
+                        <p class="text-slate-700 text-base md:text-lg leading-relaxed whitespace-pre-line">${data.opis || 'Brak dodatkowego opisu...'}</p>
                     </div>
                     
                     <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -434,7 +421,7 @@ async function checkUrlRoute() {
                             <p class="text-sm font-bold text-slate-800">${currentUser ? '🟢 Numer telefonu jest odkryty' : '🔒 Zaloguj się, aby zobaczyć telefon'}</p>
                         </div>
                         ${currentUser 
-                            ? `<a href="tel:${data.Telefon}" class="block sm:inline-block bg-gradient-to-r ${isPro ? 'from-amber-500 to-amber-600' : 'from-green-500 to-green-600'} text-white text-center px-8 py-4 rounded-xl font-black uppercase text-sm shadow-md hover:scale-[1.02] transition-transform">📞 Zadzwoń: ${data.Telefon}</a>`
+                            ? `<a href="tel:${data.telefon}" class="block sm:inline-block bg-gradient-to-r ${isPro ? 'from-amber-500 to-amber-600' : 'from-green-500 to-green-600'} text-white text-center px-8 py-4 rounded-xl font-black uppercase text-sm shadow-md hover:scale-[1.02] transition-transform">📞 Zadzwoń: ${data.telefon || ''}</a>`
                             : `<p class="text-center text-slate-400 text-xs italic bg-slate-100 px-4 py-3 rounded-xl w-full sm:w-auto">Wymagane konto do wyświetlenia numeru</p>`
                         }
                     </div>
@@ -448,14 +435,10 @@ async function checkUrlRoute() {
             </div>
         `;
     } else {
-        // Jeśli adres URL nie ma hasha (jest czysty), przywracamy normalną listę główną
         document.getElementById('details-view').classList.add('hidden');
         document.getElementById('list').classList.remove('hidden');
-        
-        // Pokazujemy z powrotem filtry i wyszukiwarkę
         document.getElementById('filter-kategoria').parentElement.parentElement.classList.remove('hidden');
         
-        // Wywołujemy standardowe sprawdzanie widoków paneli zalogowania
         if (currentUser) {
             document.getElementById('add-panel').classList.remove('hidden');
         } else {
@@ -465,12 +448,12 @@ async function checkUrlRoute() {
     }
 }
 
-// Nadpisujemy funkcję updateUI, aby przy zmianie konta zawsze respektowała routing adresu URL
+// Nadpisanie updateUI na potrzeby routingu URL
 const oryginalneUpdateUI = updateUI;
 updateUI = function(session) {
     currentUser = session?.user || null;
     oryginalneUpdateUI(session);
-    checkUrlRoute(); // Sprawdzamy adres na wypadek gdyby użytkownik był w widoku szczegółów
+    checkUrlRoute();
 };
 </script>
 </body>
