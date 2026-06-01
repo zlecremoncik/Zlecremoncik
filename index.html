@@ -274,16 +274,16 @@ async function add() {
         }
 
         const { error: dbErr } = await db.from("Zlecenia").insert([{ 
-            Tytuł: tVal, 
-            Miasto: mVal, 
-            Opis: oVal, 
-            Telefon: pVal, 
-            Kategoria: kVal, 
-            zdjecie_url: photoUrl,
-            user_id: currentUser.id, 
-            typ_wpisu: selectedRole, 
-            views: 0 
-        }]);
+    tytul: tVal, 
+    miasto: mVal, 
+    opis: oVal, 
+    telefon: pVal, 
+    kategoria: kVal, 
+    zdjecie_url: photoUrl,
+    user_id: currentUser.id, 
+    typ_wpisu: selectedRole, 
+    views: 0 
+}]);
 
         if (dbErr) throw dbErr;
         
@@ -308,10 +308,13 @@ async function add() {
 }
 
 async function load() {
+    // 1. Nazwa tabeli "Zlecenia" jest OK (z dużej), ale sortujemy po id
     let query = db.from("Zlecenia").select("*").order("id", { ascending: false });
+    
     if (currentView !== 'wszystko') query = query.eq('typ_wpisu', currentView);
-    // Jeśli wybrano konkretną kategorię, filtrujemy wyniki również po niej
-    if (currentCategoryFilter !== 'wszystkie') query = query.eq('Kategoria', currentCategoryFilter);
+    
+    // POPRAWKA: Zmiana z 'Kategoria' na 'kategoria' (z małej litery)
+    if (currentCategoryFilter !== 'wszystkie') query = query.eq('kategoria', currentCategoryFilter);
     
     const { data, error } = await query;
     if (error) {
@@ -325,22 +328,23 @@ async function load() {
         return;
     }
 
+    // POPRAWKA: Wewnątrz map() zmieniamy z.Tytuł na z.tytul, z.Miasto na z.miasto itd.
     listEl.innerHTML = data.map(z => {
         const isOwner = currentUser && z.user_id === currentUser.id;
         const isPro = z.typ_wpisu === 'wykonawca';
         return `
-            <div onclick="openDetails(${z.id})" class="bg-white rounded-[2rem] card-shadow overflow-hidden border-2 ${isPro ? 'border-amber-100' : 'border-blue-50'} cursor-pointer hover:border-blue-300 transition-all">
+            <div class="bg-white rounded-[2rem] card-shadow overflow-hidden border-2 ${isPro ? 'border-amber-100' : 'border-blue-50'}">
                 ${z.zdjecie_url ? `<img src="${z.zdjecie_url}" class="w-full h-48 object-cover" alt="Zdjęcie ogłoszenia">` : ''}
                 <div class="p-6">
                     <div class="flex justify-between items-center mb-2">
-                        <span class="text-[9px] font-black px-2 py-1 rounded bg-slate-100 uppercase">${z.Kategoria || 'Inne'}</span>
+                        <span class="text-[9px] font-black px-2 py-1 rounded bg-slate-100 uppercase">${z.kategoria || 'Inne'}</span>
                         <span class="text-[9px] font-bold ${isPro ? 'text-amber-600' : 'text-blue-600'} uppercase">${isPro ? '⭐ Fachowiec' : '📝 Zlecenie'}</span>
                     </div>
-                    <h3 class="text-xl font-black mb-1 hover:text-blue-600 transition-colors">${z.Tytuł}</h3>
-                    <p class="text-blue-500 font-bold text-xs mb-3 italic">📍 ${z.Miasto || 'Brak lokalizacji'}</p>
-                    <p class="text-slate-600 text-sm mb-4 line-clamp-3 leading-relaxed">${z.Opis || 'Brak opisu...'}</p>
+                    <h3 class="text-xl font-black mb-1">${z.tytul || 'Brak tytułu'}</h3>
+                    <p class="text-blue-500 font-bold text-xs mb-3 italic">📍 ${z.miasto || 'Brak lokalizacji'}</p>
+                    <p class="text-slate-600 text-sm mb-4 line-clamp-3 leading-relaxed">${z.opis || 'Brak opisu...'}</p>
                     ${currentUser 
-                        ? `<a href="tel:${z.Telefon}" class="block w-full ${isPro ? 'bg-amber-500' : 'bg-green-500'} text-white text-center py-3 rounded-xl font-black uppercase text-sm">Zadzwoń: ${z.Telefon}</a>`
+                        ? `<a href="tel:${z.telefon}" class="block w-full ${isPro ? 'bg-amber-500' : 'bg-green-500'} text-white text-center py-3 rounded-xl font-black uppercase text-sm">Zadzwoń: ${z.telefon || ''}</a>`
                         : `<p class="text-center text-slate-400 text-[10px] italic py-2">Zaloguj się, by zobaczyć numer</p>`
                     }
                     ${isOwner ? `<button onclick="del(${z.id})" class="w-full mt-3 text-[9px] text-red-400 font-bold uppercase hover:text-red-600 transition-colors">Usuń moje</button>` : ''}
