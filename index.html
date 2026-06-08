@@ -370,7 +370,8 @@ async function signUp() {
         const checkedBoxes = document.querySelectorAll('.spec-checkbox-item:checked');
         const wybraneSpecjalizacje = Array.from(checkedBoxes).map(cb => cb.value).join(", ") || "Ogólne prace remontowe";
 
-        const { error: profileError } = await db.from('profile_wykonawcow').insert([{\n            user_id: data.user.id,
+                const { error: profileError } = await db.from('profile_wykonawcow').insert([{
+            user_id: data.user.id,
             nazwa_firmy: document.getElementById('reg-firma').value || "Fachowiec",
             nip: document.getElementById('reg-nip').value || null,
             miejscowosc: document.getElementById('reg-miejscowosc').value || "Nie podano",
@@ -626,11 +627,11 @@ async function loadAccountPanel() {
                 </div>
                 <div class="mt-2 space-y-1.5">
                     ${p.zgloszenia?.map(z => `
-                        <div class="flex justify-between items-center bg-white p-2 rounded-xl border border-slate-100 shadow-sm">
-                            <span class="font-black text-[10px] text-slate-700 truncate max-w-[150px]">🏗️ ${z.profile_wykonawcow?.nazwa_firmy || 'Fachowiec'}</span>
+                                                <div class="flex justify-between items-center bg-white p-2 rounded-xl border border-slate-100 shadow-sm">
+                            <span class="font-black text-[10px] text-slate-700 truncate max-w-[150px]">Firma: ${z.profile_wykonawcow?.nazwa_firmy || 'Fachowiec'}</span>
                             <div class="flex gap-1 shrink-0">
                                 <button onclick="openChatBox('${z.wykonawca_id}', ${p.id}, '${z.profile_wykonawcow?.nazwa_firmy}')" class="bg-slate-800 text-white px-2 py-1 rounded text-[8px] font-black uppercase">Czat</button>
-                                <button onclick="alert('Numer kontaktowy fachowca: ${z.profile_wykonawcow?.telephone || 'Brak danych'}')" class="bg-blue-600 text-white px-2 py-1 rounded text-[8px] font-black uppercase">📞 Telefon</button>
+                                <button onclick="alert('Numer kontaktowy: ' + (z.profile_wykonawcow?.telephone || 'Brak danych'))" class="bg-blue-600 text-white px-2 py-1 rounded text-[8px] font-black uppercase">Telefon</button>
                             </div>
                         </div>
                     `).join("") || '<p class="text-[9px] text-slate-400 uppercase">Oczekiwanie na oferty...</p>'}
