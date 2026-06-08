@@ -47,21 +47,36 @@ function setAuthRole(r) {
 }
 
 async function signUp() {
-    const e = document.getElementById('email').value, p = document.getElementById('password').value;
-    const { data, error } = await db.auth.signUp({ email: e, password: p });
-    if (error) return alert(error.message);
+    const e = document.getElementById('reg-email').value.trim();
+    const p = document.getElementById('reg-password').value;
+    const phone = document.getElementById('reg-phone').value.trim();
+    const role = document.getElementById('reg-role').value;
 
-    if (authRole === 'wykonawca' && data.user) {
+    if(!e || !p) return alert("Podaj adres e-mail oraz hasło!");
+
+    const { data, error } = await db.auth.signUp({ email: e, password: p });
+    
+    if (error) return alert("Błąd rejestracji: " + error.message);
+
+    if (role === 'wykonawca' && data.user) {
+        const checkedBoxes = document.querySelectorAll('.spec-checkbox-item:checked');
+        const wybraneSpecjalizacje = Array.from(checkedBoxes).map(cb => cb.value).join(", ") || "Ogólne prace remontowe";
+
         await db.from('profile_wykonawcow').insert([{
             user_id: data.user.id,
-            nazwa_firmy: document.getElementById('reg-firma').value,
-            miejscowosc: document.getElementById('reg-miejscowosc').value,
-            kod_pocztowy: document.getElementById('reg-kod').value,
-            specjalizacja: document.getElementById('reg-spec').value,
-            punkty: 10
+            nazwa_firmy: document.getElementById('reg-firma').value || "Fachowiec",
+            nip: document.getElementById('reg-nip').value || null,
+            miejscowosc: document.getElementById('reg-miejscowosc').value || "Nie podano",
+            kod_pocztowy: document.getElementById('reg-kod').value || "00-000",
+            specjalizacja: wybraneSpecjalizacje,
+            punkty: 10,
+            telefon: phone || null
         }]);
+    } else if (phone && data.user) {
+        await db.auth.updateUser({ data: { telefon_kontaktowy: phone } });
     }
-    alert("Wysłaliśmy link na e-mail. Potwierdź go!");
+
+    alert("Konto zostało zarejestrowane pomyślnie! Możesz się zalogować.");
 }
 
 async function signIn() {
