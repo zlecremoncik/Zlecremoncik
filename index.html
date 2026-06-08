@@ -354,10 +354,10 @@ async function signUp() {
     if(!e || !p) return alert("Podaj adres e-mail oraz hasło!");
     if (!validatePassword(p)) return alert("Hasło musi zawierać min. 8 znaków, dużą literę, cyfrę oraz znak specjalny.");
 
-    // Wyłączenie przycisku, żeby użytkownik nie kliknął dwa razy
     const btn = document.querySelector("#view-register button");
     if(btn) { btn.disabled = true; btn.innerText = "Trwa rejestracja..."; }
 
+    // 1. Tworzymy konto użytkownika
     const { data, error } = await db.auth.signUp({ email: e, password: p });
     
     if (error) {
@@ -365,12 +365,12 @@ async function signUp() {
         return alert("Błąd rejestracji: " + error.message);
     }
 
+    // 2. Jeśli wybrałeś 'wykonawca', musimy go dopisać do specjalnej tabeli
     if (role === 'wykonawca' && data.user) {
         const checkedBoxes = document.querySelectorAll('.spec-checkbox-item:checked');
         const wybraneSpecjalizacje = Array.from(checkedBoxes).map(cb => cb.value).join(", ") || "Ogólne prace remontowe";
 
-        await db.from('profile_wykonawcow').insert([{
-            user_id: data.user.id,
+        const { error: profileError } = await db.from('profile_wykonawcow').insert([{\n            user_id: data.user.id,
             nazwa_firmy: document.getElementById('reg-firma').value || "Fachowiec",
             nip: document.getElementById('reg-nip').value || null,
             miejscowosc: document.getElementById('reg-miejscowosc').value || "Nie podano",
@@ -379,11 +379,17 @@ async function signUp() {
             punkty: 10,
             telefon: phone || null
         }]);
+
+        if (profileError) {
+            console.error("Błąd profilu:", profileError);
+            alert("Konto stworzone, ale wystąpił błąd przy tworzeniu profilu wykonawcy.");
+        }
     } else if (phone && data.user) {
+        // Jeśli to klient, po prostu dopisujemy mu numer telefonu
         await db.auth.updateUser({ data: { telefon_kontaktowy: phone } });
     }
 
-    alert("Konto zostało zarejestrowane pomyślnie!");
+    alert("Konto zostało zarejestrowane pomyślnie! Teraz możesz się zalogować.");
     window.location.reload();
 }
 
