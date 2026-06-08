@@ -21,7 +21,7 @@ async function updateUI(session) {
         currentProfile = data || null;
         if (currentProfile) {
             const pc = document.getElementById('points-counter');
-            pc.innerText = `Posiadasz: ${currentProfile.punkty} pkt`;
+            pc.innerText = `${currentProfile.punkty} PKT`;
             pc.classList.remove('hidden');
         }
         document.getElementById('add-panel').classList.toggle('hidden', currentView === 'konto');
@@ -33,10 +33,17 @@ async function updateUI(session) {
 db.auth.onAuthStateChange((_, session) => updateUI(session));
 checkUser();
 
-// AUTH
+// MODAL MENU KONTRA
+function toggleAccountModal(show) {
+    const m = document.getElementById('account-modal');
+    if(show) { m.classList.remove('hidden'); setTimeout(() => m.classList.add('active'), 10); }
+    else { m.classList.remove('active'); setTimeout(() => m.classList.add('hidden'), 300); }
+}
+
+// LOGIKA AUTH
 function setAuthRole(r) { 
     authRole = r; 
-    document.getElementById('pro-register-fields').classList.toggle('hidden', r !== 'wykonawca');
+    document.getElementById('pro-fields').classList.toggle('hidden', r !== 'wykonawca');
 }
 
 async function signUp() {
@@ -54,7 +61,7 @@ async function signUp() {
             punkty: 10
         }]);
     }
-    alert("Wysłaliśmy link aktywacyjny na Twój e-mail. Potwierdź go, aby się zalogować!");
+    alert("Wysłaliśmy link na e-mail. Potwierdź go!");
 }
 
 async function signIn() {
@@ -63,7 +70,7 @@ async function signIn() {
     if (error) alert(error.message);
 }
 
-async function signOut() { await db.auth.signOut(); setView('wszystko'); }
+async function signOut() { await db.auth.signOut(); toggleAccountModal(false); setView('wszystko'); }
 
 // OGŁOSZENIA
 async function add() {
@@ -72,27 +79,28 @@ async function add() {
         kod_pocztowy: document.getElementById('postcode').value, opis: document.getElementById('o').value,
         telefon: document.getElementById('p').value, user_id: currentUser.id, typ_wpisu: selectedRole
     };
-    if (data.telefon.length !== 9) return alert("Podaj 9 cyfr telefonu!");
-    await db.from('zlecenia').insert([data]);
+    if (data.telefon.length !== 9) return alert("Telefon musi mieć 9 cyfr!");
+    await db.from('zlecenie').insert([data]);
     alert("Dodano!"); load();
 }
 
 async function load() {
-    let q = db.from('zlecenia').select('*, zgloszenia(id)').order('id', { ascending: false });
+    // Tabela 'zlecenie' zgodnie ze screenem
+    let q = db.from('zlecenie').select('*, zgloszenia(id)').order('id', { ascending: false });
     if (currentView !== 'wszystko') q = q.eq('typ_wpisu', currentView);
     const { data } = await q;
 
     const list = document.getElementById('list');
     list.innerHTML = data.map(z => `
-        <div onclick="openDetails(${z.id})" class="bg-white p-6 rounded-[2rem] card-shadow cursor-pointer border border-slate-100 hover:border-blue-200 transition-all">
-            <div class="flex justify-between text-[9px] font-black uppercase mb-3">
+        <div onclick="openDetails(${z.id})" class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm active:scale-95 transition-all">
+            <div class="flex justify-between text-[8px] font-black uppercase mb-2">
                 <span class="${z.typ_wpisu === 'klient' ? 'text-blue-600' : 'text-amber-500'}">${z.typ_wpisu === 'klient' ? '📝 Zlecenie' : '⭐ Fachowiec'}</span>
                 <span>📍 ${z.miasto} (${z.kod_pocztowy})</span>
             </div>
-            <h3 class="text-lg font-black">${z.tytul}</h3>
-            <div class="mt-4 flex items-center justify-between text-[10px] font-bold text-slate-400">
+            <h3 class="text-sm font-black text-slate-800 leading-tight mb-3">${z.tytul}</h3>
+            <div class="flex items-center justify-between text-[9px] font-bold text-slate-400">
                 <span>Chętnych: ${z.zgloszenia.length}/5</span>
-                <div class="h-1.5 w-24 bg-slate-100 rounded-full overflow-hidden">
+                <div class="h-1.5 w-20 bg-slate-100 rounded-full overflow-hidden">
                     <div class="h-full bg-blue-500" style="width: ${z.zgloszenia.length * 20}%"></div>
                 </div>
             </div>
@@ -100,31 +108,34 @@ async function load() {
     `).join("");
 }
 
-// SZCZEGÓŁY I ZGŁOSZENIA
 async function openDetails(id) {
     window.location.hash = `ogloszenie-${id}`;
     document.getElementById('list-view').classList.add('hidden');
     document.getElementById('details-view').classList.remove('hidden');
     
-    const { data: z } = await db.from('zlecenia').select('*').eq('id', id).single();
+    const { data: z } = await db.from('zlecenie').select('*').eq('id', id).single();
     const { count } = await db.from('zgloszenia').select('*', { count: 'exact', head: true }).eq('zlecenie_id', id);
     
     let action = "";
     if (currentUser && z.typ_wpisu === 'klient' && z.user_id !== currentUser.id) {
-        action = count >= 5 ? `<div class="bg-red-50 text-red-500 p-4 rounded-2xl text-center font-black text-xs">Zebrano już komplet chętnych</div>`
-                             : `<button onclick="apply(${z.id})" class="w-full bg-amber-500 text-white py-4 rounded-2xl font-black uppercase text-xs shadow-lg">🙋 Jestem zainteresowany (-1 pkt)</button>`;
+        action = count >= 5 ? `<div class="bg-red-50 text-red-500 p-4 rounded-2xl text-center font-black text-[10px] uppercase">Zebrano już komplet chętnych</div>`
+                             : `<button onclick="apply(${z.id})" class="w-full bg-amber-500 text-white py-4 rounded-2xl font-black uppercase text-[10px] shadow-lg">🙋 Jestem zainteresowany (-1 pkt)</button>`;
     }
 
     document.getElementById('details-content').innerHTML = `
-        <div class="bg-white p-8 rounded-[2.5rem] card-shadow space-y-6">
-            <h1 class="text-3xl font-black">${z.tytul}</h1>
-            <p class="text-slate-600 leading-relaxed">${z.opis}</p>
-            <div class="p-5 bg-slate-50 rounded-2xl flex justify-between items-center text-xs font-bold">
-                <span>📍 ${z.miasto} | ${z.kod_pocztowy}</span>
-                <span class="text-blue-600">📞 ${z.telefon}</span>
+        <div class="bg-white p-6 rounded-[2.5rem] border border-slate-100 space-y-4">
+            <h1 class="text-xl font-black leading-tight text-slate-800">${z.tytul}</h1>
+            <p class="text-slate-500 text-xs leading-relaxed">${z.opis}</p>
+            <div class="p-4 bg-slate-50 rounded-2xl flex justify-between items-center text-[10px] font-black">
+                <span class="text-slate-400 uppercase tracking-widest">📍 ${z.miasto} | ${z.kod_pocztowy}</span>
+                <span class="text-blue-600 bg-white px-3 py-1.5 rounded-lg border">📞 ${z.telefon}</span>
             </div>
             ${action}
         </div>`;
+    
+    const opinionsSec = document.getElementById('opinions-section');
+    if (z.typ_wpisu === 'wykonawca') { opinionsSec.classList.remove('hidden'); loadOpinions(z.user_id); } 
+    else { opinionsSec.classList.add('hidden'); }
 }
 
 async function apply(id) {
@@ -134,45 +145,22 @@ async function apply(id) {
     alert("Zgłoszono!"); openDetails(id); updateUI();
 }
 
-// SYSTEM OPINII
-async function submitOpinion() {
-    const id = window.location.hash.split('-')[1];
-    const em = document.getElementById('op-email').value, stars = parseInt(document.getElementById('op-stars').value), txt = document.getElementById('op-text').value;
-    
-    const { data: target } = await db.from('zlecenia').select('user_id').eq('id', id).single();
-    const { error } = await db.from('opinie').insert([{ wykonawca_id: target.user_id, autor_email: em, gwiazdki: stars, tresc: txt }]);
-    
-    if (!error && stars >= 2) {
-        const { data: prof } = await db.from('profile_wykonawcow').select('punkty').eq('user_id', target.user_id).single();
-        await db.from('profile_wykonawcow').update({ punkty: prof.punkty + stars }).eq('user_id', target.user_id);
-    }
-    alert("Dodano!");
-}
-
-// MOJE KONTO I CZAT
-function toggleAccountMenu() { document.getElementById('account-dropdown').classList.toggle('hidden'); }
-
-function setView(v) {
-    currentView = v;
-    document.getElementById('account-view').classList.toggle('hidden', v !== 'konto');
-    document.getElementById('list-view').classList.toggle('hidden', v === 'konto');
-    document.getElementById('details-view').classList.add('hidden');
-    document.getElementById('account-dropdown').classList.add('hidden');
-    updateUI();
-}
-
+// CZAT I KONTO
 async function loadAccountPanel() {
-    const { data: posts } = await db.from('zlecenia').select('*, zgloszenia(wykonawca_id, profile_wykonawcow(nazwa_firmy))').eq('user_id', currentUser.id);
+    const { data: posts } = await db.from('zlecenie').select('*, zgloszenia(wykonawca_id, profile_wykonawcow(nazwa_firmy))').eq('user_id', currentUser.id);
     const container = document.getElementById('user-posts-list');
     container.innerHTML = posts.map(p => `
         <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-            <div class="flex justify-between font-bold text-xs"><span>${p.tytul}</span> <button onclick="delPost(${p.id})" class="text-red-500">Usuń</button></div>
-            <div class="mt-2 space-y-1">
-                ${p.zgloszenia.map(z => `<button onclick="startChat('${z.wykonawca_id}', ${p.id})" class="w-full text-left bg-white p-2 rounded-lg text-[9px] border">💬 ${z.profile_wykonawcow.nazwa_firmy}</button>`).join('')}
+            <div class="flex justify-between items-center mb-3">
+                <span class="text-[10px] font-black uppercase text-slate-400">${p.tytul}</span>
+                <button onclick="delPost(${p.id})" class="text-red-400 text-[8px] font-black uppercase">Usuń</button>
+            </div>
+            <div class="space-y-1">
+                ${p.zgloszenia.map(z => `<button onclick="startChat('${z.wykonawca_id}', ${p.id})" class="w-full text-left bg-white p-3 rounded-xl text-[10px] font-bold border border-slate-100 shadow-sm">💬 ${z.profile_wykonawcow.nazwa_firmy}</button>`).join('')}
             </div>
         </div>
     `).join('');
-    loadChatList();
+    loadConversations();
 }
 
 async function startChat(tid, zid) {
@@ -182,18 +170,51 @@ async function startChat(tid, zid) {
 }
 
 async function sendMessage() {
-    const input = document.getElementById('chat-input');
-    await db.from('wiadomosci').insert([{ zlecenie_id: activeZlecenieId, nadawca_id: currentUser.id, odbiorca_id: activeTargetId, tresc: input.value }]);
-    input.value = ""; loadMessages();
+    const i = document.getElementById('chat-input');
+    if(!i.value.trim()) return;
+    await db.from('wiadomosci').insert([{ zlecenie_id: activeZlecenieId, nadawca_id: currentUser.id, odbiorca_id: activeTargetId, tresc: i.value }]);
+    i.value = ""; loadMessages();
 }
 
 async function loadMessages() {
     const { data } = await db.from('wiadomosci').select('*').eq('zlecenie_id', activeZlecenieId).or(`and(nadawca_id.eq.${currentUser.id},odbiorca_id.eq.${activeTargetId}),and(nadawca_id.eq.${activeTargetId},odbiorca_id.eq.${currentUser.id})`).order('created_at', { ascending: true });
-    document.getElementById('chat-messages').innerHTML = data.map(m => `
-        <div class="${m.nadawca_id === currentUser.id ? 'bg-blue-600 text-white ml-8 rounded-t-xl rounded-bl-xl' : 'bg-white mr-8 rounded-t-xl rounded-br-xl'} p-3 shadow-sm mb-2">
+    const msgBox = document.getElementById('chat-messages');
+    msgBox.innerHTML = data.map(m => `
+        <div class="${m.nadawca_id === currentUser.id ? 'ml-auto bg-blue-600 text-white rounded-t-xl rounded-bl-xl' : 'mr-auto bg-white border rounded-t-xl rounded-br-xl'} p-3 max-w-[80%] mb-1">
             <p>${m.tresc}</p>
-            <p class="text-[7px] mt-1 opacity-60 text-right">${new Date(m.created_at).toLocaleString()}</p>
+            <p class="text-[6px] opacity-60 text-right mt-1 uppercase">${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</p>
         </div>`).join('');
+    msgBox.scrollTop = msgBox.scrollHeight;
+}
+
+// PRAWNE MODALE
+function openLegal(type) {
+    const m = document.getElementById('legal-modal');
+    const t = document.getElementById('legal-title');
+    const b = document.getElementById('legal-body');
+    m.classList.remove('hidden');
+    
+    if(type === 'regulamin') {
+        t.innerText = "Regulamin Serwisu";
+        b.innerHTML = "<p>1. Każdy wykonawca otrzymuje 10 punktów na start.</p><p>2. Zgłoszenie do zlecenia to koszt 1 pkt.</p><p>3. Punkty odnawiają się (+3) w każdy poniedziałek o 00:00.</p><p>4. Limit zgłoszeń na zlecenie wynosi 5 fachowców.</p>";
+    } else if(type === 'rodo') {
+        t.innerText = "RODO i Cookies";
+        b.innerHTML = "<p>Przetwarzamy Twój e-mail i telefon tylko w celu kontaktu z fachowcem. Pliki cookies służą do utrzymania zalogowanej sesji. Masz prawo do usunięcia konta w panelu sterowania.</p>";
+    } else {
+        t.innerText = "Zasady Strony";
+        b.innerHTML = "<p>Zasady są proste: Bądź rzetelny. Jako zleceniodawca podawaj prawdziwy e-mail. Jako fachowiec nie wyklikuj zleceń bezmyślnie, bo stracisz punkty kontaktu.</p>";
+    }
+}
+function closeLegal() { document.getElementById('legal-modal').classList.add('hidden'); }
+
+// ROUTING
+function setView(v) {
+    currentView = v;
+    document.getElementById('account-view').classList.toggle('hidden', v !== 'konto');
+    document.getElementById('list-view').classList.toggle('hidden', v === 'konto');
+    document.getElementById('details-view').classList.add('hidden');
+    toggleAccountModal(false);
+    updateUI();
 }
 
 function goBackToList() { window.location.hash = ""; document.getElementById('details-view').classList.add('hidden'); document.getElementById('list-view').classList.remove('hidden'); setView('wszystko'); }
