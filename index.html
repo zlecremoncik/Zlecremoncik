@@ -341,7 +341,11 @@ async function executeLogin() {
     if (error) alert("Błąd logowania: " + error.message);
 }
 
-async function executeRegister() {
+function validatePassword(p) {
+    return p.length >= 8 && /[A-Z]/.test(p) && /[0-9]/.test(p) && /[^A-Za-z0-9]/.test(p);
+}
+
+async function signUp() {
     const e = document.getElementById('reg-email').value.trim();
     const p = document.getElementById('reg-password').value;
     const phone = document.getElementById('reg-phone').value.trim();
