@@ -762,6 +762,16 @@ function openLegal(type) {
     }
 }
 function closeLegal() { document.getElementById('legal-modal').classList.add('hidden'); }
+
+async function loginWithGoogle() {
+    const role = document.getElementById('google-role').value;
+    localStorage.setItem('google_login_role', role); 
+    const { error } = await db.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: window.location.origin }
+    });
+    if (error) alert("Błąd Google: " + error.message);
+}
 </script>
 </body>
 </html>
