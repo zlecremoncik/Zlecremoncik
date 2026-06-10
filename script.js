@@ -98,11 +98,14 @@ async function loginWithGoogle() {
     localStorage.setItem('google_login_role', role);
 
     const { error } = await db.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-            redirectTo: 'https://zlecremoncik.github.io/Zlecremoncik/'
-        }
-    });
+    provider: 'google',
+    options: {
+        redirectTo: 'https://zlecremoncik.github.io/Zlecremoncik/'
+    }
+});
+
+console.log('Google redirect:',
+    'https://zlecremoncik.github.io/Zlecremoncik/');
 
     if (error) {
         alert("Błąd Google: " + error.message);
