@@ -309,6 +309,15 @@ async function updateUI(session) {
         document.getElementById('acc-email-display').innerText = currentUser.email;
         const { data } = await db.from('profile_wykonawcow').select('*').eq('user_id', currentUser.id).maybeSingle();
         currentProfile = data || null;
+
+        const pendingRole = localStorage.getItem('google_login_role');
+        if (!currentProfile && pendingRole === 'wykonawca') {
+            localStorage.removeItem('google_login_role');
+            await db.from('profile_wykonawcow').insert([{ user_id: currentUser.id, nazwa_firmy: "Fachowiec (Google)", punkty: 10 }]);
+            window.location.reload();
+            return;
+        }
+        localStorage.removeItem('google_login_role');
         
         const pCounter = document.getElementById('points-counter');
         const addJobBtn = document.getElementById('nav-add-job-btn');
@@ -353,6 +362,16 @@ async function executeLogin() {
 
     const { error } = await db.auth.signInWithPassword({ email: e, password: p });
     if (error) alert("Błąd logowania: " + error.message);
+}
+
+async function loginWithGoogle() {
+    const role = document.getElementById('google-role').value;
+    localStorage.setItem('google_login_role', role); 
+    const { error } = await db.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: window.location.origin }
+    });
+    if (error) alert("Błąd Google: " + error.message);
 }
 
 function validatePassword(p) {
