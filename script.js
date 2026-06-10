@@ -31,7 +31,28 @@ async function updateUI(session) {
 }
 
 db.auth.onAuthStateChange((_, session) => updateUI(session));
-checkUser();
+
+async function initAuth() {
+    const hash = window.location.hash;
+
+    if (hash.includes('access_token=')) {
+        history.replaceState(
+            {},
+            document.title,
+            '/Zlecremoncik/'
+        );
+    }
+
+    const { data: { session } } = await db.auth.getSession();
+
+    if (session) {
+        updateUI(session);
+    } else {
+        checkUser();
+    }
+}
+
+initAuth();
 
 // MODAL MENU KONTRA
 function toggleAccountModal(show) {
