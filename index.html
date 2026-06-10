@@ -357,7 +357,7 @@ async function signUp() {
     const btn = document.querySelector("#view-register button");
     if(btn) { btn.disabled = true; btn.innerText = "Trwa rejestracja..."; }
 
-    // 1. Tworzymy konto użytkownika
+    // 1. Zakładamy konto w systemie (Auth)
     const { data, error } = await db.auth.signUp({ email: e, password: p });
     
     if (error) {
@@ -365,32 +365,32 @@ async function signUp() {
         return alert("Błąd rejestracji: " + error.message);
     }
 
-    // 2. Jeśli wybrałeś 'wykonawca', musimy go dopisać do specjalnej tabeli
-    if (role === 'wykonawca' && data.user) {
-        const checkedBoxes = document.querySelectorAll('.spec-checkbox-item:checked');
-        const wybraneSpecjalizacje = Array.from(checkedBoxes).map(cb => cb.value).join(", ") || "Ogólne prace remontowe";
+    if (data.user) {
+        if (role === 'wykonawca') {
+            // Zapisujemy do tabeli WYKONAWCÓW
+            const checkedBoxes = document.querySelectorAll('.spec-checkbox-item:checked');
+            const wybraneSpecjalizacje = Array.from(checkedBoxes).map(cb => cb.value).join(", ") || "Ogólne prace";
 
-                const { error: profileError } = await db.from('profile_wykonawcow').insert([{
-            user_id: data.user.id,
-            nazwa_firmy: document.getElementById('reg-firma').value || "Fachowiec",
-            nip: document.getElementById('reg-nip').value || null,
-            miejscowosc: document.getElementById('reg-miejscowosc').value || "Nie podano",
-            kod_pocztowy: document.getElementById('reg-kod').value || "00-000",
-            specjalizacja: wybraneSpecjalizacje,
-            punkty: 10,
-            telefon: phone || null
-        }]);
-
-        if (profileError) {
-            console.error("Błąd profilu:", profileError);
-            alert("Konto stworzone, ale wystąpił błąd przy tworzeniu profilu wykonawcy.");
+            const { error: profErr } = await db.from('profile_wykonawcow').insert([{
+                user_id: data.user.id,
+                nazwa_firmy: document.getElementById('reg-firma').value || "Fachowiec",
+                nip: document.getElementById('reg-nip').value || null,
+                miejscowosc: document.getElementById('reg-miejscowosc').value || "Nie podano",
+                kod_pocztowy: document.getElementById('reg-kod').value || "00-000",
+                specjalizacja: wybraneSpecjalizacje,
+                punkty: 10,
+                telefon: phone || null
+            }]);
+            if(profErr) console.error("Błąd tabeli wykonawcy:", profErr);
+            
+        } else {
+            // OPCJONALNIE: Tutaj możesz dodać zapis do tabeli 'profile_klientow' 
+            // jeśli stworzysz taką tabelę w Supabase (instrukcja poniżej)
+            await db.auth.updateUser({ data: { telefon_kontaktowy: phone, rola: 'klient' } });
         }
-    } else if (phone && data.user) {
-        // Jeśli to klient, po prostu dopisujemy mu numer telefonu
-        await db.auth.updateUser({ data: { telefon_kontaktowy: phone } });
     }
 
-    alert("Konto zostało zarejestrowane pomyślnie! Teraz możesz się zalogować.");
+    alert("Rejestracja udana! Jeśli nie możesz się zalogować, sprawdź e-mail i kliknij link aktywacyjny (jeśli masz go włączonego w Supabase).");
     window.location.reload();
 }
 
