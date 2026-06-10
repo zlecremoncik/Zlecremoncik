@@ -94,12 +94,19 @@ async function signIn() {
 
 async function loginWithGoogle() {
     const role = document.getElementById('google-role').value;
+
     localStorage.setItem('google_login_role', role);
+
     const { error } = await db.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: window.location.origin }
+        options: {
+            redirectTo: 'https://zlecremoncik.github.io/Zlecremoncik/'
+        }
     });
-    if (error) alert("Błąd Google: " + error.message);
+
+    if (error) {
+        alert("Błąd Google: " + error.message);
+    }
 }
 async function signOut() { await db.auth.signOut(); toggleAccountModal(false); setView('wszystko'); }
 
