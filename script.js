@@ -92,6 +92,19 @@ async function signIn() {
     if (error) alert(error.message);
 }
 
+async function loginWithGoogle() {
+    const { error } = await db.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+            redirectTo: window.location.origin
+        }
+    });
+
+    if (error) {
+        alert("Błąd logowania Google: " + error.message);
+    }
+}
+
 async function signOut() { await db.auth.signOut(); toggleAccountModal(false); setView('wszystko'); }
 
 // OGŁOSZENIA
