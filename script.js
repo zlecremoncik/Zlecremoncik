@@ -17,13 +17,36 @@ async function updateUI(session) {
     document.getElementById('my-account-btn').classList.toggle('hidden', !session);
     
     if (currentUser) {
-        const { data } = await db.from('profile_wykonawcow').select('*').eq('user_id', currentUser.id).single();
-        currentProfile = data || null;
-        if (currentProfile) {
-            const pc = document.getElementById('points-counter');
-            pc.innerText = `${currentProfile.punkty} PKT`;
-            pc.classList.remove('hidden');
+        // Ustalamy tabelę na podstawie wybranej roli (klient = profile_zleceniodawcow, wykonawca = profile_wykonawcow)
+        const targetTable = selectedRole === 'klient' ? 'profile_zleceniodawcow' : 'profile_wykonawcow';
+        
+        let { data, error } = await db.from(targetTable).select('*').eq('user_id', currentUser.id).maybeSingle();
+        
+        // Jeśli profil nie istnieje (nowy użytkownik z Google), tworzymy go w locie
+        if (!data) {
+            const initialProfile = { user_id: currentUser.id };
+            if (selectedRole === 'wykonawca') {
+                initialProfile.punkty = 10; // 10 punktów na start dla fachowca
+                initialProfile.nazwa = currentUser.user_metadata?.full_name || "Nowy Fachowiec";
+            } else {
+                initialProfile.nazwa = currentUser.user_metadata?.full_name || "Nowy Zleceniodawca";
+            }
+            
+            const { data: newProfile, error: insertError } = await db.from(targetTable).insert([initialProfile]).select().single();
+            if (!insertError) data = newProfile;
         }
+
+        currentProfile = data || null;
+        authRole = selectedRole; // Zapamiętujemy rolę, z którą użytkownik faktycznie operuje
+
+        const pc = document.getElementById('points-counter');
+        if (currentProfile && authRole === 'wykonawca') {
+            pc.innerText = `${currentProfile.punkty || 0} PKT`;
+            pc.classList.remove('hidden');
+        } else {
+            pc.classList.add('hidden'); // Ukrywamy punkty dla zleceniodawcy
+        }
+        
         document.getElementById('add-panel').classList.toggle('hidden', currentView === 'konto');
     }
     
