@@ -313,9 +313,8 @@ async function updateUI(session) {
         const pendingRole = localStorage.getItem('google_login_role');
         if (!currentProfile && pendingRole === 'wykonawca') {
             localStorage.removeItem('google_login_role');
-            await db.from('profile_wykonawcow').insert([{ user_id: currentUser.id, nazwa_firmy: "Fachowiec (Google)", punkty: 10 }]);
-            window.location.reload();
-            return;
+            const { error: insErr } = await db.from('profile_wykonawcow').insert([{ user_id: currentUser.id, nazwa_firmy: "Fachowiec (Google)", punkty: 10 }]);
+            if(!insErr) { window.location.reload(); return; }
         }
         localStorage.removeItem('google_login_role');
         
@@ -496,7 +495,7 @@ async function load() {
     if (!data || data.length === 0) { listEl.innerHTML = `<p class='text-center text-slate-400 py-16 text-xs font-semibold bg-white rounded-2xl border'>Brak wpisów spełniających kryteria wyszukiwania.</p>`; return; }
 
     listEl.innerHTML = data.map(z => {
-        const totalReq = z.zgleszenia?.length || 0;
+        const totalReq = z.zgloszenia?.length || 0;
         const isFull = totalReq >= 5;
         const locString = z.kod_pocztowy ? `${z.miasto} (${z.kod_pocztowy})` : z.miasto;
         return `
