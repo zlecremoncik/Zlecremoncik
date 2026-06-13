@@ -354,6 +354,14 @@ function acceptCookies() {
     document.getElementById('cookie-banner').classList.add('hidden');
 }
 
+async function executeLogin() {
+    const e = document.getElementById('login-email').value.trim();
+    const p = document.getElementById('login-password').value;
+    if(!e || !p) return alert("Podaj email i hasło!");
+    const { error } = await db.auth.signInWithPassword({ email: e, password: p });
+    if (error) alert("Błąd logowania: " + error.message);
+}
+
 async function loginWithGoogle() {
     const role = document.getElementById('google-role').value;
     localStorage.setItem('google_login_role', role); 
@@ -490,11 +498,12 @@ async function load() {
     const categorySelect = document.getElementById('search-category').value;
     if (categorySelect !== "") q = q.eq('kategoria', categorySelect);
 
-    const { data } = await q;
+    const { data, error } = await q;
+    if (error) console.error("Supabase Error:", error);
     const listEl = document.getElementById("list");
     if (!data || data.length === 0) { listEl.innerHTML = `<p class='text-center text-slate-400 py-16 text-xs font-semibold bg-white rounded-2xl border'>Brak wpisów spełniających kryteria wyszukiwania.</p>`; return; }
 
-    listEl.innerHTML = data.map(z => {
+    listEl.innerHTML = (data || []).map(z => {
         const totalReq = z.zgloszenia?.length || 0;
         const isFull = totalReq >= 5;
         const locString = z.kod_pocztowy ? `${z.miasto} (${z.kod_pocztowy})` : z.miasto;
