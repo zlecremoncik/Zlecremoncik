@@ -493,7 +493,7 @@ async function add() {
 }
 
 async function load() {
-    let q = db.from("zlecenia").select("*, zgleszenia:zgloszenia(id)").order("id", { ascending: false });
+    let q = db.from("zlecenia").select("*, zgloszenia:zgloszenia(id)").order("id", { ascending: false });
     
     const cityInput = document.getElementById('search-city').value.trim();
     if (cityInput !== "") q = q.ilike('miasto', `%${cityInput}%`);
@@ -693,7 +693,7 @@ async function loadConversations() {
         const partner = c.nadawca_id === currentUser.id ? c.odbiorca_id : c.nadawca_id;
         const key = `${partner}-${c.zlecenie_id}`;
         if(c.odbiorca_id === currentUser.id && !c.czy_przeczytane) unreadTotal++;
-        if(!seen.has(key)) { seen.add(key); unique.push({ partner, title: c.zlecenie?.tytul || "Ogłoszenie", zlId: c.zlecenie_id, unread: (c.odbiorca_id === currentUser.id && !c.czy_przeczytane) }); }
+        if(!seen.has(key)) { seen.add(key); unique.push({ partner, title: c.zlecenie?.tytul || "Ogłoszenie", zlecenie_id: c.zlecenie_id, unread: (c.odbiorca_id === currentUser.id && !c.czy_przeczytane) }); }
     });
 
     const notifyNode = document.getElementById('nav-notify');
