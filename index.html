@@ -129,33 +129,29 @@
                 <img src="https://www.google.com/favicon.ico" class="w-4 h-4"> Zaloguj przez Google
             </button>
 
-            <div class="text-left pt-4">
+                        <div class="text-left pt-4">
                 <button onclick="switchAuthView('register')" class="text-xs font-bold text-slate-500 hover:text-blue-600 transition-colors">Brak konta? Zarejestruj się</button>
             </div>
+        </div> <!-- DODANE: To zamyka view-login -->
 
         <div id="view-register" class="hidden space-y-4">
             <h2 class="text-xl font-black text-slate-800 tracking-tight">Rejestracja</h2>
-            
             <select id="reg-role" onchange="toggleRegRoleFields(this.value)" class="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none font-bold text-sm text-slate-600 transition-all bg-white">
                 <option value="klient">Zleceniodawca</option>
                 <option value="wykonawca">Wykonawca</option>
             </select>
-            
             <div class="grid grid-cols-1 gap-3">
                 <input id="reg-email" type="email" placeholder="email" class="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none focus:border-blue-400 font-medium text-sm transition-all">
                 <input id="reg-password" type="password" placeholder="haslo" class="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none focus:border-blue-400 font-medium text-sm transition-all">
             </div>
-
             <div class="px-3 py-2 bg-slate-50 rounded-xl border border-slate-100 text-[9px] text-slate-400 leading-normal">
                 <span class="font-bold text-slate-600 block mb-0.5">Wymogi bezpieczeństwa hasła:</span>
                 • min. 8 znaków | • duża litera | • liczba | • znak specjalny
             </div>
-
             <div id="phone-field-wrapper" class="space-y-1">
                 <input id="reg-phone" type="tel" maxlength="9" placeholder="Numer telefonu (Opcjonalnie)" class="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none focus:border-blue-400 font-medium text-sm transition-all">
                 <p id="phone-tip" class="text-[9px] text-amber-600 font-bold px-1">Pamiętaj! Podanie numeru uskuteczni realizację Zlecenia.</p>
             </div>
-
             <div id="pro-fields" class="hidden space-y-3 pt-2 border-t border-dashed border-slate-200">
                 <input id="reg-firma" placeholder="Nazwa firmy / Imię i Nazwisko" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm outline-none">
                 <input id="reg-nip" placeholder="NIP (Opcjonalnie)" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm outline-none">
@@ -168,13 +164,12 @@
                     <div id="spec-checkboxes-container" class="space-y-1.5 max-h-36 overflow-y-auto text-[11px] font-semibold text-slate-700 pr-1"></div>
                 </div>
             </div>
-
             <button onclick="signUp()" class="w-full bg-slate-800 hover:bg-slate-900 text-white py-4 rounded-2xl font-black uppercase text-xs shadow-md transition-all">Załóż konto</button>
             <div class="text-left pt-1">
                 <button onclick="switchAuthView('login')" class="text-xs font-bold text-blue-600 hover:underline transition-all">Masz już konto? Zaloguj się</button>
             </div>
         </div>
-    </div>
+    </div> <!-- DODANE: To zamyka auth-panel -->
 
     <div id="filter-panel" class="bg-white p-6 rounded-[2rem] card-shadow border border-slate-100 mb-8 space-y-4">
         <h2 class="text-xl font-extrabold text-slate-800 tracking-tight">Najnowsze ZLECENIA</h2>
@@ -689,8 +684,8 @@ async function loadConversations() {
     const badgeNode = document.getElementById('chat-notify-count');
     if (unreadTotal > 0) { notifyNode.classList.remove('hidden'); badgeNode.innerText = unreadTotal; badgeNode.classList.remove('hidden'); } else { notifyNode.classList.add('hidden'); badgeNode.classList.add('hidden'); }
 
-    chatsList.innerHTML = unique.map(c => `
-        <button onclick="openChatBox('${c.partner}', ${c.zlId}, 'Konwersacja')" class="w-full text-left bg-slate-50 p-3 rounded-xl text-[11px] font-black border ${c.unread ? 'border-red-400 bg-red-50/50' : 'border-slate-100'} hover:bg-white hover:border-blue-300 transition-all block relative">
+        chatsList.innerHTML = unique.map(c => `
+        <button onclick="openChatBox('${c.partner}', ${c.zlecenie_id}, 'Konwersacja')" class="w-full text-left bg-slate-50 p-3 rounded-xl text-[11px] font-black border ${c.unread ? 'border-red-400 bg-red-50/50' : 'border-slate-100'} hover:bg-white hover:border-blue-300 transition-all block relative">
             💬 Dotyczy: "${c.title}"
             ${c.unread ? '<span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>' : ''}
         </button>
