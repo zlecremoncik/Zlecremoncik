@@ -853,7 +853,13 @@ async function sendMessage() {
 }
 
 async function del(id) { if(confirm("Czy na pewno chcesz usunąć to ogłoszenie?")) { await db.from("zlecenia").delete().eq('id', id); loadAccountPanel(); } }
-async function delBought(zgloszenieId) { if(confirm("Czy na pewno chcesz usunąć to zlecenie ze swojej listy?")) { await db.from("zgloszenia").delete().eq('id', zgloszenieId); loadAccountPanel(); } }
+async function delBought(zgloszenieId) { 
+    if(confirm("Czy na pewno chcesz usunąć to zlecenie ze swojej listy?")) { 
+        await db.from("zgloszenia").delete().eq('id', zgloszenieId); 
+        goBackToList(); 
+        loadAccountPanel(); 
+    } 
+}
 async function editPost(id) { const nt = prompt("Wprowadź nowy tytuł:"); if(nt) { await db.from('zlecenia').update({tytul: nt}).eq('id', id); loadAccountPanel(); } }
 
 function openLegal(type) {
