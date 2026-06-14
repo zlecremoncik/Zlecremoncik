@@ -673,43 +673,64 @@ async function submitOpinion() {
     }
 }
 
-async function loadAccountPanel() {
+async function loadAccountPanel(page = 1) {
     const postsList = document.getElementById('user-posts-list');
     const actTitle = document.getElementById('activity-title');
+    const perPage = 5;
+
     if (!currentProfile) {
-        actTitle.innerText = "📂 MOJE ZLECENIA (Zleceniodawca)";
-        const { data: posts } = await db.from('zlecenia').select('*, zgloszenia(wykonawca_id, profile_wykonawcow(nazwa_firmy, telefon))').eq('user_id', currentUser.id);
+        // WIDOK ZLECENIODAWCY (Moje ogłoszenia)
+        actTitle.innerText = "📂 MOJE ZLECENIA";
+        const { data: posts } = await db.from('zlecenia').select('*').eq('user_id', currentUser.id).order('created_at', {ascending: false});
+        
         postsList.innerHTML = posts?.map(p => `
-            <div class="glass-panel p-4 rounded-2xl mb-3 shadow-sm">
+            <div class="border border-slate-200 rounded-2xl p-4 bg-white mb-3 shadow-sm cursor-pointer" onclick="openDetails(${p.id})">
                 <div class="flex justify-between items-center mb-2">
-                    <strong class="text-xs truncate font-bold">${p.tytul}</strong>
-                    <div class="flex gap-1">
-                        <button onclick="editPost(${p.id})" class="text-blue-500 text-[10px] font-black">EDYTUJ</button>
-                        <button onclick="del(${p.id})" class="text-red-500 text-[10px] font-black">USUŃ</button>
-                    </div>
+                    <h4 class="font-bold text-xs uppercase">${p.tytul}</h4>
+                    <span class="text-[9px] font-bold text-slate-400">AKTYWNE</span>
                 </div>
-                <div class="space-y-1">${p.zgloszenia?.map(z => `
-                    <div class="flex justify-between items-center bg-white/60 p-2 rounded-xl border border-slate-200">
-                        <span class="text-[10px] font-bold">${z.profile_wykonawcow?.nazwa_firmy}</span>
-                        <button onclick="openChatBox('${z.wykonawca_id}', ${p.id}, '${z.profile_wykonawcow?.nazwa_firmy}')" class="bg-slate-800 text-white px-2 py-1 rounded text-[8px] font-black uppercase">Czat</button>
-                    </div>`).join('') || '<p class="text-[8px] text-slate-400">BRAK ZGŁOSZEŃ</p>'}
-                </div>
-            </div>`).join('') || "Brak zleceń.";
-        } else {
-        actTitle.innerText = "🛒 KUPIONE ZLECENIA (Wykonawca)";
-        const { data: apps } = await db.from('zgloszenia').select('*, zlecenie:zlecenia(*)').eq('wykonawca_id', currentUser.id);
-        postsList.innerHTML = apps?.map(a => `
-            <div class="glass-panel p-4 rounded-2xl mb-3 border-l-4 border-blue-500 shadow-sm hover:bg-white/80 transition-all cursor-pointer" onclick="openDetails(${a.zlecenie?.id})">
-                <div class="flex justify-between items-start mb-2">
-                    <h4 class="font-bold text-xs text-slate-800 uppercase">${a.zlecenie?.tytul || 'Zlecenie'}</h4>
-                    <span class="text-[8px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-black">OPŁACONE</span>
-                </div>
-                <p class="text-[10px] text-slate-500 line-clamp-2 mb-3">${a.zlecenie?.opis || ''}</p>
+                <p class="text-[10px] text-slate-500 mb-2 line-clamp-1">${p.opis}</p>
                 <div class="flex gap-2">
-                    <button onclick="event.stopPropagation(); openChatBox('${a.zlecenie?.user_id}', ${a.zlecenie?.id}, 'Zleceniodawca')" class="flex-1 bg-slate-900 text-white py-2 rounded-xl text-[9px] font-black uppercase hover:bg-blue-600">Czat</button>
-                    <a href="tel:${a.zlecenie?.telefon}" onclick="event.stopPropagation()" class="px-4 bg-blue-50 text-blue-600 py-2 rounded-xl flex items-center justify-center border border-blue-100">📞</a>
+                    <button onclick="event.stopPropagation(); editPost(${p.id})" class="text-[9px] font-bold text-blue-600">EDYTUJ</button>
+                    <button onclick="event.stopPropagation(); del(${p.id})" class="text-[9px] font-bold text-red-500">USUŃ</button>
                 </div>
-            </div>`).join('') || "Brak zakupionych kontaktów.";
+            </div>
+        `).join('') || "Brak ogłoszeń.";
+
+    } else {
+        // WIDOK WYKONAWCY (Kupione - Zgodnie ze screenem)
+        actTitle.innerText = "🛒 KUPIONE ZLECENIA (WYKONAWCA)";
+        const { data: apps } = await db.from('zgloszenia').select('*, zlecenie:zlecenia(*)').eq('wykonawca_id', currentUser.id).order('created_at', {ascending: false});
+        
+        const start = (page - 1) * perPage;
+        const pagedApps = apps?.slice(start, start + perPage);
+
+        postsList.innerHTML = pagedApps?.map(a => `
+            <div class="border border-blue-200 rounded-2xl p-5 bg-white shadow-sm mb-4 cursor-pointer" onclick="openDetails(${a.zlecenie?.id})">
+                <div class="flex justify-between items-start mb-2">
+                    <h4 class="font-bold text-sm uppercase tracking-tight">${a.zlecenie?.tytul}</h4>
+                    <span class="text-[9px] bg-blue-50 text-blue-600 px-2 py-1 rounded font-bold border border-blue-100 uppercase">Opłacone</span>
+                </div>
+                <p class="text-[11px] text-slate-500 mb-3">${a.zlecenie?.opis?.substring(0, 80)}...</p>
+                <div class="bg-slate-50 p-3 rounded-xl mb-4 text-[10px] space-y-1">
+                    <p><span class="text-slate-400">Dane Zleceniodawcy:</span> <span class="font-bold">${a.zlecenie?.user_email?.split('@')[0]}</span></p>
+                    <p><span class="text-slate-400">Telefon:</span> <span class="font-bold">${a.zlecenie?.telefon}</span></p>
+                    <p><span class="text-slate-400">Email:</span> <span class="font-bold">${a.zlecenie?.user_email}</span></p>
+                </div>
+                <button onclick="event.stopPropagation(); openChatBox('${a.zlecenie?.user_id}', ${a.zlecenie?.id}, '${a.zlecenie?.user_email?.split('@')[0]}')" class="w-full bg-slate-900 text-white py-3 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-black transition-colors">Czat</button>
+            </div>
+        `).join('') || "Brak zakupionych zleceń.";
+
+        // Paginacja
+        const totalPages = Math.ceil((apps?.length || 0) / perPage);
+        if (totalPages > 1) {
+            let paginHtml = `<div class="flex gap-2 justify-center mt-4 text-[10px] font-bold">`;
+            for(let i=1; i<=totalPages; i++) {
+                paginHtml += `<button onclick="loadAccountPanel(${i})" class="${i===page ? 'text-blue-600 underline' : 'text-slate-400'}">${i}</button>`;
+            }
+            paginHtml += `</div>`;
+            postsList.innerHTML += paginHtml;
+        }
     }
     loadConversations();
 }
