@@ -8,18 +8,21 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&display=swap" rel="stylesheet">
     <style>
-        body { 
+                body { 
             font-family: 'Plus Jakarta Sans', sans-serif; 
-            /* Zmniejszyliśmy wartość z 0.88 na 0.60 - teraz zdjęcie będzie dużo wyraźniejsze! */
-            background-image: linear-gradient(rgba(248, 250, 252, 0.60), rgba(248, 250, 252, 0.60)), url('kuchnia.png');
-            background-attachment: fixed;
+            background: url('kuchnia.png') no-repeat center center fixed;
             background-size: cover;
-            background-position: center;
         }
-        .card-shadow { box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.08); }
+        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        .card-shadow { box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.1); }
         .hidden { display: none !important; }
         .loader { border: 3px solid #f3f3f3; border-top: 3px solid #3b82f6; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* Style Czatu */
+        .chat-bubble-me { background: #2563eb; color: white; border-radius: 1.25rem 1.25rem 0.2rem 1.25rem; padding: 10px 15px; margin-bottom: 8px; align-self: flex-end; }
+        .chat-bubble-them { background: #f1f5f9; color: #1e293b; border-radius: 1.25rem 1.25rem 1.25rem 0.2rem; padding: 10px 15px; margin-bottom: 8px; align-self: flex-start; }
+        #account-panel { transform: translateX(100%); transition: 0.3s; }
+        #account-panel.active { transform: translateX(0); }
     </style>
 </head>
 <body class="text-slate-900">
@@ -27,9 +30,9 @@
 <nav class="bg-white sticky top-0 z-50 border-b border-slate-200 shadow-sm">
     <div class="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
         <div class="text-2xl font-extrabold tracking-tighter text-slate-800">Zleć<span class="text-blue-600">Remoncik</span></div>
-        <div class="flex items-center gap-3">
-            <span id="user-info" class="text-[10px] font-bold text-slate-400 bg-slate-50 px-3 py-1 rounded-full uppercase"></span>
-            <button id="logout-btn" onclick="signOut()" class="hidden text-[10px] font-bold text-red-400 hover:text-red-600 uppercase">Wyloguj</button>
+                <div class="flex items-center gap-3">
+            <button id="acc-btn" onclick="toggleAccount()" class="hidden text-[10px] font-black bg-blue-600 text-white px-4 py-2 rounded-full uppercase">Moje Konto</button>
+            <button id="logout-btn" onclick="signOut()" class="hidden text-[10px] font-bold text-red-400 uppercase">Wyloguj</button>
         </div>
     </div>
 </nav>
@@ -102,8 +105,10 @@
             <textarea id="o" placeholder="Opis..." class="w-full bg-slate-50 border-2 p-3 rounded-xl h-24 outline-none focus:border-blue-300"></textarea>
             <input id="p" type="tel" maxlength="9" placeholder="Telefon (9 cyfr)" class="w-full bg-slate-50 border-2 p-3 rounded-xl outline-none focus:border-blue-300">
             
-            <div class="flex items-center gap-4 p-3 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
-                <input id="img-input" type="file" accept="image/*" class="text-[10px] flex-1">
+                       <div class="grid grid-cols-3 gap-2">
+                <input id="img1" type="file" accept="image/*" class="text-[9px] bg-white p-2 rounded-xl border">
+                <input id="img2" type="file" accept="image/*" class="text-[9px] bg-white p-2 rounded-xl border">
+                <input id="img3" type="file" accept="image/*" class="text-[9px] bg-white p-2 rounded-xl border">
                 <div id="upload-spinner" class="hidden loader"></div>
             </div>
 
@@ -158,6 +163,38 @@
     </div>
 
     <div id="list" class="space-y-6 pb-20"></div>
+        <!-- PANEL MOJE KONTO -->
+    <div id="account-panel" class="fixed top-0 right-0 h-full w-full sm:w-[400px] bg-white z-[60] shadow-2xl p-6 overflow-y-auto hidden">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-black uppercase">Moje Konto</h2>
+            <button onclick="toggleAccount()" class="text-slate-400"> Zamknij ✕</button>
+        </div>
+        <div id="account-content" class="space-y-6">
+            <div>
+                <h3 id="role-title" class="text-[10px] font-black text-blue-600 uppercase mb-4 tracking-widest">Twoja Aktywność</h3>
+                <div id="user-items" class="space-y-3"></div>
+            </div>
+            <div class="border-t pt-6">
+                <h3 class="text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">Konwersacje</h3>
+                <div id="chat-list" class="space-y-2"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- OKNO CZATU -->
+    <div id="chat-window" class="fixed inset-0 bg-black/50 z-[70] flex items-end sm:items-center justify-center hidden">
+        <div class="bg-white w-full sm:w-[450px] sm:rounded-3xl h-[90vh] sm:h-[600px] flex flex-col overflow-hidden">
+            <div class="p-4 border-b flex justify-between items-center bg-slate-50">
+                <div class="font-bold text-sm" id="chat-target-name">Rozmowa</div>
+                <button onclick="closeChat()" class="p-2 text-slate-400">✕</button>
+            </div>
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-4 flex flex-col bg-slate-100/50"></div>
+            <div class="p-4 border-t bg-white flex gap-2">
+                <input id="chat-input" placeholder="Napisz wiadomość..." class="flex-1 bg-slate-100 border-none p-3 rounded-xl text-sm outline-none">
+                <button onclick="sendMessage()" class="bg-blue-600 text-white px-6 rounded-xl font-bold">Wyślij</button>
+            </div>
+        </div>
+    </div>
 </main>
 
 <script>
