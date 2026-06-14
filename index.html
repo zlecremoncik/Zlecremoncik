@@ -412,6 +412,7 @@ async function signUp() {
 
             const { error: profErr } = await db.from('profile_wykonawcow').insert([{
                 user_id: data.user.id,
+                email: e, // <--- TUTAJ ZAPISUJEMY EMAIL WYKONAWCY PRZY REJESTRACJI
                 nazwa_firmy: document.getElementById('reg-firma').value || "Fachowiec",
                 nip: document.getElementById('reg-nip').value || null,
                 miejscowosc: document.getElementById('reg-miejscowosc').value || "Nie podano",
@@ -476,7 +477,8 @@ async function add() {
     
     const insertData = {
         tytul: tVal, miasto: mVal, opis: oVal, telefon: pVal, 
-        kategoria: kVal || 'Inne', user_id: currentUser.id, typ_wpisu: wyznaczonaRolaWpisu
+        kategoria: kVal || 'Inne', user_id: currentUser.id, typ_wpisu: wyznaczonaRolaWpisu,
+        user_email: currentUser.email // <--- TUTAJ ZAPISUJEMY EMAIL DO TABELI ZLECENIA
     };
     if (pcVal && pcVal.trim() !== "") insertData.kod_pocztowy = pcVal;
 
