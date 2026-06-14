@@ -111,7 +111,7 @@
         </div>
     </div>
 
-    <div class="mb-8 space-y-3">
+    <div id="filters-container" class="mb-8 space-y-3">
         <div class="flex flex-wrap gap-2 justify-center">
             <button onclick="setView('wszystko')" id="v-all" class="px-6 py-2 bg-blue-600 text-white rounded-full text-[10px] font-black uppercase shadow-md">Wszystko</button>
             <button onclick="setView('klient')" id="v-klient" class="px-6 py-2 bg-white border border-slate-200 rounded-full text-[10px] font-black uppercase">Zlecenia</button>
@@ -200,8 +200,16 @@ checkUser();
 // Sprawdzanie adresu URL (czy oglądamy szczegóły)
 window.addEventListener('hashchange', checkUrlRoute);
 
+// Przywracanie roli po przeładowaniu strony (np. po powrocie z Google OAuth)
+const savedRole = localStorage.getItem('preferowanaRola');
+if (savedRole) {
+    selectedRole = savedRole;
+    setTimeout(() => setRole(savedRole), 50); 
+}
+
 function setRole(role) {
     selectedRole = role;
+    localStorage.setItem('preferowanaRola', role); // Zabezpieczenie przed przeładowaniem
     document.getElementById('role-klient').className = role === 'klient' ? 'flex-1 py-3 rounded-xl text-[10px] font-black bg-white shadow-sm uppercase' : 'flex-1 py-3 rounded-xl text-[10px] font-black text-slate-500 uppercase';
     document.getElementById('role-wykonawca').className = role === 'wykonawca' ? 'flex-1 py-3 rounded-xl text-[10px] font-black bg-white shadow-sm uppercase' : 'flex-1 py-3 rounded-xl text-[10px] font-black text-slate-500 uppercase';
 }
@@ -312,7 +320,7 @@ async function add() {
 }
 
 async function load() {
-    let query = db.from("Zlecenia").select("*").order("id", { ascending: false });
+    let query = db.from("zlecenia").select("*").order("id", { ascending: false });
     if (currentView !== 'wszystko') query = query.eq('typ_wpisu', currentView);
     if (currentCategoryFilter !== 'wszystkie') query = query.eq('kategoria', currentCategoryFilter);
     
@@ -332,7 +340,7 @@ async function load() {
         const isOwner = currentUser && z.user_id === currentUser.id;
         const isPro = z.typ_wpisu === 'wykonawca';
         return `
-            <div onclick="openDetails(${z.id})" class="bg-white rounded-[2rem] card-shadow overflow-hidden border-2 ${isPro ? 'border-amber-100' : 'border-blue-50'} cursor-pointer hover:scale-[1.01] transition-transform">
+            <div onclick="openDetails('${z.id}')" class="bg-white rounded-[2rem] card-shadow overflow-hidden border-2 ${isPro ? 'border-amber-100' : 'border-blue-50'} cursor-pointer hover:scale-[1.01] transition-transform">
                 ${z.zdjecie_url ? `<img src="${z.zdjecie_url}" class="w-full h-48 object-cover" alt="Zdjęcie ogłoszenia">` : ''}
                 <div class="p-6">
                     <div class="flex justify-between items-center mb-2">
@@ -346,7 +354,7 @@ async function load() {
                         ? `<a href="tel:${z.telefon}" onclick="event.stopPropagation();" class="block w-full ${isPro ? 'bg-amber-500' : 'bg-green-500'} text-white text-center py-3 rounded-xl font-black uppercase text-sm">Zadzwoń: ${z.telefon || ''}</a>`
                         : `<p class="text-center text-slate-400 text-[10px] italic py-2">Zaloguj się, by zobaczyć numer</p>`
                     }
-                    ${isOwner ? `<button onclick="event.stopPropagation(); del(${z.id})" class="w-full mt-3 text-[9px] text-red-400 font-bold uppercase hover:text-red-600 transition-colors">Usuń moje</button>` : ''}
+                    ${isOwner ? `<button onclick="event.stopPropagation(); del('${z.id}')" class="w-full mt-3 text-[9px] text-red-400 font-bold uppercase hover:text-red-600 transition-colors">Usuń moje</button>` : ''}
                 </div>
             </div>
         `;
@@ -355,7 +363,7 @@ async function load() {
 
 async function del(id) { 
     if(confirm("Czy na pewno chcesz usunąć to ogłoszenie?")) { 
-        const { error } = await db.from("Zlecenia").delete().eq('id', id); 
+        const { error } = await db.from("zlecenia").delete().eq('id', id); 
         if (error) alert("Błąd usuwania: " + error.message);
         window.location.hash = "";
         load(); 
@@ -378,7 +386,7 @@ async function checkUrlRoute() {
         
         document.getElementById('add-panel').classList.add('hidden');
         document.getElementById('auth-panel').classList.add('hidden');
-        document.getElementById('filter-kategoria').parentElement.parentElement.classList.add('hidden');
+        document.getElementById('filters-container').classList.add('hidden');
         document.getElementById('list').classList.add('hidden');
         
         const detailsView = document.getElementById('details-view');
@@ -386,14 +394,14 @@ async function checkUrlRoute() {
         detailsView.classList.remove('hidden');
         detailsContent.innerHTML = `<p class="text-center text-slate-400 py-10">Ładowanie szczegółów ogłoszenia...</p>`;
 
-        const { data, error } = await db.from("Zlecenia").select("*").eq('id', id).single();
+        const { data, error } = await db.from("zlecenia").select("*").eq('id', id).single();
         
         if (error || !data) {
             detailsContent.innerHTML = `<p class="text-center text-red-500 font-bold py-10">Nie znaleziono takiego ogłoszenia.</p>`;
             return;
         }
 
-        await db.from("Zlecenia").update({ views: (data.views || 0) + 1 }).eq('id', id);
+        await db.from("zlecenia").update({ views: (data.views || 0) + 1 }).eq('id', id);
 
         const isOwner = currentUser && data.user_id === currentUser.id;
         const isPro = data.typ_wpisu === 'wykonawca';
@@ -429,7 +437,7 @@ async function checkUrlRoute() {
 
                     ${isOwner ? `
                         <div class="mt-8 border-t border-red-50 pt-4 flex justify-end">
-                            <button onclick="del(${data.id})" class="text-xs text-red-500 font-black uppercase tracking-wider hover:text-red-700 transition-colors bg-red-50 px-4 py-2 rounded-xl">❌ Usuń to ogłoszenie</button>
+                            <button onclick="del('${data.id}')" class="text-xs text-red-500 font-black uppercase tracking-wider hover:text-red-700 transition-colors bg-red-50 px-4 py-2 rounded-xl">❌ Usuń to ogłoszenie</button>
                         </div>
                     ` : ''}
                 </div>
@@ -438,7 +446,7 @@ async function checkUrlRoute() {
     } else {
         document.getElementById('details-view').classList.add('hidden');
         document.getElementById('list').classList.remove('hidden');
-        document.getElementById('filter-kategoria').parentElement.parentElement.classList.remove('hidden');
+        document.getElementById('filters-container').classList.remove('hidden');
         
         if (currentUser) {
             document.getElementById('add-panel').classList.remove('hidden');
