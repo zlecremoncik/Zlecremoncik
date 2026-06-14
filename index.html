@@ -8,16 +8,19 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { 
+                body { 
             font-family: 'Plus Jakarta Sans', sans-serif; 
-            background-color: #f8fafc;
-            background-image: radial-gradient(#e2e8f0 0.5px, transparent 0.5px);
-            background-size: 24px 24px;
+            background: url('kuchnia.png') no-repeat center center fixed;
+            background-size: cover;
         }
-        .card-shadow { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); }
+        .glass-panel { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.2); }
+        .card-shadow { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); }
         .hidden { display: none !important; }
-        .slide-panel { transform: translateX(100%); transition: transform 0.3s ease-in-out; }
+        .slide-panel { transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .slide-panel.active { transform: translateX(0); }
+        .chat-bubble-me { background: #2563eb; color: white; border-radius: 18px 18px 2px 18px; }
+        .chat-bubble-them { background: #f1f5f9; color: #1e293b; border-radius: 18px 18px 18px 2px; }
+        @media (max-width: 640px) { .slide-panel { width: 100% !important; } .glass-panel { border-radius: 1.5rem; } }
     </style>
 </head>
 <body class="text-slate-900 pb-10">
@@ -61,10 +64,14 @@
             <select id="k" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl outline-none font-bold text-sm text-slate-700 select-dynamic-categories text-slate-700 bg-white">
                 </select>
             
-            <textarea id="o" placeholder="Opisz dokładnie zakres prac lub swoje doświadczenie..." class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl h-32 outline-none focus:border-blue-400"></textarea>
-            <input id="p" type="tel" maxlength="9" placeholder="Telefon kontaktowy do ogłoszenia (9 cyfr)" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl outline-none focus:border-blue-400">
-            
-            <button onclick="add()" id="add-btn" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black text-base shadow-xl shadow-blue-100 uppercase hover:bg-blue-700 transition-all">Opublikuj ogłoszenie</button>
+                        <textarea id="o" placeholder="Opisz dokładnie zakres prac lub swoje doświadczenie..." class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl h-32 outline-none focus:border-blue-400"></textarea>
+            <div class="grid grid-cols-3 gap-2">
+                <input id="img1" type="file" accept="image/*" class="text-[9px] bg-slate-50 p-2 rounded-xl border border-slate-100">
+                <input id="img2" type="file" accept="image/*" class="text-[9px] bg-slate-50 p-2 rounded-xl border border-slate-100">
+                <input id="img3" type="file" accept="image/*" class="text-[9px] bg-slate-50 p-2 rounded-xl border border-slate-100">
+            </div>
+            <input id="p" type="tel" maxlength="9" placeholder="Telefon kontaktowy (9 cyfr)" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl outline-none focus:border-blue-400">
+            <button onclick="add()" id="add-btn" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase shadow-xl hover:bg-blue-700 transition-all">Opublikuj ogłoszenie</button>
         </div>
     </div>
 </div>
@@ -658,38 +665,34 @@ async function submitOpinion() {
 
 async function loadAccountPanel() {
     const postsList = document.getElementById('user-posts-list');
+    const actTitle = document.getElementById('activity-title');
     if (!currentProfile) {
-        const { data: posts } = await db.from('zlecenia').select('*, zgloszenia(wykonawca_id, profile_wykonawcow(nazwa_firmy, telephone:telefon))').eq('user_id', currentUser.id);
-        postsList.innerHTML = posts && posts.length > 0 ? posts.map(p => `
-            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-xs">
-                <div class="flex justify-between items-start mb-2">
-                    <strong class="text-slate-800 font-bold block max-w-[200px] truncate">${p.tytul}</strong>
-                    <div class="flex gap-2 shrink-0">
-                        <button onclick="editPost(${p.id})" class="text-blue-500 font-bold uppercase text-[9px]">Edytuj</button>
-                        <button onclick="del(${p.id})" class="text-red-500 font-bold uppercase text-[9px]">Usuń</button>
+        actTitle.innerText = "📂 MOJE ZLECENIA (Zleceniodawca)";
+        const { data: posts } = await db.from('zlecenia').select('*, zgloszenia(wykonawca_id, profile_wykonawcow(nazwa_firmy, telefon))').eq('user_id', currentUser.id);
+        postsList.innerHTML = posts?.map(p => `
+            <div class="glass-panel p-4 rounded-2xl mb-3 shadow-sm">
+                <div class="flex justify-between items-center mb-2">
+                    <strong class="text-xs truncate font-bold">${p.tytul}</strong>
+                    <div class="flex gap-1">
+                        <button onclick="editPost(${p.id})" class="text-blue-500 text-[10px] font-black">EDYTUJ</button>
+                        <button onclick="del(${p.id})" class="text-red-500 text-[10px] font-black">USUŃ</button>
                     </div>
                 </div>
-                <div class="mt-2 space-y-1.5">
-                    ${p.zgloszenia?.map(z => `
-                                                <div class="flex justify-between items-center bg-white p-2 rounded-xl border border-slate-100 shadow-sm">
-                            <span class="font-black text-[10px] text-slate-700 truncate max-w-[150px]">Firma: ${z.profile_wykonawcow?.nazwa_firmy || 'Fachowiec'}</span>
-                            <div class="flex gap-1 shrink-0">
-                                <button onclick="openChatBox('${z.wykonawca_id}', ${p.id}, '${z.profile_wykonawcow?.nazwa_firmy}')" class="bg-slate-800 text-white px-2 py-1 rounded text-[8px] font-black uppercase">Czat</button>
-                                <button onclick="alert('Numer kontaktowy: ' + (z.profile_wykonawcow?.telephone || 'Brak danych'))" class="bg-blue-600 text-white px-2 py-1 rounded text-[8px] font-black uppercase">Telefon</button>
-                            </div>
-                        </div>
-                    `).join("") || '<p class="text-[9px] text-slate-400 uppercase">Oczekiwanie na oferty...</p>'}
+                <div class="space-y-1">${p.zgloszenia?.map(z => `
+                    <div class="flex justify-between items-center bg-white/60 p-2 rounded-xl border border-slate-200">
+                        <span class="text-[10px] font-bold">${z.profile_wykonawcow?.nazwa_firmy}</span>
+                        <button onclick="openChatBox('${z.wykonawca_id}', ${p.id}, '${z.profile_wykonawcow?.nazwa_firmy}')" class="bg-slate-800 text-white px-2 py-1 rounded text-[8px] font-black uppercase">Czat</button>
+                    </div>`).join('') || '<p class="text-[8px] text-slate-400">BRAK ZGŁOSZEŃ</p>'}
                 </div>
-            </div>
-        `).join("") : `<p class="text-center py-6 text-slate-400 text-xs">Nie dodałeś jeszcze ogłoszeń.</p>`;
+            </div>`).join('') || "Brak zleceń.";
     } else {
-        const { data: apps } = await db.from('zgloszenia').select('*, zlecenie:zlecenia(id, tytul, user_id)').eq('wykonawca_id', currentUser.id);
-        postsList.innerHTML = apps && apps.length > 0 ? apps.map(a => `
-            <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 flex justify-between items-center text-xs">
-                <span class="font-bold text-slate-700 truncate flex-1">📌 ${a.zlecenie?.tytul || 'Zlecenie'}</span>
-                <button onclick="openChatBox('${a.zlecenie?.user_id}', ${a.zlecenie?.id}, 'Zleceniodawca')" class="bg-blue-600 text-white px-3 py-1 rounded-lg text-[9px] font-black uppercase ml-2">Czat</button>
-            </div>
-        `).join("") : `<p class="text-center py-6 text-slate-400 text-xs">Brak aktywnych zgłoszeń.</p>`;
+        actTitle.innerText = "🛒 KUPIONE ZLECENIA (Wykonawca)";
+        const { data: apps } = await db.from('zgloszenia').select('*, zlecenie:zlecenia(*)').eq('wykonawca_id', currentUser.id);
+        postsList.innerHTML = apps?.map(a => `
+            <div class="glass-panel p-3 rounded-xl mb-2 flex justify-between items-center border-l-4 border-amber-400">
+                <span class="font-bold text-[10px] truncate max-w-[180px]">${a.zlecenie?.tytul}</span>
+                <button onclick="openChatBox('${a.zlecenie?.user_id}', ${a.zlecenie?.id}, 'Zleceniodawca')" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-[9px] font-black">CZAT</button>
+            </div>`).join('') || "Nie kupiono jeszcze zleceń.";
     }
     loadConversations();
 }
@@ -737,12 +740,12 @@ async function loadMessages() {
     if(!activePartnerId) return;
     const { data } = await db.from('wiadomosci').select('*').eq('zlecenie_id', activeZlecenieId).or(`and(nadawca_id.eq.${currentUser.id},odbiorca_id.eq.${activePartnerId}),and(nadawca_id.eq.${activePartnerId},odbiorca_id.eq.${currentUser.id})`).order('created_at', { ascending: true });
     const msgBox = document.getElementById('chat-messages');
-    msgBox.innerHTML = data?.map(m => `
-        <div class="max-w-[85%] ${m.nadawca_id === currentUser.id ? 'ml-auto bg-blue-600 text-white rounded-t-2xl rounded-bl-2xl' : 'mr-auto bg-white border border-slate-200 rounded-t-2xl rounded-br-2xl'} p-2.5 shadow-sm mb-1.5">
-            <p class="leading-tight">${m.tresc}</p>
-            <p class="text-[7px] mt-1 opacity-60 text-right uppercase">${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</p>
+        msgBox.innerHTML = data?.map(m => `
+        <div class="max-w-[80%] mb-3 p-3 shadow-sm ${m.nadawca_id === currentUser.id ? 'ml-auto chat-bubble-me' : 'mr-auto chat-bubble-them'}">
+            <p class="text-xs leading-relaxed">${m.tresc}</p>
+            <p class="text-[6px] mt-1 opacity-50 text-right uppercase">${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</p>
         </div>
-    `).join("") || '<p class="text-center py-6 text-slate-400 text-[10px] uppercase">Napisz wiadomość!</p>';
+    `).join("") || '<div class="text-center py-10 text-[10px] text-slate-400 font-bold uppercase tracking-widest">Początek rozmowy</div>';
     msgBox.scrollTop = msgBox.scrollHeight;
 }
 
