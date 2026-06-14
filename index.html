@@ -311,32 +311,42 @@ async function updateUI(session) {
     currentUser = session?.user || null;
     const authPanel = document.getElementById('auth-panel');
     if (authPanel) authPanel.classList.toggle('hidden', !!session);
-    document.getElementById('logout-btn').classList.toggle('hidden', !session);
-    document.getElementById('my-account-btn').classList.toggle('hidden', !session);
+    if (document.getElementById('logout-btn')) document.getElementById('logout-btn').classList.toggle('hidden', !session);
+    if (document.getElementById('my-account-btn')) document.getElementById('my-account-btn').classList.toggle('hidden', !session);
     
     if (currentUser) {
         try {
             document.getElementById('acc-email-display').innerText = currentUser.email;
-            const { data } = await db.from('profile_wykonawcow').select('*').eq('user_id', currentUser.id).maybeSingle();
-            currentProfile = data || null;
+            
+            // Logika Google: Sprawdź czy mamy zapisaną rolę wykonawcy
+            const savedRole = localStorage.getItem('google_login_role');
+            let { data: prof } = await db.from('profile_wykonawcow').select('*').eq('user_id', currentUser.id).maybeSingle();
+            
+            if (!prof && savedRole === 'wykonawca') {
+                const { data: newProf } = await db.from('profile_wykonawcow').insert([{
+                    user_id: currentUser.id,
+                    nazwa_firmy: currentUser.user_metadata?.full_name || "Fachowiec Google",
+                    punkty: 10,
+                    miejscowosc: "Nie podano"
+                }]).select().single();
+                prof = newProf;
+                localStorage.removeItem('google_login_role');
+            }
 
+            currentProfile = prof || null;
             const pCounter = document.getElementById('points-counter');
             const addJobBtn = document.getElementById('nav-add-job-btn');
 
             if (currentProfile) {
-                pCounter.innerText = `Saldo punktów: ${currentProfile.punkty} PKT`;
-                pCounter.classList.remove('hidden');
+                if(pCounter) { pCounter.innerText = `Saldo: ${currentProfile.punkty} PKT`; pCounter.classList.remove('hidden'); }
                 if (addJobBtn) addJobBtn.classList.add('hidden');
             } else {
-                pCounter.classList.add('hidden');
+                if(pCounter) pCounter.classList.add('hidden');
                 if (addJobBtn) addJobBtn.classList.remove('hidden');
             }
-            loadAccountPanel().catch(e => console.error("Błąd panelu:", e));
-        } catch (e) {
-            console.error("Błąd logowania/profilu:", e);
-        }
+            loadAccountPanel();
+        } catch (e) { console.error("Błąd profilu:", e); }
     }
-    // Zawsze wywołuj load(), nawet jeśli powyższy kod zgłosi błąd
     load();
 }
 
@@ -365,7 +375,7 @@ async function loginWithGoogle() {
     localStorage.setItem('google_login_role', role); 
     const { error } = await db.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: window.location.origin + window.location.pathname }
+        options: { redirectTo: window.location.href.split('#')[0] }
     });
     if (error) alert("Błąd Google: " + error.message);
 }
@@ -425,9 +435,9 @@ async function signUp() {
 
 async function signOut() { 
     await db.auth.signOut(); 
+    localStorage.clear(); // Czyści role i sesje
     toggleAccountMenu(false); 
-    window.location.hash = ""; 
-    load();
+    window.location.href = window.location.origin + window.location.pathname; // Pełne odświeżenie strony
 }
 
 function toggleAccountMenu(open) {
