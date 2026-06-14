@@ -75,6 +75,12 @@
         <div>
             <h2 class="text-xl font-black text-slate-800">Panel użytkownika</h2>
             <p id="acc-email-display" class="text-xs text-blue-600 font-bold"></p>
+                    <div id="edit-profile-box" class="mt-4 p-4 bg-blue-50 rounded-2xl border border-blue-100 hidden">
+            <input id="edit-nazwa" placeholder="Nowa nazwa firmy/imię" class="w-full p-2 mb-2 rounded-lg border text-xs">
+            <input id="edit-tel" placeholder="Nowy telefon" class="w-full p-2 mb-2 rounded-lg border text-xs">
+            <button onclick="saveProfile()" class="w-full bg-blue-600 text-white py-2 rounded-lg text-[10px] font-bold uppercase">Zapisz zmiany</button>
+        </div>
+        <button onclick="document.getElementById('edit-profile-box').classList.toggle('hidden')" class="text-[10px] font-bold text-slate-400 hover:text-blue-600 mt-2">⚙️ Edytuj moje dane</button>
         </div>
         <button onclick="toggleAccountMenu(false)" class="text-sm font-bold text-slate-400 hover:text-slate-600">✖ Zamknij</button>
     </div>
@@ -475,49 +481,51 @@ async function add() {
 }
 
 async function load() {
-    // Uproszczone zapytanie (bez zgloszenia:zgloszenia), aby uniknąć błędów bazy
-    let q = db.from("zlecenia").select("*").order("id", { ascending: false });
+    // Pobieramy zlecenia wraz z ID zgłoszeń, aby móc je policzyć
+    let q = db.from("zlecenia").select("*, zgloszenia(id)").order("id", { ascending: false });
     
-    const cityInput = document.getElementById('search-city') ? document.getElementById('search-city').value.trim() : "";
+    const cityInput = document.getElementById('search-city').value.trim();
     if (cityInput !== "") q = q.ilike('miasto', `%${cityInput}%`);
-    
-    const categorySelect = document.getElementById('search-category') ? document.getElementById('search-category').value : "";
+    const categorySelect = document.getElementById('search-category').value;
     if (categorySelect !== "") q = q.eq('kategoria', categorySelect);
 
     const { data, error } = await q;
-    if (error) console.error("Supabase Error:", error);
     const listEl = document.getElementById("list");
-    if (!data || data.length === 0) { listEl.innerHTML = `<p class='text-center text-slate-400 py-16 text-xs font-semibold bg-white rounded-2xl border'>Brak wpisów spełniających kryteria wyszukiwania.</p>`; return; }
+    if (!data || data.length === 0) { listEl.innerHTML = `<p class='text-center text-slate-400 py-16 text-xs font-semibold bg-white rounded-2xl border'>Brak wpisów.</p>`; return; }
 
-    listEl.innerHTML = (data || []).map(z => {
-        const totalReq = z.zgloszenia?.length || 0;
+    listEl.innerHTML = data.map(z => {
+        const totalReq = z.zgloszenia ? z.zgloszenia.length : 0;
         const isFull = totalReq >= 5;
-        const locString = z.kod_pocztowy ? `${z.miasto} (${z.kod_pocztowy})` : z.miasto;
+        const hasTel = z.telefon && z.telefon.length === 9 ? "✅ Podano" : "❌ Brak";
+        // Zakładamy, że email jest zawsze (bo użytkownik musi być zalogowany)
+        const hasMail = "✅ Podano"; 
+
         return `
         <div onclick="openDetails(${z.id})" class="group bg-white rounded-2xl card-shadow overflow-hidden border border-slate-100 cursor-pointer hover:border-blue-300 transition-all p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative">
             <div class="space-y-1.5 flex-1">
                 <div class="flex items-center gap-2 text-[9px] font-black uppercase">
                     <span class="${z.typ_wpisu === 'wykonawca' ? 'text-amber-500' : 'text-blue-600'}">${z.typ_wpisu === 'wykonawca' ? '⭐ Fachowiec' : '📝 Zlecenie'}</span>
                     <span class="text-slate-300">|</span>
-                    <span class="text-slate-400">📍 ${locString}</span>
-                    <span class="text-slate-300">|</span>
-                    <span class="text-slate-400 bg-slate-50 px-2 py-0.5 rounded border">${z.kategoria || 'Inne'}</span>
+                    <span class="text-slate-400">📍 ${z.miasto}</span>
                 </div>
                 <h3 class="text-base font-bold text-slate-800 group-hover:text-blue-600 transition-colors leading-tight">${z.tytul}</h3>
-                <p class="text-slate-500 text-xs line-clamp-1 max-w-2xl">${z.opis}</p>
+                <div class="flex gap-3 mt-1 text-[8px] font-bold uppercase text-slate-400">
+                    <span>📞 Tel: ${hasTel}</span>
+                    <span>📧 Email: ${hasMail}</span>
+                </div>
             </div>
             <div class="sm:text-right shrink-0 flex flex-col items-start sm:items-end gap-1 min-w-[120px]">
-                ${z.typ_wpisu === 'klient' ? `
-                    <span class="text-[9px] font-bold text-slate-400">${totalReq}/5 chętnych</span>
-                    <div class="h-1.5 w-24 bg-slate-100 rounded-full overflow-hidden">
-                        <div class="h-full bg-blue-500" style="width: ${totalReq * 20}%"></div>
-                    </div>
-                    ${isFull ? '<span class="text-[8px] bg-red-50 text-red-500 font-black px-1.5 py-0.5 rounded mt-1 uppercase tracking-tight">Komplet</span>' : ''}
-                ` : '<span class="text-[10px] font-black text-amber-500 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-full">Wolne terminy</span>'}
+                <span class="text-[9px] font-bold text-slate-400">${totalReq}/5 chętnych</span>
+                <div class="h-1.5 w-24 bg-slate-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-blue-500" style="width: ${totalReq * 20}%"></div>
+                </div>
             </div>
         </div>`;
     }).join("");
 }
+// 2. Automatyczne odświeżanie co 30 sekund
+setInterval(load, 30000);
+setInterval(() => { if(currentUser) loadConversations(); }, 10000);
 
 function openDetails(id) { window.location.hash = `ogloszenie-${id}`; }
 function goBackToList() { window.location.hash = ""; document.getElementById('details-view').classList.add('hidden'); document.getElementById('list').classList.remove('hidden'); document.getElementById('filter-panel').classList.remove('hidden'); }
@@ -576,16 +584,34 @@ async function checkUrlRoute() {
 }
 
 async function applyForJob(zlecenieId) {
-    if (!currentProfile) return alert("Musisz posiadać profil wykonawcy!");
-    if (currentProfile.punkty < 1) return alert("Posiadasz za mało punktów na koncie.");
+    if (!currentProfile) return alert("Tylko Wykonawca może zgłaszać chęć realizacji!");
     
-    const { data: existing } = await db.from('zgloszenia').select('id').eq('zlecenie_id', zlecenieId).eq('wykonawca_id', currentUser.id).maybeSingle();
-    if(existing) return alert("Zgłosiłeś się już wcześniej!");
+    // 1. Pobieramy dane zlecenia, żeby sprawdzić czy jest telefon
+    const { data: z } = await db.from('zlecenia').select('*, owner:user_id').eq('id', zlecenieId).single();
+    
+    const cost = (z.telefon && z.telefon.length === 9) ? 2 : 1;
+    if (currentProfile.punkty < cost) return alert(`To zlecenie kosztuje ${cost} PKT. Masz tylko ${currentProfile.punkty}.`);
 
+    const { data: existing } = await db.from('zgloszenia').select('id').eq('zlecenie_id', zlecenieId).eq('wykonawca_id', currentUser.id).maybeSingle();
+    if(existing) return alert("Już zgłosiłeś się do tego zlecenia!");
+
+    // 2. Dodajemy zgłoszenie
     const { error } = await db.from('zgloszenia').insert([{ zlecenie_id: zlecenieId, wykonawca_id: currentUser.id }]);
-    if (error) { alert("Błąd operacji: " + error.message); } else {
-        await db.from('profile_wykonawcow').update({ punkty: currentProfile.punkty - 1 }).eq('user_id', currentUser.id);
-        alert("Zgłoszono pomyślnie. Pobrano 1 punkt.");
+    
+    if (!error) {
+        // 3. Pobieramy punkty
+        await db.from('profile_wykonawcow').update({ punkty: currentProfile.punkty - cost }).eq('user_id', currentUser.id);
+        
+        // 4. Wysyłamy WIADOMOŚĆ SYSTEMOWĄ z danymi
+        const systemMsg = `SYSTEM: Wykupiłeś kontakt do zlecenia "${z.tytul}". \n📞 Tel: ${z.telefon || 'Nie podano'} \n📧 Email autora: (dostępny w profilu)`;
+        await db.from('wiadomosci').insert([{ 
+            zlecenie_id: zlecenieId, 
+            nadawca_id: '00000000-0000-0000-0000-000000000000', // ID systemowe lub Twoje
+            odbiorca_id: currentUser.id, 
+            tresc: systemMsg 
+        }]);
+
+        alert(`Sukces! Pobrano ${cost} PKT. Dane kontaktowe znajdziesz w zakładce Konwersacje.`);
         checkUrlRoute();
         updateUI({user: currentUser});
     }
@@ -747,6 +773,22 @@ function openLegal(type) {
     }
 }
 function closeLegal() { document.getElementById('legal-modal').classList.add('hidden'); }
+    async function saveProfile() {
+    const nowaNazwa = document.getElementById('edit-nazwa').value;
+    const nowyTel = document.getElementById('edit-tel').value;
+    
+    if(currentProfile) {
+        const { error } = await db.from('profile_wykonawcow').update({ 
+            nazwa_firmy: nowaNazwa || currentProfile.nazwa_firmy,
+            telefon: nowyTel || currentProfile.telefon 
+        }).eq('user_id', currentUser.id);
+        
+        if(!error) { alert("Dane zaktualizowane!"); window.location.reload(); }
+    } else {
+        // Dla klienta aktualizujemy w metadata lub nowej tabeli jeśli ją masz
+        alert("Funkcja edycji dla zleceniodawcy w przygotowaniu.");
+    }
+}
 
 
 </script>
