@@ -78,18 +78,13 @@
 
 <div id="account-sidebar-overlay" onclick="toggleAccountMenu(false)" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden"></div>
 <div id="account-sidebar" class="fixed top-0 right-0 h-full w-full sm:w-[450px] bg-white z-50 shadow-2xl slide-panel p-6 overflow-y-auto flex flex-col">
-    <div class="flex justify-between items-center border-b border-slate-100 pb-4 mb-6">
+        <div class="flex justify-between items-start border-b border-slate-100 pb-6 mb-6">
         <div>
-            <h2 class="text-xl font-black text-slate-800">Panel użytkownika</h2>
-            <p id="acc-email-display" class="text-xs text-blue-600 font-bold"></p>
-                    <div id="edit-profile-box" class="mt-4 p-4 bg-blue-50 rounded-2xl border border-blue-100 hidden">
-            <input id="edit-nazwa" placeholder="Nowa nazwa firmy/imię" class="w-full p-2 mb-2 rounded-lg border text-xs">
-            <input id="edit-tel" placeholder="Nowy telefon" class="w-full p-2 mb-2 rounded-lg border text-xs">
-            <button onclick="saveProfile()" class="w-full bg-blue-600 text-white py-2 rounded-lg text-[10px] font-bold uppercase">Zapisz zmiany</button>
+            <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tighter">Panel użytkownika</h2>
+            <p id="acc-email-display" class="text-xs text-blue-600 font-bold mt-1"></p>
+            <button onclick="document.getElementById('edit-profile-box').classList.toggle('hidden')" class="text-[9px] font-bold text-slate-400 hover:text-blue-600 mt-2 uppercase">⚙️ Edytuj moje dane</button>
         </div>
-        <button onclick="document.getElementById('edit-profile-box').classList.toggle('hidden')" class="text-[10px] font-bold text-slate-400 hover:text-blue-600 mt-2">⚙️ Edytuj moje dane</button>
-        </div>
-        <button onclick="toggleAccountMenu(false)" class="text-sm font-bold text-slate-400 hover:text-slate-600">✖ Zamknij</button>
+        <button onclick="toggleAccountMenu(false)" class="text-[10px] font-black text-slate-400 hover:text-red-500 uppercase tracking-widest">✕ Zamknij</button>
     </div>
 
     <div class="mb-6">
@@ -572,14 +567,17 @@ async function checkUrlRoute() {
 
     const finalLocString = z.kod_pocztowy ? `${z.miasto} (${z.kod_pocztowy})` : z.miasto;
 
-    document.getElementById('details-content').innerHTML = `
+        document.getElementById('details-content').innerHTML = `
         <div class="bg-white p-8 rounded-[2.5rem] card-shadow border border-slate-100 space-y-6">
             <div class="flex justify-between items-start">
-                <h1 class="text-3xl font-black leading-tight">${z.tytul}</h1>
-                <span class="bg-blue-50 text-blue-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-tighter">${z.kategoria || 'Inne'}</span>
+                <h1 class="text-3xl font-black leading-tight uppercase">${z.tytul}</h1>
+                <div class="flex gap-2">
+                    <span class="bg-blue-50 text-blue-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-tighter">${z.kategoria || 'Inne'}</span>
+                    ${currentUser && currentUser.id === z.user_id ? `<button onclick="del(${z.id})" class="bg-red-50 text-red-600 px-4 py-2 rounded-xl text-[10px] font-black border border-red-100 uppercase">Usuń</button>` : ''}
+                </div>
             </div>
             <div class="flex flex-wrap gap-4 text-xs font-bold text-slate-400 uppercase">
-                <span>📍 ${finalLocString}</span>
+                <span>📍 ${z.kod_pocztowy ? `${z.miasto} (${z.kod_pocztowy})` : z.miasto}</span>
             </div>
             <div class="text-slate-600 leading-relaxed whitespace-pre-wrap border-t border-slate-50 pt-6">${z.opis}</div>
             ${z.typ_wpisu === 'klient' ? `
