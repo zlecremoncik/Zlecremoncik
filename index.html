@@ -706,18 +706,21 @@ async function loadAccountPanel(page = 1) {
         const pagedApps = apps?.slice(start, start + perPage);
 
         postsList.innerHTML = pagedApps?.map(a => `
-            <div class="border border-blue-200 rounded-2xl p-5 bg-white shadow-sm mb-4 cursor-pointer" onclick="openDetails(${a.zlecenie?.id})">
-                <div class="flex justify-between items-start mb-2">
-                    <h4 class="font-bold text-sm uppercase tracking-tight">${a.zlecenie?.tytul}</h4>
-                    <span class="text-[9px] bg-blue-50 text-blue-600 px-2 py-1 rounded font-bold border border-blue-100 uppercase">Opłacone</span>
+            <div class="border border-blue-200 rounded-xl p-3 bg-white shadow-sm mb-2 cursor-pointer hover:border-blue-400 transition-all" onclick="openDetails(${a.zlecenie?.id})">
+                <div class="flex justify-between items-center mb-1">
+                    <h4 class="font-bold text-xs uppercase tracking-tight text-slate-800">${a.zlecenie?.tytul}</h4>
+                    <span class="text-[8px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-bold border border-blue-100 uppercase">Opłacone</span>
                 </div>
-                <p class="text-[11px] text-slate-500 mb-3">${a.zlecenie?.opis?.substring(0, 80)}...</p>
-                <div class="bg-slate-50 p-3 rounded-xl mb-4 text-[10px] space-y-1">
-                    <p><span class="text-slate-400">Dane Zleceniodawcy:</span> <span class="font-bold">${a.zlecenie?.user_email?.split('@')[0]}</span></p>
-                    <p><span class="text-slate-400">Telefon:</span> <span class="font-bold">${a.zlecenie?.telefon}</span></p>
-                    <p><span class="text-slate-400">Email:</span> <span class="font-bold">${a.zlecenie?.user_email}</span></p>
+                <p class="text-[10px] text-slate-500 mb-1.5 line-clamp-1">${a.zlecenie?.opis}</p>
+                <div class="bg-slate-50 p-2 rounded-lg mb-2 text-[10px] space-y-0.5 border border-slate-100">
+                    <p><span class="text-slate-400">Dane Zleceniodawcy:</span> <span class="font-bold">${a.zlecenie?.user_email?.split('@')[0] || 'undefined'}</span></p>
+                    <p><span class="text-slate-400">Telefon:</span> <span class="font-bold text-slate-700">${a.zlecenie?.telefon || 'Brak'}</span></p>
+                    <p><span class="text-slate-400">Email:</span> <span class="font-bold">${a.zlecenie?.user_email || 'undefined'}</span></p>
                 </div>
-                <button onclick="event.stopPropagation(); openChatBox('${a.zlecenie?.user_id}', ${a.zlecenie?.id}, '${a.zlecenie?.user_email?.split('@')[0]}')" class="w-full bg-slate-900 text-white py-3 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-black transition-colors">Czat</button>
+                <div class="flex gap-2">
+                    <button onclick="event.stopPropagation(); openChatBox('${a.zlecenie?.user_id}', ${a.zlecenie?.id}, '${a.zlecenie?.user_email?.split('@')[0]}')" class="flex-1 bg-slate-900 text-white py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-black transition-colors">Czat</button>
+                    <button onclick="event.stopPropagation(); delBought('${a.id}')" class="px-3 bg-red-50 text-red-600 border border-red-100 rounded-lg text-[10px] font-bold uppercase hover:bg-red-100 transition-colors">Usuń</button>
+                </div>
             </div>
         `).join('') || "Brak zakupionych zleceń.";
 
@@ -806,6 +809,7 @@ async function sendMessage() {
 }
 
 async function del(id) { if(confirm("Czy na pewno chcesz usunąć to ogłoszenie?")) { await db.from("zlecenia").delete().eq('id', id); loadAccountPanel(); } }
+async function delBought(zgloszenieId) { if(confirm("Czy na pewno chcesz usunąć to zlecenie ze swojej listy?")) { await db.from("zgloszenia").delete().eq('id', zgloszenieId); loadAccountPanel(); } }
 async function editPost(id) { const nt = prompt("Wprowadź nowy tytuł:"); if(nt) { await db.from('zlecenia').update({tytul: nt}).eq('id', id); loadAccountPanel(); } }
 
 function openLegal(type) {
