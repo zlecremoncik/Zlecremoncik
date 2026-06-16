@@ -105,7 +105,8 @@
                 <textarea id="edit-p-o" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl h-32 outline-none focus:border-blue-400"></textarea>
             </div>
             <div>
-                <label class="text-[10px] font-bold text-slate-400 uppercase">Nowe zdjęcia (Zostaw puste, aby nie zmieniać)</label>
+                <label class="text-[10px] font-bold text-slate-400 uppercase">Aktualne / Nowe zdjęcia (Zostaw puste, aby nie zmieniać)</label>
+                <div id="edit-media-preview" class="flex gap-2 mb-2 hidden"></div>
                 <div class="grid grid-cols-3 gap-2 mt-1">
                     <input id="edit-p-img1" type="file" accept="image/*" class="text-[9px] bg-slate-50 p-2 rounded-xl border border-slate-100">
                     <input id="edit-p-img2" type="file" accept="image/*" class="text-[9px] bg-slate-50 p-2 rounded-xl border border-slate-100">
@@ -545,15 +546,17 @@ async function uploadFile(fileInputId) {
     const file = fileInput.files[0];
     const fileExt = file.name.split('.').pop();
     const fileName = `${Math.random()}_${Date.now()}.${fileExt}`;
-    const BUCKET_NAME = "zdjecia-zlecen"; // Upewnij się, że masz taki bucket w Supabase Storage (publiczny!)
+    const BUCKET_NAME = "zdjecia-zlecen";
     
     const { data, error } = await db.storage.from(BUCKET_NAME).upload(fileName, file);
     if (error) {
         console.error("Błąd uploadu zdjęcia:", error.message);
         return null;
     }
-    const { data: urlData } = db.storage.from(BUCKET_NAME).getPublicUrl(fileName);
-    return urlData.publicUrl;
+    
+    // POPRAWKA: Precyzyjne i bezpieczne wyciągnięcie adresu URL jako String
+    const res = db.storage.from(BUCKET_NAME).getPublicUrl(fileName);
+    return res.data?.publicUrl || res.publicUrl || null;
 }
 
 async function add() {
@@ -716,9 +719,11 @@ async function checkUrlRoute() {
     const displayPhone = hasAccess ? (z.telefon || 'Brak') : "Ukryty (wykup kontakt)";
     const displayEmail = hasAccess ? ownerEmail : "Ukryty (wykup kontakt)";
 
-    // Generowanie sekcji zdjęć - teraz wykonuje się poprawnie po ustaleniu hasAccess
+    // Generowanie sekcji zdjęć - odfiltrowujemy puste oraz zepsute wpisy [object Object]
     let imagesHtml = "";
-    const availableImages = [z.zdjecie1, z.zdjecie2, z.zdjecie3].filter(img => img && img.trim() !== "");
+    const availableImages = [z.zdjecie1, z.zdjecie2, z.zdjecie3].filter(img => {
+        return img && img.trim() !== "" && !img.includes("[object") && img !== "undefined";
+    });
     if (availableImages.length > 0) {
         imagesHtml = `
             <div class="border-t border-slate-100 pt-4">
@@ -1051,6 +1056,18 @@ async function editPost(id) {
     document.getElementById('edit-p-o').value = z.opis || "";
     document.getElementById('edit-p-p').value = z.telefon || "";
     
+    // Pokazywanie podglądu istniejących zdjęć w edycji
+    const previewBox = document.getElementById('edit-media-preview');
+    if(previewBox) {
+        const oldImgs = [z.zdjecie1, z.zdjecie2, z.zdjecie3].filter(img => img && img.trim() !== "" && !img.includes("[object"));
+        if(oldImgs.length > 0) {
+            previewBox.classList.remove('hidden');
+            previewBox.innerHTML = oldImgs.map(url => `<img src="${url}" class="w-12 h-12 object-cover rounded-lg border">`).join('');
+        } else {
+            previewBox.classList.add('hidden');
+        }
+    }
+
     // Czyszczenie pól plików
     document.getElementById('edit-p-img1').value = "";
     document.getElementById('edit-p-img2').value = "";
