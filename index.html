@@ -610,7 +610,22 @@ async function checkUrlRoute() {
         }
     }
 
-    const finalLocString = z.kod_pocztowy ? `${z.miasto} (${z.kod_pocztowy})` : z.miasto;
+    const finalLocString = z.kod_pocytowy ? `${z.miasto} (${z.kod_pocztowy})` : z.miasto;
+
+    // Sprawdzamy czy bieżący użytkownik wykupił już to zlecenie lub jest jego autorem
+    let hasAccess = false;
+    if (currentUser) {
+        if (z.user_id === currentUser.id) {
+            hasAccess = true;
+        } else {
+            const { data: bz } = await db.from('zgloszenia').select('id').eq('zlecenie_id', z.id).eq('wykonawca_id', currentUser.id).maybeSingle();
+            if (bz) hasAccess = true;
+        }
+    }
+
+    // Jeśli brak dostępu, ukrywamy prawdziwy e-mail i telefon
+    const displayPhone = hasAccess ? (z.telefon || 'Brak') : "Ukryty (wykup kontakt)";
+    const displayEmail = hasAccess ? ownerEmail : "Ukryty (wykup kontakt)";
 
     // Generowanie sekcji zdjęć (tylko gdy istnieją w obiekcie zlecenia)
     let imagesHtml = "";
@@ -641,8 +656,8 @@ async function checkUrlRoute() {
 
             <div class="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 max-w-sm text-xs space-y-1">
                 <p><span class="text-slate-400">Dane Zleceniodawcy:</span> <span class="font-bold text-slate-800">${ownerName}</span></p>
-                <p><span class="text-slate-400">Telefon:</span> <span class="font-bold text-slate-900">${z.telefon || 'Brak'}</span></p>
-                <p><span class="text-slate-400">Email:</span> <span class="font-bold text-slate-800">${ownerEmail}</span></p>
+                <p><span class="text-slate-400">Telefon:</span> <span class="font-bold ${hasAccess ? 'text-slate-900' : 'text-amber-600 italic'}">${displayPhone}</span></p>
+                <p><span class="text-slate-400">Email:</span> <span class="font-bold ${hasAccess ? 'text-slate-800' : 'text-amber-600 italic'}">${displayEmail}</span></p>
             </div>
 
             <div class="text-slate-600 leading-relaxed whitespace-pre-wrap border-t border-slate-50 pt-4 text-sm">${z.opis}</div>
@@ -673,6 +688,21 @@ async function checkUrlRoute() {
 
     const opinionsSec = document.getElementById('opinions-section');
     if (z.typ_wpisu === 'wykonawca') { opinionsSec.classList.remove('hidden'); loadOpinions(z.user_id); } else { opinionsSec.classList.add('hidden'); }
+}
+
+// Funkcje do obsługi modala powiększania zdjęć
+function openImageModal(url) {
+    let imgModal = document.getElementById('image-fullscreen-modal');
+    if (!imgModal) {
+        imgModal = document.createElement('div');
+        imgModal.id = 'image-fullscreen-modal';
+        imgModal.className = 'fixed inset-0 bg-slate-900/90 backdrop-blur-md z-[60] flex items-center justify-center p-4 cursor-zoom-out';
+        imgModal.onclick = () => imgModal.classList.add('hidden');
+        imgModal.innerHTML = `<img id='fullscreen-target-img' class='max-w-full max-h-[90vh] rounded-2xl shadow-2xl border border-white/10'>`;
+        document.body.appendChild(imgModal);
+    }
+    document.getElementById('fullscreen-target-img').src = url;
+    imgModal.classList.remove('hidden');
 }
 
 // Funkcje do obsługi modala powiększania zdjęć
