@@ -720,7 +720,7 @@ async function checkUrlRoute() {
 
     // Generowanie sekcji zdjęć - odfiltrowujemy puste oraz zepsute wpisy [object Object]
     let imagesHtml = "";
-    const availableImages = [z.img1, z.img2, z.img3].filter(img => {
+    const availableImages = [z.zdjecie1, z.zdjecie2, z.zdjecie3].filter(img => {
         return img && img.trim() !== "" && !img.includes("[object") && img !== "undefined";
     });
     if (availableImages.length > 0) {
