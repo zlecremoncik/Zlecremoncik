@@ -716,7 +716,7 @@ async function checkUrlRoute() {
     const displayPhone = hasAccess ? (z.telefon || 'Brak') : "Ukryty (wykup kontakt)";
     const displayEmail = hasAccess ? ownerEmail : "Ukryty (wykup kontakt)";
 
-    // Generowanie sekcji zdjęć (tylko gdy istnieją w obiekcie zlecenia)
+    // Generowanie sekcji zdjęć - teraz wykonuje się poprawnie po ustaleniu hasAccess
     let imagesHtml = "";
     const availableImages = [z.zdjecie1, z.zdjecie2, z.zdjecie3].filter(img => img && img.trim() !== "");
     if (availableImages.length > 0) {
