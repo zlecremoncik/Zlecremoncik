@@ -319,17 +319,25 @@ async function updateUI(session) {
             document.getElementById('acc-email-display').innerText = currentUser.email;
             
             // Logika Google: Sprawdź czy mamy zapisaną rolę wykonawcy
-            const savedRole = localStorage.getItem('google_login_role');
+            const savedRole = localStorage.getItem('google_login_role') || currentUser.user_metadata?.rola;
             let { data: prof } = await db.from('profile_wykonawcow').select('*').eq('user_id', currentUser.id).maybeSingle();
             
             if (!prof && savedRole === 'wykonawca') {
-                const { data: newProf } = await db.from('profile_wykonawcow').insert([{
+                const { data: newProf, error: insErr } = await db.from('profile_wykonawcow').insert([{
                     user_id: currentUser.id,
+                    email: currentUser.email,
                     nazwa_firmy: currentUser.user_metadata?.full_name || "Fachowiec Google",
                     punkty: 10,
-                    miejscowosc: "Nie podano"
-                }]).select().single();
-                prof = newProf;
+                    miejscowosc: "Nie podano",
+                    specjalizacja: "Ogólne prace"
+                }]).select().maybeSingle();
+                
+                if (!insErr && newProf) {
+                    prof = newProf;
+                } else {
+                    const { data: retryProf } = await db.from('profile_wykonawcow').select('*').eq('user_id', currentUser.id).maybeSingle();
+                    if (retryProf) prof = retryProf;
+                }
                 localStorage.removeItem('google_login_role');
             }
 
@@ -376,7 +384,10 @@ async function loginWithGoogle() {
     localStorage.setItem('google_login_role', role); 
     const { error } = await db.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: window.location.href.split('#')[0] }
+        options: { 
+            redirectTo: window.location.href.split('#')[0],
+            options: { data: { rola: role } }
+        }
     });
     if (error) alert("Błąd Google: " + error.message);
 }
