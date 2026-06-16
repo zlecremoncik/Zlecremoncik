@@ -574,7 +574,6 @@ async function add() {
 
     btn.disabled = true; btn.innerText = "Trwa publikowanie...";
     
-    // Upload zdjęć do Supabase Storage
     const imgUrl1 = await uploadFile('img1');
     const imgUrl2 = await uploadFile('img2');
     const imgUrl3 = await uploadFile('img3');
@@ -583,9 +582,9 @@ async function add() {
     
     const insertData = {
         tytul: tVal, miasto: mVal, opis: oVal, telefon: pVal, 
-        kategoria: kVal || 'Inne', user_id: currentUser.id, typ_wpisu: wyznaczonaRolaWpisu,
-        user_email: currentUser.email,
-        zdjecie1: imgUrl1, zdjecie2: imgUrl2, zdjecie3: imgUrl3
+        kategoria: kVal || 'Inne', identyfikator_uzytkownika: currentUser.id, typ_wpisu: wyznaczonaRolaWpisu,
+        adres_e_mail_uzytkownika: currentUser.email,
+        img1: imgUrl1, img2: imgUrl2, img3: imgUrl3
     };
     if (pcVal && pcVal.trim() !== "") insertData.kod_pocztowy = pcVal;
 
@@ -721,7 +720,7 @@ async function checkUrlRoute() {
 
     // Generowanie sekcji zdjęć - odfiltrowujemy puste oraz zepsute wpisy [object Object]
     let imagesHtml = "";
-    const availableImages = [z.zdjecie1, z.zdjecie2, z.zdjecie3].filter(img => {
+    const availableImages = [z.img1, z.img2, z.img3].filter(img => {
         return img && img.trim() !== "" && !img.includes("[object") && img !== "undefined";
     });
     if (availableImages.length > 0) {
