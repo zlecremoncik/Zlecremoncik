@@ -76,18 +76,73 @@
     </div>
 </div>
 
+<div id="edit-post-modal-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white p-6 sm:p-8 rounded-[2.5rem] card-shadow max-w-2xl w-full border border-slate-100 relative max-h-[90vh] overflow-y-auto">
+        <button onclick="toggleEditPostModal(false)" class="absolute top-5 right-6 text-slate-400 hover:text-slate-600 font-bold text-lg">✖</button>
+        <h2 class="text-xl font-black mb-6 text-slate-800 flex items-center gap-2"><span class="bg-amber-500 text-white w-7 h-7 flex items-center justify-center rounded-full text-xs">✏️</span> Edytuj swoje ogłoszenie</h2>
+        <input type="hidden" id="edit-post-id">
+        <div class="space-y-4">
+            <div>
+                <label class="text-[10px] font-bold text-slate-400 uppercase">Tytuł</label>
+                <input id="edit-p-t" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl outline-none focus:border-blue-400">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase">Miasto</label>
+                    <input id="edit-p-m" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl outline-none focus:border-blue-400">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase">Kod pocztowy</label>
+                    <input id="edit-p-postcode" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl outline-none focus:border-blue-400">
+                </div>
+            </div>
+            <div>
+                <label class="text-[10px] font-bold text-slate-400 uppercase">Kategoria</label>
+                <select id="edit-p-k" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl outline-none font-bold text-sm text-slate-700 bg-white"></select>
+            </div>
+            <div>
+                <label class="text-[10px] font-bold text-slate-400 uppercase">Opis zlecenia</label>
+                <textarea id="edit-p-o" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl h-32 outline-none focus:border-blue-400"></textarea>
+            </div>
+            <div>
+                <label class="text-[10px] font-bold text-slate-400 uppercase">Nowe zdjęcia (Zostaw puste, aby nie zmieniać)</label>
+                <div class="grid grid-cols-3 gap-2 mt-1">
+                    <input id="edit-p-img1" type="file" accept="image/*" class="text-[9px] bg-slate-50 p-2 rounded-xl border border-slate-100">
+                    <input id="edit-p-img2" type="file" accept="image/*" class="text-[9px] bg-slate-50 p-2 rounded-xl border border-slate-100">
+                    <input id="edit-p-img3" type="file" accept="image/*" class="text-[9px] bg-slate-50 p-2 rounded-xl border border-slate-100">
+                </div>
+            </div>
+            <div>
+                <label class="text-[10px] font-bold text-slate-400 uppercase">Telefon kontaktowy</label>
+                <input id="edit-p-p" type="tel" maxlength="9" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl outline-none focus:border-blue-400">
+            </div>
+            <button onclick="saveEditedPost()" id="edit-post-save-btn" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase shadow-xl hover:bg-blue-700 transition-all">Zapisz zmiany w ogłoszeniu</button>
+        </div>
+    </div>
+</div>
+
 <div id="account-sidebar-overlay" onclick="toggleAccountMenu(false)" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden"></div>
 <div id="account-sidebar" class="fixed top-0 right-0 h-full w-full sm:w-[450px] bg-white z-50 shadow-2xl slide-panel p-6 overflow-y-auto flex flex-col">
     <div class="flex justify-between items-center border-b border-slate-100 pb-4 mb-6">
         <div>
             <h2 class="text-xl font-black text-slate-800">Panel użytkownika</h2>
             <p id="acc-email-display" class="text-xs text-blue-600 font-bold"></p>
-                    <div id="edit-profile-box" class="mt-4 p-4 bg-blue-50 rounded-2xl border border-blue-100 hidden">
-            <input id="edit-nazwa" placeholder="Nowa nazwa firmy/imię" class="w-full p-2 mb-2 rounded-lg border text-xs">
-            <input id="edit-tel" placeholder="Nowy telefon" class="w-full p-2 mb-2 rounded-lg border text-xs">
+                    <div id="edit-profile-box" class="mt-4 p-4 bg-blue-50 rounded-2xl border border-blue-100 hidden space-y-2">
+            <div>
+                <label class="text-[9px] font-bold text-slate-400 uppercase">Adres E-mail (Brak możliwości zmiany)</label>
+                <input id="edit-email" class="w-full p-2 rounded-lg border text-xs bg-slate-100 text-slate-500 cursor-not-allowed" disabled>
+            </div>
+            <div>
+                <label class="text-[9px] font-bold text-slate-700 uppercase">Nazwa firmy / Imię i Nazwisko</label>
+                <input id="edit-nazwa" placeholder="Nazwa firmy/imię" class="w-full p-2 rounded-lg border text-xs">
+            </div>
+            <div>
+                <label class="text-[9px] font-bold text-slate-700 uppercase">Numer telefonu</label>
+                <input id="edit-tel" placeholder="Telefon" class="w-full p-2 rounded-lg border text-xs">
+            </div>
             <button onclick="saveProfile()" class="w-full bg-blue-600 text-white py-2 rounded-lg text-[10px] font-bold uppercase">Zapisz zmiany</button>
         </div>
-        <button onclick="document.getElementById('edit-profile-box').classList.toggle('hidden')" class="text-[10px] font-bold text-slate-400 hover:text-blue-600 mt-2">⚙️ Edytuj moje dane</button>
+        <button onclick="openEditProfileForm()" class="text-[10px] font-bold text-slate-400 hover:text-blue-600 mt-2">⚙️ Edytuj moje dane</button>
         </div>
         <button onclick="toggleAccountMenu(false)" class="text-sm font-bold text-slate-400 hover:text-slate-600">✖ Zamknij</button>
     </div>
@@ -271,12 +326,19 @@ const SKLADNICA_SPECJALIZACJI = [
 ];
 
 const selectNodes = document.querySelectorAll('.select-dynamic-categories');
-selectNodes.forEach(node => {
-    const isFilter = node.id === 'search-category';
-    let optionsHtml = isFilter ? '<option value="">📂 Wszystkie kategorie branżowe</option>' : '<option value="">Wybierz kategorię główną prac...</option>';
-    optionsHtml += SKLADNICA_SPECJALIZACJI.map(spec => `<option value="${spec}">${spec}</option>`).join("");
-    node.innerHTML = optionsHtml;
-});
+function setupCategorySelects() {
+    selectNodes.forEach(node => {
+        const isFilter = node.id === 'search-category';
+        let optionsHtml = isFilter ? '<option value="">📂 Wszystkie kategorie branżowe</option>' : '<option value="">Wybierz kategorię główną prac...</option>';
+        optionsHtml += SKLADNICA_SPECJALIZACJI.map(spec => `<option value="${spec}">${spec}</option>`).join("");
+        node.innerHTML = optionsHtml;
+    });
+    const editSelect = document.getElementById('edit-p-k');
+    if(editSelect) {
+        editSelect.innerHTML = SKLADNICA_SPECJALIZACJI.map(spec => `<option value="${spec}">${spec}</option>`).join("");
+    }
+}
+setupCategorySelects();
 
 const containerCheckboxes = document.getElementById('spec-checkboxes-container');
 containerCheckboxes.innerHTML = SKLADNICA_SPECJALIZACJI.map(spec => `
@@ -477,6 +539,23 @@ function toggleAddModal(open) {
     if(open) modal.classList.remove('hidden'); else modal.classList.add('hidden');
 }
 
+async function uploadFile(fileInputId) {
+    const fileInput = document.getElementById(fileInputId);
+    if (!fileInput || !fileInput.files || fileInput.files.length === 0) return null;
+    const file = fileInput.files[0];
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random()}_${Date.now()}.${fileExt}`;
+    const BUCKET_NAME = "zdjecia-zlecen"; // Upewnij się, że masz taki bucket w Supabase Storage (publiczny!)
+    
+    const { data, error } = await db.storage.from(BUCKET_NAME).upload(fileName, file);
+    if (error) {
+        console.error("Błąd uploadu zdjęcia:", error.message);
+        return null;
+    }
+    const { data: urlData } = db.storage.from(BUCKET_NAME).getPublicUrl(fileName);
+    return urlData.publicUrl;
+}
+
 async function add() {
     const btn = document.getElementById('add-btn');
     const tVal = document.getElementById("t").value;
@@ -491,12 +570,19 @@ async function add() {
     }
 
     btn.disabled = true; btn.innerText = "Trwa publikowanie...";
+    
+    // Upload zdjęć do Supabase Storage
+    const imgUrl1 = await uploadFile('img1');
+    const imgUrl2 = await uploadFile('img2');
+    const imgUrl3 = await uploadFile('img3');
+
     const wyznaczonaRolaWpisu = currentProfile ? 'wykonawca' : 'klient';
     
     const insertData = {
         tytul: tVal, miasto: mVal, opis: oVal, telefon: pVal, 
         kategoria: kVal || 'Inne', user_id: currentUser.id, typ_wpisu: wyznaczonaRolaWpisu,
-        user_email: currentUser.email // <--- TUTAJ ZAPISUJEMY EMAIL DO TABELI ZLECENIA
+        user_email: currentUser.email,
+        zdjecie1: imgUrl1, zdjecie2: imgUrl2, zdjecie3: imgUrl3
     };
     if (pcVal && pcVal.trim() !== "") insertData.kod_pocztowy = pcVal;
 
@@ -512,6 +598,9 @@ async function add() {
         document.getElementById("o").value = "";
         document.getElementById("m").value = "";
         document.getElementById("postcode").value = "";
+        document.getElementById("img1").value = "";
+        document.getElementById("img2").value = "";
+        document.getElementById("img3").value = "";
         btn.disabled = false; btn.innerText = "Opublikuj ogłoszenie";
         toggleAddModal(false); load(); if(currentUser) loadAccountPanel(); 
     }
@@ -608,9 +697,9 @@ async function checkUrlRoute() {
         } else {
             actionBtn = `<button onclick="applyForJob(${z.id})" class="w-full bg-amber-500 text-white py-5 rounded-2xl font-black uppercase text-sm shadow-lg shadow-amber-100 hover:scale-[1.01] transition-all">🙋 Jestem Zainteresowany (-1 pkt)</button>`;
         }
-    }
+   }
 
-    const finalLocString = z.kod_pocytowy ? `${z.miasto} (${z.kod_pocztowy})` : z.miasto;
+    const finalLocString = z.kod_pocztowy ? `${z.miasto} (${z.kod_pocztowy})` : z.miasto;
 
     // Sprawdzamy czy bieżący użytkownik wykupił już to zlecenie lub jest jego autorem
     let hasAccess = false;
@@ -944,8 +1033,79 @@ async function delBought(zgloszenieId) {
         loadAccountPanel(); 
     } 
 }
-async function editPost(id) { const nt = prompt("Wprowadź nowy tytuł:"); if(nt) { await db.from('zlecenia').update({tytul: nt}).eq('id', id); loadAccountPanel(); } }
+function toggleEditPostModal(open) {
+    const modal = document.getElementById('edit-post-modal-overlay');
+    if(open) modal.classList.remove('hidden'); else modal.classList.add('hidden');
+}
 
+async function editPost(id) {
+    toggleAccountMenu(false);
+    const { data: z, error } = await db.from('zlecenia').select('*').eq('id', id).single();
+    if (error || !z) return alert("Nie udało się pobrać danych ogłoszenia.");
+
+    document.getElementById('edit-post-id').value = z.id;
+    document.getElementById('edit-p-t').value = z.tytul || "";
+    document.getElementById('edit-p-m').value = z.miasto || "";
+    document.getElementById('edit-p-postcode').value = z.kod_pocztowy || "";
+    document.getElementById('edit-p-k').value = z.kategoria || "";
+    document.getElementById('edit-p-o').value = z.opis || "";
+    document.getElementById('edit-p-p').value = z.telefon || "";
+    
+    // Czyszczenie pól plików
+    document.getElementById('edit-p-img1').value = "";
+    document.getElementById('edit-p-img2').value = "";
+    document.getElementById('edit-p-img3').value = "";
+
+    toggleEditPostModal(true);
+}
+
+async function saveEditedPost() {
+    const id = document.getElementById('edit-post-id').value;
+    const btn = document.getElementById('edit-post-save-btn');
+    
+    const tVal = document.getElementById('edit-p-t').value;
+    const mVal = document.getElementById('edit-p-m').value;
+    const pcVal = document.getElementById('edit-p-postcode').value;
+    const kVal = document.getElementById('edit-p-k').value;
+    const oVal = document.getElementById('edit-p-o').value;
+    const pVal = document.getElementById('edit-p-p').value;
+
+    if (!tVal || !mVal || !oVal || pVal.length !== 9) {
+        return alert("Pola Tytuł, Miasto, Opis oraz 9-cyfrowy Telefon są obowiązkowe.");
+    }
+
+    btn.disabled = true; btn.innerText = "Trwa zapisywanie zmian...";
+
+    // Pobieramy stare dane, aby zachować zdjęcia, jeśli użytkownik nie wybrał nowych
+    const { data: oldPost } = await db.from('zlecenia').select('zdjecie1, zdjecie2, zdjecie3').eq('id', id).single();
+
+    const newImg1 = await uploadFile('edit-p-img1');
+    const newImg2 = await uploadFile('edit-p-img2');
+    const newImg3 = await uploadFile('edit-p-img3');
+
+    const updateData = {
+        tytul: tVal,
+        miasto: mVal,
+        kod_pocztowy: pcVal || null,
+        kategoria: kVal,
+        opis: oVal,
+        telefon: pVal,
+        zdjecie1: newImg1 ? newImg1 : oldPost.zdjecie1,
+        zdjecie2: newImg2 ? newImg2 : oldPost.zdjecie2,
+        zdjecie3: newImg3 ? newImg3 : oldPost.zdjecie3
+    };
+
+    const { error } = await db.from('zlecenia').update(updateData).eq('id', id);
+
+    if (error) {
+        alert("Błąd aktualizacji: " + error.message);
+    } else {
+        alert("Ogłoszenie zostało pomyślnie zaktualizowane!");
+        toggleEditPostModal(false);
+        load();
+    }
+    btn.disabled = false; btn.innerText = "Zapisz zmiany w ogłoszeniu";
+}
 function openLegal(type) {
     const modal = document.getElementById('legal-modal');
     const title = document.getElementById('legal-title');
@@ -963,20 +1123,37 @@ function openLegal(type) {
     }
 }
 function closeLegal() { document.getElementById('legal-modal').classList.add('hidden'); }
-    async function saveProfile() {
+    function openEditProfileForm() {
+    const box = document.getElementById('edit-profile-box');
+    box.classList.toggle('hidden');
+    if(!box.classList.contains('hidden')) {
+        document.getElementById('edit-email').value = currentUser.email;
+        if(currentProfile) {
+            document.getElementById('edit-nazwa').value = currentProfile.nazwa_firmy || "";
+            document.getElementById('edit-tel').value = currentProfile.telefon || "";
+        } else {
+            document.getElementById('edit-nazwa').value = currentUser.user_metadata?.full_name || "";
+            document.getElementById('edit-tel').value = currentUser.user_metadata?.telefon_kontaktowy || "";
+        }
+    }
+}
+
+async function saveProfile() {
     const nowaNazwa = document.getElementById('edit-nazwa').value;
     const nowyTel = document.getElementById('edit-tel').value;
     
     if(currentProfile) {
         const { error } = await db.from('profile_wykonawcow').update({ 
-            nazwa_firmy: nowaNazwa || currentProfile.nazwa_firmy,
-            telefon: nowyTel || currentProfile.telefon 
+            nazwa_firmy: nowaNazwa,
+            telefon: nowyTel 
         }).eq('user_id', currentUser.id);
         
         if(!error) { alert("Dane zaktualizowane!"); window.location.reload(); }
     } else {
-        // Dla klienta aktualizujemy w metadata lub nowej tabeli jeśli ją masz
-        alert("Funkcja edycji dla zleceniodawcy w przygotowaniu.");
+        const { error } = await db.auth.updateUser({
+            data: { full_name: nowaNazwa, telefon_kontaktowy: nowyTel }
+        });
+        if(!error) { alert("Dane klienta zaktualizowane!"); window.location.reload(); }
     }
 }
 
