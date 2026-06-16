@@ -353,6 +353,7 @@ async function updateUI(session) {
 db.auth.onAuthStateChange((event, session) => { updateUI(session); });
 checkUser();
 window.addEventListener('hashchange', checkUrlRoute);
+checkUrlRoute();
 
 if (localStorage.getItem('cookie-accept') === 'true') {
     document.getElementById('cookie-banner').classList.add('hidden');
@@ -558,8 +559,8 @@ async function checkUrlRoute() {
     document.getElementById('filter-panel').classList.add('hidden');
     document.getElementById('details-view').classList.remove('hidden');
 
-    // Pobieramy zlecenie wraz z mailem autora
-    const { data: z } = await db.from("zlecenia").select("*, autor:user_id(email)").eq('id', id).single();
+    // Pobieramy zlecenie bezpośrednio
+    const { data: z } = await db.from("zlecenia").select("*").eq('id', id).single();
     if (!z) return;
 
     const { count: totalApplicants } = await db.from('zgloszenia').select('*', { count: 'exact', head: true }).eq('zlecenie_id', id);
@@ -571,7 +572,7 @@ async function checkUrlRoute() {
         bzgoszenie = appData;
     }
 
-    const ownerEmail = z.autor?.email || 'Brak';
+    const ownerEmail = z.user_email || 'Brak';
     const ownerName = ownerEmail !== 'Brak' ? ownerEmail.split('@')[0] : 'Brak';
 
     let actionBtn = "";
