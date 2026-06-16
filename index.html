@@ -549,14 +549,14 @@ async function uploadFile(fileInputId) {
     const BUCKET_NAME = "zdjecia-zlecen";
     
     const { data, error } = await db.storage.from(BUCKET_NAME).upload(fileName, file);
+    
     if (error) {
-        console.error("Błąd uploadu zdjęcia:", error.message);
+        alert("Błąd przesyłania zdjęcia: " + error.message + " (Sprawdź czy Bucket 'zdjecia-zlecen' istnieje w Storage)");
         return null;
     }
     
-    // POPRAWKA: Precyzyjne i bezpieczne wyciągnięcie adresu URL jako String
-    const res = db.storage.from(BUCKET_NAME).getPublicUrl(fileName);
-    return res.data?.publicUrl || res.publicUrl || null;
+    const { data: urlData } = db.storage.from(BUCKET_NAME).getPublicUrl(fileName);
+    return urlData?.publicUrl || null;
 }
 
 async function add() {
