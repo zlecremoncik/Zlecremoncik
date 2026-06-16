@@ -612,6 +612,22 @@ async function checkUrlRoute() {
 
     const finalLocString = z.kod_pocztowy ? `${z.miasto} (${z.kod_pocztowy})` : z.miasto;
 
+    // Generowanie sekcji zdjęć (tylko gdy istnieją w obiekcie zlecenia)
+    let imagesHtml = "";
+    const availableImages = [z.zdjecie1, z.zdjecie2, z.zdjecie3].filter(img => img && img.trim() !== "");
+    if (availableImages.length > 0) {
+        imagesHtml = `
+            <div class="border-t border-slate-100 pt-4">
+                <p class="text-[10px] font-black text-slate-400 uppercase mb-2 tracking-wider">Załączone zdjęcia (kliknij, aby powiększyć):</p>
+                <div class="flex flex-wrap gap-2">
+                    ${availableImages.map(imgUrl => `
+                        <img src="${imgUrl}" onclick="openImageModal('${imgUrl}')" class="w-24 h-24 object-cover rounded-xl border border-slate-200 cursor-zoom-in hover:opacity-90 transition-all shadow-sm">
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
     document.getElementById('details-content').innerHTML = `
         <div class="bg-white p-8 rounded-[2.5rem] card-shadow border border-slate-100 space-y-6 relative">
             <div class="flex justify-between items-start">
@@ -620,19 +636,18 @@ async function checkUrlRoute() {
             </div>
             
             <div class="flex flex-wrap gap-4 text-xs font-bold text-slate-400 uppercase">
-                <span>📍 ${finalLocString}</span>
+                <span class="text-pink-600 font-extrabold">📍 ${finalLocString.toUpperCase()}</span>
             </div>
 
-            <!-- Dane kontaktowe wyświetlane tylko, gdy użytkownik jest autorem lub wykupił zlecenie -->
-            ${(currentUser && (z.user_id === currentUser.id || bzgloszenie)) ? `
-            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 max-w-sm text-sm space-y-1">
+            <div class="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 max-w-sm text-xs space-y-1">
                 <p><span class="text-slate-400">Dane Zleceniodawcy:</span> <span class="font-bold text-slate-800">${ownerName}</span></p>
                 <p><span class="text-slate-400">Telefon:</span> <span class="font-bold text-slate-900">${z.telefon || 'Brak'}</span></p>
                 <p><span class="text-slate-400">Email:</span> <span class="font-bold text-slate-800">${ownerEmail}</span></p>
             </div>
-            ` : ''}
 
-            <div class="text-slate-600 leading-relaxed whitespace-pre-wrap border-t border-slate-50 pt-6 text-sm">${z.opis}</div>
+            <div class="text-slate-600 leading-relaxed whitespace-pre-wrap border-t border-slate-50 pt-4 text-sm">${z.opis}</div>
+
+            ${imagesHtml}
 
             ${z.typ_wpisu === 'klient' ? `
             <div class="p-6 bg-slate-50 rounded-3xl border border-slate-100">
@@ -645,8 +660,14 @@ async function checkUrlRoute() {
                 </div>
             </div>` : ''}
             
-            ${actionBtn}
-            ${deleteBtnHtml}
+            <div class="space-y-4 pt-2">
+                ${actionBtn}
+                ${deleteBtnHtml ? `
+                    <div class="flex justify-end pt-2">
+                        <button onclick="delBought('${bzgoszenie.id}')" class="bg-red-50 hover:bg-red-100 text-red-500 border border-red-100 px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-sm">USUŃ</button>
+                    </div>
+                ` : ''}
+            </div>
         </div>
     `;
 
@@ -654,13 +675,30 @@ async function checkUrlRoute() {
     if (z.typ_wpisu === 'wykonawca') { opinionsSec.classList.remove('hidden'); loadOpinions(z.user_id); } else { opinionsSec.classList.add('hidden'); }
 }
 
+// Funkcje do obsługi modala powiększania zdjęć
+function openImageModal(url) {
+    let imgModal = document.getElementById('image-fullscreen-modal');
+    if (!imgModal) {
+        imgModal = document.createElement('div');
+        imgModal.id = 'image-fullscreen-modal';
+        imgModal.className = 'fixed inset-0 bg-slate-900/90 backdrop-blur-md z-[60] flex items-center justify-center p-4 cursor-zoom-out';
+        imgModal.onclick = () => imgModal.classList.add('hidden');
+        imgModal.innerHTML = `<img id='fullscreen-target-img' class='max-w-full max-h-[90vh] rounded-2xl shadow-2xl border border-white/10'>`;
+        document.body.appendChild(imgModal);
+    }
+    document.getElementById('fullscreen-target-img').src = url;
+    imgModal.classList.remove('hidden');
+}
+
 async function applyForJob(zlecenieId) {
     if (!currentProfile) return alert("Tylko Wykonawca może zgłaszać chęć realizacji!");
     
     // 1. Pobieramy dane zlecenia, żeby sprawdzić czy jest telefon
-    const { data: z } = await db.from('zlecenia').select('*, owner:user_id').eq('id', zlecenieId).single();
+    const { data: z } = await db.from('zlecenia').select('*').eq('id', zlecenieId).single();
+    if (!z) return alert("Nie znaleziono takiego zlecenia.");
     
-    const cost = (z.telefon && z.telefon.length === 9) ? 2 : 1;
+    // Koszt: 2 punkty jeśli jest poprawny numer telefonu, w przeciwnym wypadku 1 punkt (sam email)
+    const cost = (z.telefon && z.telefon.trim().length === 9) ? 2 : 1;
     if (currentProfile.punkty < cost) return alert(`To zlecenie kosztuje ${cost} PKT. Masz tylko ${currentProfile.punkty}.`);
 
     const { data: existing } = await db.from('zgloszenia').select('id').eq('zlecenie_id', zlecenieId).eq('wykonawca_id', currentUser.id).maybeSingle();
@@ -674,10 +712,10 @@ async function applyForJob(zlecenieId) {
         await db.from('profile_wykonawcow').update({ punkty: currentProfile.punkty - cost }).eq('user_id', currentUser.id);
         
         // 4. Wysyłamy WIADOMOŚĆ SYSTEMOWĄ z danymi
-        const systemMsg = `SYSTEM: Wykupiłeś kontakt do zlecenia "${z.tytul}". \n📞 Tel: ${z.telefon || 'Nie podano'} \n📧 Email autora: (dostępny w profilu)`;
+        const systemMsg = `SYSTEM: Wykupiłeś kontakt do zlecenia "${z.tytul}". \n📞 Tel: ${z.telefon || 'Nie podano'} \n📧 Email autora: ${z.user_email || 'Nie podano'}`;
         await db.from('wiadomosci').insert([{ 
             zlecenie_id: zlecenieId, 
-            nadawca_id: '00000000-0000-0000-0000-000000000000', // ID systemowe lub Twoje
+            nadawca_id: '00000000-0000-0000-0000-000000000000', 
             odbiorca_id: currentUser.id, 
             tresc: systemMsg 
         }]);
