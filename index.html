@@ -318,11 +318,14 @@ async function updateUI(session) {
         try {
             document.getElementById('acc-email-display').innerText = currentUser.email;
             
-            // Logika Google: Sprawdź czy mamy zapisaną rolę wykonawcy
-            const savedRole = localStorage.getItem('google_login_role') || currentUser.user_metadata?.rola;
+            // Pobieramy informację o wybranej roli z localStorage
+            const savedRole = localStorage.getItem('google_login_role');
+            
+            // Sprawdzamy, czy w bazie istnieje już profil wykonawcy
             let { data: prof } = await db.from('profile_wykonawcow').select('*').eq('user_id', currentUser.id).maybeSingle();
             
-            if (!prof && savedRole === 'wykonawca') {
+            // JEŚLI użytkownik wybrał "Chcę Zarabiać (Wykonawca)" i nie ma jeszcze profilu w bazie -> tworzymy go natychmiast
+            if (savedRole === 'wykonawca' && !prof) {
                 const { data: newProf, error: insErr } = await db.from('profile_wykonawcow').insert([{
                     user_id: currentUser.id,
                     email: currentUser.email,
@@ -335,9 +338,14 @@ async function updateUI(session) {
                 if (!insErr && newProf) {
                     prof = newProf;
                 } else {
+                    // W razie opóźnień bazy próbujemy pobrać wpis ponownie
                     const { data: retryProf } = await db.from('profile_wykonawcow').select('*').eq('user_id', currentUser.id).maybeSingle();
                     if (retryProf) prof = retryProf;
                 }
+            }
+            
+            // Po upewnieniu się, że profil został sprawdzony/utworzony, czyścimy flagę z pamięci
+            if (savedRole) {
                 localStorage.removeItem('google_login_role');
             }
 
@@ -357,7 +365,6 @@ async function updateUI(session) {
     }
     load();
 }
-
 db.auth.onAuthStateChange((event, session) => { updateUI(session); });
 checkUser();
 window.addEventListener('hashchange', checkUrlRoute);
@@ -385,8 +392,7 @@ async function loginWithGoogle() {
     const { error } = await db.auth.signInWithOAuth({
         provider: 'google',
         options: { 
-            redirectTo: window.location.href.split('#')[0],
-            options: { data: { rola: role } }
+            redirectTo: window.location.href.split('#')[0]
         }
     });
     if (error) alert("Błąd Google: " + error.message);
