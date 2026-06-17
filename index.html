@@ -3,854 +3,1236 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZlećRemoncik - Fachowcy i Zlecenia Premium</title>
+    <title>ZlećRemoncik - Premium Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"></link>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"></head>
     <style>
-:root{
-    --gold:#D4AF37;
-    --gold-dark:#C89B3C;
-    --gold-light:#E3C36B;
-    --black:#121212;
-    --black-soft:#1A1A1A;
-    --bg:#FAF9F7;
-}
-
-body{
-    font-family:'Plus Jakarta Sans',sans-serif;
-    background:
-        linear-gradient(rgba(250,249,247,.88),rgba(250,249,247,.88)),
-        url('kuchnia.png') no-repeat center center fixed;
-    background-size:cover;
-    color:#1b1b1b;
-}
-
-.glass-panel{
-    background:rgba(255,255,255,.75);
-    backdrop-filter:blur(16px);
-    border:1px solid rgba(212,175,55,.15);
-}
-
-.card-shadow{
-    box-shadow:
-        0 20px 50px rgba(0,0,0,.08),
-        0 4px 15px rgba(212,175,55,.06);
-}
-
-.hidden{
-    display:none!important;
-}
-
-.slide-panel{
-    transform:translateX(100%);
-    transition:transform .35s cubic-bezier(.4,0,.2,1);
-}
-
-.slide-panel.active{
-    transform:translateX(0);
-}
-
-.chat-bubble-me{
-    background:linear-gradient(135deg,var(--gold-light),var(--gold-dark));
-    color:#111;
-    border-radius:18px 18px 2px 18px;
-    font-weight:600;
-}
-
-.chat-bubble-them{
-    background:#ffffff;
-    color:#1e293b;
-    border:1px solid rgba(212,175,55,.18);
-    border-radius:18px 18px 18px 2px;
-}
-
-nav{
-    background:
-        linear-gradient(
-            135deg,
-            #0f0f0f 0%,
-            #1a1a1a 45%,
-            #222 100%
-        ) !important;
-    border-bottom:1px solid rgba(212,175,55,.35)!important;
-    box-shadow:
-        0 5px 30px rgba(0,0,0,.25);
-}
-
-nav::before{
-    content:'';
-    position:absolute;
-    inset:0;
-    background:
-    linear-gradient(
-        rgba(255,255,255,.03),
-        rgba(255,255,255,0)
-    );
-    pointer-events:none;
-}
-
-#filter-panel,
-#auth-panel,
-#details-content > div,
-#account-sidebar,
-#add-modal-overlay > div,
-#edit-post-modal-overlay > div{
-    background:rgba(255,255,255,.92)!important;
-    backdrop-filter:blur(18px);
-    border:1px solid rgba(212,175,55,.25)!important;
-    border-radius:24px!important;
-    box-shadow:
-        0 20px 40px rgba(0,0,0,.06),
-        0 4px 20px rgba(212,175,55,.08);
-}
-
-button{
-    transition:.25s ease;
-}
-
-.bg-blue-600,
-.bg-blue-500{
-    background:
-    linear-gradient(
-        135deg,
-        var(--gold-light),
-        var(--gold),
-        var(--gold-dark)
-    )!important;
-    color:#111!important;
-    border:1px solid rgba(212,175,55,.45)!important;
-    box-shadow:
-        0 6px 18px rgba(212,175,55,.25);
-}
-
-.bg-blue-600:hover,
-.bg-blue-500:hover{
-    transform:translateY(-2px);
-    box-shadow:
-        0 10px 24px rgba(212,175,55,.35);
-}
-
-input,
-select,
-textarea{
-    background:#fff!important;
-    border:1px solid rgba(212,175,55,.15)!important;
-    border-radius:18px!important;
-    box-shadow:
-        inset 0 1px 3px rgba(0,0,0,.03);
-}
-
-input:focus,
-select:focus,
-textarea:focus{
-    border-color:var(--gold)!important;
-    box-shadow:
-        0 0 0 4px rgba(212,175,55,.12);
-}
-
-#list > div{
-    border-radius:22px!important;
-    border:1px solid rgba(212,175,55,.18)!important;
-    background:rgba(255,255,255,.95)!important;
-    box-shadow:
-        0 15px 35px rgba(0,0,0,.05);
-}
-
-#list > div:hover{
-    transform:translateY(-3px);
-    border-color:rgba(212,175,55,.45)!important;
-}
-
-h1,h2,h3{
-    letter-spacing:-0.03em;
-}
-
-.text-blue-600{
-    color:var(--gold-dark)!important;
-}
-
-.border-blue-100,
-.border-blue-200,
-.border-blue-300{
-    border-color:rgba(212,175,55,.25)!important;
-}
-
-#cookie-banner{
-    background:
-    linear-gradient(
-        135deg,
-        #0f0f0f,
-        #1a1a1a
-    )!important;
-    border-top:1px solid rgba(212,175,55,.35);
-}
-
-@media(max-width:640px){
-    .slide-panel{
-        width:100%!important;
-    }
-
-    .glass-panel{
-        border-radius:24px;
-    }
-}
-</style>
-</head>
-<body class="min-h-screen text-[#121212] antialiased bg-[#FAF9F7]/90 backdrop-blur-md pb-24">
-
-    <header class="luxury-header text-white sticky top-0 z-40 px-6 py-4 mb-12">
-        <div class="max-w-[1400px] mx-auto flex justify-between items-center">
-            <div class="flex items-center space-x-3 cursor-pointer" onclick="showSection('zlecenia')">
-                <span class="text-2xl font-extrabold tracking-wider bg-gradient-to-r from-[#E3C36B] via-[#D4AF37] to-[#C89B3C] bg-clip-text text-transparent">
-                    ZLEĆ<span class="font-light text-[#FAF9F7]">REMONCIK</span>
-                </span>
-                <span class="text-[10px] uppercase tracking-[0.2em] bg-[#D4AF37] text-[#121212] px-2 py-0.5 rounded font-bold">PRO</span>
-            </div>
-            
-            <nav class="flex items-center space-x-4">
-                <div id="user-logged" class="hidden flex items-center space-x-4">
-                    <div id="wallet-display" class="bg-[#1A1A1A] border border-[#D4AF37]/30 px-5 py-2 rounded-full text-sm font-semibold tracking-wide text-[#E3C36B] flex items-center space-x-2">
-                        <span class="inline-block w-2 h-2 rounded-full bg-[#E3C36B] animate-pulse"></span>
-                        <span>Stan konta:</span>
-                        <span id="user-points" class="font-bold text-white text-base">0</span> 
-                        <span class="text-xs text-[#E3C36B]/80 font-normal">pkt</span>
-                    </div>
-                    <button onclick="toggleProfilModal()" class="bg-[#1A1A1A] border border-[#FAF9F7]/20 hover:border-[#D4AF37]/60 px-5 py-2 rounded-full text-sm font-medium tracking-wide text-[#FAF9F7] transition-all duration-300 flex items-center space-x-2">
-                        <svg class="w-4 h-4 text-[#D4AF37]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                        <span id="user-name-display">Moje Konto</span>
-                    </button>
-                    <button onclick="logout()" class="text-xs tracking-widest uppercase text-gray-400 hover:text-[#E3C36B] transition-colors pl-2">
-                        Wylot
-                    </button>
-                </div>
-                <div id="user-guest" class="space-x-3">
-                    <button onclick="openAuth('login')" class="px-5 py-2 text-sm font-medium text-[#FAF9F7] hover:text-[#E3C36B] transition-colors">Zaloguj się</button>
-                    <button onclick="openAuth('register')" class="gold-gradient-btn px-6 py-2 rounded-full text-sm font-bold text-[#121212] tracking-wide">Dołącz premium</button>
-                </div>
-            </nav>
-        </div>
-    </header>
-
-    <main class="max-w-[1400px] mx-auto px-6">
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: url('kuchnia.png') no-repeat center center fixed;
+            background-size: cover;
+            background-color: #FAF9F7;
+        }
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(250, 249, 247, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: -1;
+        }
+        .luxury-header {
+            background: linear-gradient(135deg, #121212 0%, #1A1A1A 100%);
+            border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+        .gold-glow {
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.2);
+        }
+        .gold-glow-hover:hover {
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+            transform: translateY(-1px);
+        }
+        .luxury-card {
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(212, 175, 55, 0.15);
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .luxury-card:hover {
+            border-color: rgba(212, 175, 55, 0.4);
+            box-shadow: 0 15px 35px -5px rgba(212, 175, 55, 0.1);
+        }
+        .gold-gradient-btn {
+            background: linear-gradient(135deg, #E3C36B 0%, #C89B3C 50%, #D4AF37 100%);
+            color: #121212;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(212, 175, 55, 0.5);
+        }
+        .gold-gradient-btn:hover {
+            background: linear-gradient(135deg, #D4AF37 0%, #C89B3C 50%, #E3C36B 100%);
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+        }
+        .glass-panel { 
+            background: rgba(255, 255, 255, 0.85); 
+            backdrop-filter: blur(16px); 
+            border: 1px solid rgba(212, 175, 55, 0.2); 
+        }
+        .hidden { display: none !important; }
+        .slide-panel { transform: translateX(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .slide-panel.open { transform: translateX(0); }
         
-        <div class="mb-12 text-center md:text-left flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+        /* Custom scrollbar to match luxury vibe */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #FAF9F7; }
+        ::-webkit-scrollbar-thumb { background: #C89B3C; border-radius: 4px; }
+    </style>
+</head>
+<body class="text-slate-900 pb-10">
+
+<div id="cookie-banner" class="fixed bottom-0 left-0 right-0 bg-slate-900 text-white p-4 z-50 text-xs flex flex-col sm:flex-row justify-between items-center gap-4 card-shadow">
+    <p>Używamy plików cookie do zbierania danych i ulepszania naszych usług. Korzystając ze strony zgadzasz się na ich zapis w przeglądarce oraz akceptujesz politykę RODO. <button onclick="openLegal('rodo')" class="underline text-blue-400">Dowiedz się więcej</button></p>
+    <button onclick="acceptCookies()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-xl font-bold uppercase whitespace-nowrap">Przyjmij</button>
+</div>
+
+<nav class="bg-white sticky top-0 z-40 border-b border-slate-200 shadow-sm">
+    <div class="max-w-6xl mx-auto px-4 py-2 flex justify-between items-center">
+        <div onclick="goBackToList()" class="cursor-pointer py-1">
+            <img src="logo.png" alt="ZlećRemoncik" class="h-28 sm:h-36 w-auto object-contain">
+        </div>
+        <div class="flex items-center gap-2 sm:gap-3">
+            <button id="nav-add-job-btn" onclick="toggleAddModal(true)" class="hidden text-[10px] font-black text-white bg-blue-600 px-4 py-2 rounded-full uppercase hover:bg-blue-700 transition-all tracking-wider shadow-md shadow-blue-100">ZlećRemoncik</button>
+            
+            <span id="points-counter" class="hidden text-[10px] font-black text-amber-600 bg-amber-50 border border-amber-100 px-3 py-1.5 rounded-full uppercase"></span>
+            
+            <div class="relative">
+                <button id="my-account-btn" onclick="toggleAccountMenu(true)" class="hidden text-[10px] font-bold text-blue-600 bg-blue-50 border border-blue-100 px-3 py-1.5 rounded-full uppercase hover:bg-blue-100 transition-all flex items-center gap-1">
+                    Moje Konto <span id="nav-notify" class="w-2 h-2 bg-red-500 rounded-full hidden"></span>
+                </button>
+            </div>
+            <button id="logout-btn" onclick="signOut()" class="hidden text-[10px] font-bold text-red-500 hover:text-red-700 uppercase">Wyloguj</button>
+        </div>
+    </div>
+</nav>
+
+<div id="add-modal-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white p-6 sm:p-8 rounded-[2.5rem] card-shadow max-w-2xl w-full border border-slate-100 relative max-h-[90vh] overflow-y-auto">
+        <button onclick="toggleAddModal(false)" class="absolute top-5 right-6 text-slate-400 hover:text-slate-600 font-bold text-lg">✖</button>
+        
+        <h2 class="text-xl font-black mb-6 text-slate-800 flex items-center gap-2"><span class="bg-blue-600 text-white w-7 h-7 flex items-center justify-center rounded-full text-xs">+</span> Dodaj nowe ogłoszenie na tablicę</h2>
+        
+        <div class="space-y-4">
+            <input id="t" placeholder="Tytuł ogłoszenia (np. Remont łazienki 5m2)" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl outline-none focus:border-blue-400">
+            <div class="grid grid-cols-2 gap-4">
+                <input id="m" placeholder="Miasto" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl outline-none focus:border-blue-400">
+                <input id="postcode" placeholder="Kod pocztowy (Opcjonalnie)" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl outline-none focus:border-blue-400">
+            </div>
+            
+            <select id="k" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl outline-none font-bold text-sm text-slate-700 select-dynamic-categories text-slate-700 bg-white">
+                </select>
+            
+                        <textarea id="o" placeholder="Opisz dokładnie zakres prac lub swoje doświadczenie..." class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl h-32 outline-none focus:border-blue-400"></textarea>
+            <div class="grid grid-cols-3 gap-2">
+                <input id="img1" type="file" accept="image/*" class="text-[9px] bg-slate-50 p-2 rounded-xl border border-slate-100">
+                <input id="img2" type="file" accept="image/*" class="text-[9px] bg-slate-50 p-2 rounded-xl border border-slate-100">
+                <input id="img3" type="file" accept="image/*" class="text-[9px] bg-slate-50 p-2 rounded-xl border border-slate-100">
+            </div>
+                        <div>
+                <div class="flex items-center gap-2 mb-2 px-2">
+                    <input type="checkbox" id="no-phone" onchange="document.getElementById('p').disabled = this.checked; if(this.checked) document.getElementById('p').value='';" class="w-4 h-4 rounded border-slate-300">
+                    <label for="no-phone" class="text-[10px] font-bold text-slate-500 uppercase">Wolę nie podawać numeru</label>
+                </div>
+                <input id="p" type="tel" maxlength="9" placeholder="Telefon kontaktowy (9 cyfr)" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl outline-none focus:border-blue-400 disabled:opacity-50">
+                <p class="text-[9px] text-blue-500 font-bold mt-2 px-2 leading-tight">Zastanów się: zlecenia z numerem telefonu zdobywają średnio o 80% więcej ofert od sprawdzonych wykonawców.</p>
+            </div>
+            <button onclick="add()" id="add-btn" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase shadow-xl hover:bg-blue-700 transition-all">Opublikuj ogłoszenie</button>
+        </div>
+    </div>
+</div>
+
+<div id="edit-post-modal-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white p-6 sm:p-8 rounded-[2.5rem] card-shadow max-w-2xl w-full border border-slate-100 relative max-h-[90vh] overflow-y-auto">
+        <button onclick="toggleEditPostModal(false)" class="absolute top-5 right-6 text-slate-400 hover:text-slate-600 font-bold text-lg">✖</button>
+        <h2 class="text-xl font-black mb-6 text-slate-800 flex items-center gap-2"><span class="bg-amber-500 text-white w-7 h-7 flex items-center justify-center rounded-full text-xs">✏️</span> Edytuj swoje ogłoszenie</h2>
+        <input type="hidden" id="edit-post-id">
+        <div class="space-y-4">
             <div>
-                <h1 id="page-title" class="text-4xl font-extrabold tracking-tight text-[#121212] sm:text-5xl mb-3">
-                    Ekskluzywne Oferty i Zlecenia
-                </h1>
-                <p class="text-gray-600 max-w-xl font-medium">
-                    Najwyższy standard realizacji. Przeglądaj zweryfikowane zlecenia budowlane lub zaprezentuj swoje portfolio inwestorom.
-                </p>
+                <label class="text-[10px] font-bold text-slate-400 uppercase">Tytuł</label>
+                <input id="edit-p-t" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl outline-none focus:border-blue-400">
             </div>
-            <div class="flex gap-3 w-full md:w-auto">
-                <button id="nav-btn-zlecenia" onclick="showSection('zlecenia')" class="flex-1 md:flex-none bg-[#121212] text-white font-bold px-6 py-3 rounded-full text-sm tracking-wide shadow-lg transition-all duration-300 gold-border">
-                    Zlecenia i Fachowcy
-                </button>
-                <button id="nav-btn-dodaj" onclick="showSection('dodaj')" class="flex-1 md:flex-none gold-gradient-btn text-[#121212] font-extrabold px-7 py-3 rounded-full text-sm tracking-wide">
-                    + Dodaj ogłoszenie
-                </button>
-            </div>
-        </div>
-
-        <section id="sec-zlecenia" class="space-y-8">
-            <div class="bg-white/90 card-shadow rounded-3xl p-6 gold-border flex flex-wrap gap-4 items-center justify-between">
-                <div class="flex flex-wrap items-center gap-4 w-full lg:w-auto">
-                    <div class="relative min-w-[240px] flex-1 lg:flex-none">
-                        <span class="absolute inset-y-0 left-4 flex items-center text-[#C89B3C]">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                        </span>
-                        <input type="text" id="filter-search" oninput="renderZlecenia()" placeholder="Szukaj po tytule lub opisie..." class="w-full bg-[#FAF9F7] text-[#121212] placeholder-gray-400 pl-12 pr-4 py-3 rounded-2xl text-sm font-medium border border-gray-100 gold-border-focus transition-all duration-300">
-                    </div>
-                    
-                    <select id="filter-kategoria" onchange="renderZlecenia()" class="bg-[#FAF9F7] text-[#121212] px-4 py-3 rounded-2xl text-sm font-medium border border-gray-100 gold-border-focus transition-all duration-300 min-w-[180px]">
-                        <option value="">Wszystkie branże</option>
-                        <option value="Remonty">Remonty i Wykończenia</option>
-                        <option value="Budowa">Budowa Domów</option>
-                        <option value="Instalacje">Instalacje i Hydraulika</option>
-                        <option value="Wizytówka">Wizytówki Fachowców</option>
-                    </select>
-
-                    <select id="filter-wojewodztwo" onchange="renderZlecenia()" class="bg-[#FAF9F7] text-[#121212] px-4 py-3 rounded-2xl text-sm font-medium border border-gray-100 gold-border-focus transition-all duration-300 min-w-[180px]">
-                        <option value="">Cała Polska</option>
-                        <option value="dolnoslaskie">Dolnośląskie</option>
-                        <option value="kujawsko-pomorskie">Kujawsko-pomorskie</option>
-                        <option value="lubelskie">Lubelskie</option>
-                        <option value="lubuskie">Lubuskie</option>
-                        <option value="lodzkie">Łódzkie</option>
-                        <option value="malopolskie">Małopolskie</option>
-                        <option value="mazowieckie">Mazowieckie</option>
-                        <option value="opolskie">Opolskie</option>
-                        <option value="podkarpackie">Podkarpackie</option>
-                        <option value="podlaskie">Podlaskie</option>
-                        <option value="pomorskie">Pomorskie</option>
-                        <option value="slaskie">Śląskie</option>
-                        <option value="swietokrzyskie">Świętokrzyskie</option>
-                        <option value="warminsko-mazurskie">Warmińsko-mazurskie</option>
-                        <option value="wielkopolskie">Wielkopolskie</option>
-                        <option value="zachodniopomorskie">Zachodniopomorskie</option>
-                    </select>
-                </div>
-                
-                <div class="text-xs font-bold tracking-widest text-gray-400 uppercase bg-[#FAF9F7] px-4 py-2 rounded-xl border border-gray-100">
-                    Aktywne oferty: <span id="counter-offers" class="text-[#C89B3C]">0</span>
-                </div>
-            </div>
-
-            <div id="zlecenia-container" class="grid grid-cols-1 gap-8">
-                </div>
-        </section>
-
-        <section id="sec-dodaj" class="hidden max-w-3xl mx-auto">
-            <div class="bg-white card-shadow rounded-3xl p-8 md:p-12 gold-border">
-                <div class="mb-8 border-b border-gray-100 pb-6">
-                    <h2 class="text-2xl font-bold text-[#121212]">Nowa Publikacja Premium</h2>
-                    <p class="text-sm text-gray-500 mt-1">Wypełnij formularz, aby dodać zlecenie lub swoją wizytówkę wykonawcy.</p>
-                </div>
-                
-                <form id="form-zlecenie" onsubmit="saveZlecenie(event)" class="space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label class="block text-xs font-bold uppercase text-gray-500 tracking-wider mb-2">Typ ogłoszenia</label>
-                            <select id="form-typ" onchange="toggleFormType()" class="w-full bg-[#FAF9F7] text-[#121212] px-4 py-3 rounded-2xl text-sm font-medium border border-gray-200 gold-border-focus transition-all">
-                                <option value="zlecenie">Szukam fachowca (Zlecenie)</option>
-                                <option value="wizytowka">Jestem fachowcem (Wizytówka firmy)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold uppercase text-gray-500 tracking-wider mb-2">Kategoria branżowa</label>
-                            <select id="form-kategoria" class="w-full bg-[#FAF9F7] text-[#121212] px-4 py-3 rounded-2xl text-sm font-medium border border-gray-200 gold-border-focus transition-all">
-                                <option value="Remonty">Remonty i Wykończenia</option>
-                                <option value="Budowa">Budowa Domów</option>
-                                <option value="Instalacje">Instalacje i Hydraulika</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold uppercase text-gray-500 tracking-wider mb-2">Tytuł ogłoszenia / Nazwa firmy</label>
-                        <input type="text" id="form-tytul" required placeholder="np. Wykończenie apartamentu 120m2 w standardzie premium" class="w-full bg-[#FAF9F7] text-[#121212] px-4 py-3 rounded-2xl text-sm font-medium border border-gray-200 gold-border-focus transition-all">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold uppercase text-gray-500 tracking-wider mb-2">Szczegółowy opis projektu</label>
-                        <textarea id="form-opis" rows="5" required placeholder="Opisz zakres prac, oczekiwania, materiały oraz preferowany harmonogram..." class="w-full bg-[#FAF9F7] text-[#121212] px-4 py-3 rounded-2xl text-sm font-medium border border-gray-200 gold-border-focus transition-all"></textarea>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div>
-                            <label class="block text-xs font-bold uppercase text-gray-500 tracking-wider mb-2">Województwo</label>
-                            <select id="form-wojewodztwo" class="w-full bg-[#FAF9F7] text-[#121212] px-4 py-3 rounded-2xl text-sm font-medium border border-gray-200 gold-border-focus transition-all">
-                                <option value="mazowieckie">Mazowieckie</option>
-                                <option value="dolnoslaskie">Dolnośląskie</option>
-                                <option value="malopolskie">Małopolskie</option>
-                                <option value="wielkopolskie">Wielkopolskie</option>
-                                <option value="slaskie">Śląskie</option>
-                                <option value="pomorskie">Pomorskie</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold uppercase text-gray-500 tracking-wider mb-2">Miejscowość</label>
-                            <input type="text" id="form-miasto" required placeholder="np. Warszawa Wilanów" class="w-full bg-[#FAF9F7] text-[#121212] px-4 py-3 rounded-2xl text-sm font-medium border border-gray-200 gold-border-focus transition-all">
-                        </div>
-                        <div>
-                            <label id="lbl-budzet" class="block text-xs font-bold uppercase text-gray-500 tracking-wider mb-2">Budżet szacunkowy (PLN)</label>
-                            <input type="number" id="form-budzet" placeholder="np. 45000" class="w-full bg-[#FAF9F7] text-[#121212] px-4 py-3 rounded-2xl text-sm font-medium border border-gray-200 gold-border-focus transition-all">
-                        </div>
-                    </div>
-
-                    <div id="box-kontakt" class="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-[#FAF9F7] rounded-2xl gold-border">
-                        <div>
-                            <label class="block text-xs font-bold uppercase text-[#C89B3C] tracking-wider mb-2">Telefon kontaktowy</label>
-                            <input type="tel" id="form-telefon" placeholder="np. +48 600 700 800" class="w-full bg-white text-[#121212] px-4 py-3 rounded-xl text-sm font-medium border border-gray-200 gold-border-focus transition-all">
-                            <p class="text-[11px] text-gray-400 mt-1">Wykonawcy zapłacą 1 lub 2 punkty za odsłonięcie tego numeru.</p>
-                        </div>
-                        <div class="flex items-center">
-                            <p class="text-xs text-gray-500 italic leading-relaxed">
-                                Dane kontaktowe premium są szyfrowane i dostępne wyłącznie dla zalogowanych specjalistów posiadających aktywne punkty dostępu.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="flex justify-end space-x-4 pt-4">
-                        <button type="button" onclick="showSection('zlecenia')" class="px-6 py-3 text-sm font-medium text-gray-500 hover:text-[#121212] transition-colors">Anuluj</button>
-                        <button type="submit" class="gold-gradient-btn text-[#121212] font-extrabold px-8 py-3 rounded-full text-sm tracking-wide">Opublikuj ogłoszenie</button>
-                    </div>
-                </form>
-            </div>
-        </section>
-    </main>
-
-    <div id="modal-profil" class="fixed inset-0 z-50 hidden">
-        <div class="absolute inset-0 bg-[#121212]/60 backdrop-blur-sm" onclick="toggleProfilModal()"></div>
-        <div class="absolute right-0 top-0 h-full w-full max-w-md bg-white card-shadow slide-panel flex flex-col border-l border-[#D4AF37]/20" id="profil-panel">
-            <div class="p-6 bg-[#121212] text-white flex justify-between items-center gold-border-b">
+            <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <h3 class="text-lg font-bold tracking-wide">Konto Użytkownika</h3>
-                    <p id="profile-email-lbl" class="text-xs text-[#E3C36B] font-light">premium@user.pl</p>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase">Miasto</label>
+                    <input id="edit-p-m" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl outline-none focus:border-blue-400">
                 </div>
-                <button onclick="toggleProfilModal()" class="text-gray-400 hover:text-white p-2">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase">Kod pocztowy</label>
+                    <input id="edit-p-postcode" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl outline-none focus:border-blue-400">
+                </div>
             </div>
-            
-            <div class="p-6 overflow-y-auto flex-1 space-y-8">
-                <div class="space-y-4">
-                    <h4 class="text-xs font-bold uppercase text-gray-400 tracking-widest border-b pb-2">Ustawienia wizytówki / profilu</h4>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-500 mb-1">Nazwa firmy / Imię i Nazwisko</label>
-                        <input type="text" id="edit-nazwa" class="w-full bg-[#FAF9F7] text-[#121212] px-4 py-2.5 rounded-xl text-sm border border-gray-200 gold-border-focus transition-all">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-500 mb-1">Domyślny telefon kontaktowy</label>
-                        <input type="text" id="edit-tel" class="w-full bg-[#FAF9F7] text-[#121212] px-4 py-2.5 rounded-xl text-sm border border-gray-200 gold-border-focus transition-all">
-                    </div>
-                    <button onclick="saveProfile()" class="w-full bg-[#121212] text-white text-xs font-bold tracking-wider uppercase py-3 rounded-xl hover:bg-[#1A1A1A] transition-all border border-[#D4AF37]/30">
-                        Zapisz zmiany
-                    </button>
+            <div>
+                <label class="text-[10px] font-bold text-slate-400 uppercase">Kategoria</label>
+                <select id="edit-p-k" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl outline-none font-bold text-sm text-slate-700 bg-white"></select>
+            </div>
+            <div>
+                <label class="text-[10px] font-bold text-slate-400 uppercase">Opis zlecenia</label>
+                <textarea id="edit-p-o" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl h-32 outline-none focus:border-blue-400"></textarea>
+            </div>
+            <div>
+                <label class="text-[10px] font-bold text-slate-400 uppercase">Aktualne / Nowe zdjęcia (Zostaw puste, aby nie zmieniać)</label>
+                <div id="edit-media-preview" class="flex gap-2 mb-2 hidden"></div>
+                <div class="grid grid-cols-3 gap-2 mt-1">
+                    <input id="edit-p-img1" type="file" accept="image/*" class="text-[9px] bg-slate-50 p-2 rounded-xl border border-slate-100">
+                    <input id="edit-p-img2" type="file" accept="image/*" class="text-[9px] bg-slate-50 p-2 rounded-xl border border-slate-100">
+                    <input id="edit-p-img3" type="file" accept="image/*" class="text-[9px] bg-slate-50 p-2 rounded-xl border border-slate-100">
                 </div>
+            </div>
+            <div>
+                <label class="text-[10px] font-bold text-slate-400 uppercase">Telefon kontaktowy</label>
+                <input id="edit-p-p" type="tel" maxlength="9" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl outline-none focus:border-blue-400">
+            </div>
+            <button onclick="saveEditedPost()" id="edit-post-save-btn" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase shadow-xl hover:bg-blue-700 transition-all">Zapisz zmiany w ogłoszeniu</button>
+        </div>
+    </div>
+</div>
 
-                <div class="p-5 bg-[#FAF9F7] rounded-2xl border border-[#D4AF37]/20 space-y-4">
-                    <div class="flex justify-between items-center">
-                        <h4 class="text-xs font-bold uppercase text-[#121212] tracking-wider">Zasilenie punktów (SaaS)</h4>
-                        <span class="text-[10px] uppercase font-extrabold px-2 py-0.5 bg-[#E3C36B] text-[#121212] rounded">Błyskawicznie</span>
-                    </div>
-                    <p class="text-xs text-gray-500 leading-relaxed">Punkty pozwalają wykonawcom na odkrywanie numerów telefonów w zleceniach premium. Wybierz pakiet:</p>
-                    <div class="grid grid-cols-2 gap-3">
-                        <button onclick="addPoints(10)" class="bg-white border border-gray-200 hover:border-[#C89B3C] p-3 rounded-xl text-center transition-all group">
-                            <div class="text-lg font-bold text-[#121212] group-hover:text-[#C89B3C]">+10 pkt</div>
-                            <div class="text-[11px] text-gray-400 font-medium">10 PLN</div>
-                        </button>
-                        <button onclick="addPoints(50)" class="bg-white border border-[#D4AF37]/30 hover:border-[#C89B3C] p-3 rounded-xl text-center transition-all relative group gold-glow">
-                            <span class="absolute -top-2 -right-1 bg-[#121212] text-[#E3C36B] text-[8px] px-1.5 py-0.5 rounded font-bold uppercase">HIT</span>
-                            <div class="text-lg font-bold text-[#121212] group-hover:text-[#C89B3C]">+50 pkt</div>
-                            <div class="text-[11px] text-[#C89B3C] font-semibold">40 PLN</div>
-                        </button>
-                    </div>
-                </div>
+<div id="account-sidebar-overlay" onclick="toggleAccountMenu(false)" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden"></div>
+<div id="account-sidebar" class="fixed top-0 right-0 h-full w-full sm:w-[450px] bg-white z-50 shadow-2xl slide-panel p-6 overflow-y-auto flex flex-col">
+    <div class="flex justify-between items-center border-b border-slate-100 pb-4 mb-6">
+        <div>
+            <h2 class="text-xl font-black text-slate-800">Panel użytkownika</h2>
+            <p id="acc-email-display" class="text-xs text-blue-600 font-bold"></p>
+                    <div id="edit-profile-box" class="mt-4 p-4 bg-blue-50 rounded-2xl border border-blue-100 hidden space-y-2">
+            <div>
+                <label class="text-[9px] font-bold text-slate-400 uppercase">Adres E-mail (Brak możliwości zmiany)</label>
+                <input id="edit-email" class="w-full p-2 rounded-lg border text-xs bg-slate-100 text-slate-500 cursor-not-allowed" disabled>
+            </div>
+            <div>
+                <label class="text-[9px] font-bold text-slate-700 uppercase">Nazwa firmy / Imię i Nazwisko</label>
+                <input id="edit-nazwa" placeholder="Nazwa firmy/imię" class="w-full p-2 rounded-lg border text-xs">
+            </div>
+            <div>
+                <label class="text-[9px] font-bold text-slate-700 uppercase">Numer telefonu</label>
+                <input id="edit-tel" placeholder="Telefon" class="w-full p-2 rounded-lg border text-xs">
+            </div>
+            <button onclick="saveProfile()" class="w-full bg-blue-600 text-white py-2 rounded-lg text-[10px] font-bold uppercase">Zapisz zmiany</button>
+        </div>
+        <button onclick="openEditProfileForm()" class="text-[10px] font-bold text-slate-400 hover:text-blue-600 mt-2">⚙️ Edytuj moje dane</button>
+        </div>
+        <button onclick="toggleAccountMenu(false)" class="text-sm font-bold text-slate-400 hover:text-slate-600">✖ Zamknij</button>
+    </div>
+
+    <div class="mb-6">
+        <h3 id="activity-title" class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">🗂 Twoja Aktywność</h3>
+        <div id="user-posts-list" class="space-y-3"></div>
+    </div>
+
+    <div class="border-t border-slate-100 pt-4 flex-1 flex flex-col">
+        <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1">
+            💬 Konwersacje <span id="chat-notify-count" class="bg-red-500 text-white rounded-full px-1.5 py-0.5 text-[8px] hidden"></span>
+        </h3>
+        <div id="user-chats-list" class="space-y-2 overflow-y-auto flex-1"></div>
+        
+        <div id="chat-box" class="hidden flex flex-col h-[300px] border border-slate-200 rounded-2xl p-3 bg-slate-50 mt-2">
+            <div class="flex justify-between items-center mb-2 border-b border-slate-200 pb-1">
+                <span id="chat-partner-name" class="text-[10px] font-black text-slate-700 uppercase">Rozmowa</span>
+                <button onclick="closeChatBox()" class="text-[9px] font-bold text-red-500">Powrót</button>
+            </div>
+            <div id="chat-messages" class="flex-1 overflow-y-auto space-y-2 mb-2 p-1 text-xs"></div>
+            <div class="flex gap-1">
+                <input id="chat-input" placeholder="Wpisz wiadomość..." class="flex-1 border border-slate-300 p-2 rounded-xl text-xs outline-none focus:border-blue-500 bg-white">
+                <button onclick="sendMessage()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 rounded-xl font-bold text-xs uppercase">Wyślij</button>
             </div>
         </div>
     </div>
+</div>
 
-    <div id="modal-auth" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-[#121212]/70 backdrop-blur-md" onclick="closeAuth()"></div>
-        <div class="bg-white w-full max-w-md rounded-3xl p-8 card-shadow relative z-10 gold-border">
-            <button onclick="closeAuth()" class="absolute top-5 right-5 text-gray-400 hover:text-[#121212]">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+<main class="max-w-4xl mx-auto px-4 mt-8 relative z-20">
+    
+    <div id="auth-panel" class="max-w-md mx-auto bg-white p-6 sm:p-8 rounded-[2.5rem] card-shadow mb-8 border border-slate-100">
+        
+        <div id="view-login" class="space-y-4">
+            <h2 class="text-xl font-black text-slate-800 tracking-tight">Logowanie</h2>
+            <input id="login-email" type="email" placeholder="email" class="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none focus:border-blue-400 focus:bg-white font-medium text-sm transition-all">
+            <input id="login-password" type="password" placeholder="hasło" class="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none focus:border-blue-400 focus:bg-white font-medium text-sm transition-all">
+            
+                        <button onclick="executeLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-black uppercase text-xs shadow-md transition-all">Zaloguj</button>
+            
+            <div class="relative py-4">
+                <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-200"></div></div>
+                <div class="relative flex justify-center text-xs uppercase"><span class="bg-white px-2 text-slate-400 font-bold">Lub przez Google</span></div>
+            </div>
+
+                                    <button onclick="loginWithGoogle()" class="w-full bg-white border-2 border-slate-100 hover:border-blue-400 text-slate-700 py-3 rounded-2xl font-bold text-xs transition-all flex items-center justify-center gap-2 shadow-sm mb-2">
+                <img src="https://www.google.com/favicon.ico" class="w-4 h-4"> Zaloguj przez Google
             </button>
-            
-            <h3 id="auth-title" class="text-2xl font-bold text-[#121212] mb-2">Zaloguj się do platformy</h3>
-            <p id="auth-desc" class="text-xs text-gray-500 mb-6">Uzyskaj dostęp do najlepszych zleceń na rynku.</p>
-            
-            <form onsubmit="handleAuth(event)" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Adres E-mail</label>
-                    <input type="email" id="auth-email" required placeholder="twoj@email.pl" class="w-full bg-[#FAF9F7] text-[#121212] px-4 py-3 rounded-xl text-sm border border-gray-200 gold-border-focus transition-all">
+            <div class="relative group mb-4 text-center">
+                <p class="text-[9px] text-red-500 font-bold leading-tight flex items-center justify-center gap-1">
+                    Uwaga. Pierwsza rejestracja jako WYKONAWCA musi nastąpić przez standardowy formularz <span class="inline-flex items-center justify-center bg-red-100 text-red-600 rounded-full w-3.5 h-3.5 text-[10px] cursor-help">!</span>
+                </p>
+                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-slate-800 text-white text-[10px] p-3 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-[200] shadow-xl text-left">
+                    ...z podaniem wszystkich informacji. Dopiero od drugiego razu użytkownik zarejestrowany jako WYKONAWCA może logować się kontem Google podając ten sam e-mail co przy rejestracji standardowej.
                 </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Hasło</label>
-                    <input type="password" id="auth-password" required placeholder="••••••••" class="w-full bg-[#FAF9F7] text-[#121212] px-4 py-3 rounded-xl text-sm border border-gray-200 gold-border-focus transition-all">
-                </div>
-                
-                <div id="register-only-fields" class="hidden space-y-4 pt-2">
-                    <div class="border-t border-gray-100 my-2"></div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Kim jesteś?</label>
-                        <select id="auth-role" onchange="toggleAuthRole()" class="w-full bg-[#FAF9F7] text-[#121212] px-4 py-3 rounded-xl text-sm border border-gray-200 gold-border-focus transition-all">
-                            <option value="klient">Inwestor / Zleceniodawca (Bezpłatnie)</option>
-                            <option value="wykonawca">Wykonawca / Fachowiec (+50 pkt na start)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label id="lbl-auth-nazwa" class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Imię i Nazwisko / Nazwa Firmy</label>
-                        <input type="text" id="auth-nazwa" placeholder="np. Jan Kowalski" class="w-full bg-[#FAF9F7] text-[#121212] px-4 py-3 rounded-xl text-sm border border-gray-200 gold-border-focus transition-all">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Telefon kontaktowy</label>
-                        <input type="text" id="auth-telefon" placeholder="np. 500600700" class="w-full bg-[#FAF9F7] text-[#121212] px-4 py-3 rounded-xl text-sm border border-gray-200 gold-border-focus transition-all">
-                    </div>
-                </div>
+            </div>
 
-                <button type="submit" id="auth-submit-btn" class="w-full gold-gradient-btn text-[#121212] font-extrabold py-3.5 rounded-xl text-sm tracking-wide mt-4">
-                    Zaloguj się
-                </button>
-            </form>
-            
-            <div class="mt-6 text-center">
-                <button id="auth-switch-mode" onclick="switchAuthMode()" class="text-xs font-medium text-gray-500 hover:text-[#C89B3C] transition-colors underline">
-                    Nie masz konta? Zarejestruj się bezpłatnie
-                </button>
+                        <div class="text-left pt-4">
+                <button onclick="switchAuthView('register')" class="text-xs font-bold text-slate-500 hover:text-blue-600 transition-colors">Brak konta? Zarejestruj się</button>
+            </div>
+        </div> <!-- DODANE: To zamyka view-login -->
+
+        <div id="view-register" class="hidden space-y-4">
+            <h2 class="text-xl font-black text-slate-800 tracking-tight">Rejestracja</h2>
+            <select id="reg-role" onchange="toggleRegRoleFields(this.value)" class="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none font-bold text-sm text-slate-600 transition-all bg-white">
+                <option value="klient">Zleceniodawca</option>
+                <option value="wykonawca">Wykonawca</option>
+            </select>
+            <div class="grid grid-cols-1 gap-3">
+                <input id="reg-email" type="email" placeholder="email" class="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none focus:border-blue-400 font-medium text-sm transition-all">
+                <input id="reg-password" type="password" placeholder="haslo" class="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none focus:border-blue-400 font-medium text-sm transition-all">
+            </div>
+            <div class="px-3 py-2 bg-slate-50 rounded-xl border border-slate-100 text-[9px] text-slate-400 leading-normal">
+                <span class="font-bold text-slate-600 block mb-0.5">Wymogi bezpieczeństwa hasła:</span>
+                • min. 8 znaków | • duża litera | • liczba | • znak specjalny
+            </div>
+                        <div id="phone-field-wrapper" class="space-y-1">
+                <input id="reg-phone" type="tel" maxlength="9" placeholder="Numer telefonu (9 cyfr)" class="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none focus:border-blue-400 font-medium text-sm transition-all">
+            </div>
+            <div id="pro-fields" class="hidden space-y-3 pt-2 border-t border-dashed border-slate-200">
+                <input id="reg-firma" placeholder="Nazwa firmy / Imię i Nazwisko" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm outline-none">
+                <input id="reg-nip" placeholder="NIP (Opcjonalnie)" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm outline-none">
+                <div class="grid grid-cols-2 gap-3">
+                    <input id="reg-miejscowosc" placeholder="Miejscowość" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm outline-none">
+                    <input id="reg-kod" placeholder="Kod pocztowy" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm outline-none">
+                </div>
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                    <p class="text-[9px] font-black text-slate-400 uppercase mb-2">Zaznacz specjalizacje budowlane:</p>
+                    <div id="spec-checkboxes-container" class="space-y-1.5 max-h-36 overflow-y-auto text-[11px] font-semibold text-slate-700 pr-1"></div>
+                </div>
+            </div>
+            <button onclick="signUp()" class="w-full bg-slate-800 hover:bg-slate-900 text-white py-4 rounded-2xl font-black uppercase text-xs shadow-md transition-all">Załóż konto</button>
+            <div class="text-left pt-1">
+                <button onclick="switchAuthView('login')" class="text-xs font-bold text-blue-600 hover:underline transition-all">Masz już konto? Zaloguj się</button>
+            </div>
+        </div>
+    </div> <!-- DODANE: To zamyka auth-panel -->
+
+    <div id="filter-panel" class="bg-white p-6 rounded-[2rem] card-shadow border border-slate-100 mb-8 space-y-4">
+        <h2 class="text-xl font-extrabold text-slate-800 tracking-tight">Najnowsze ZLECENIA</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-slate-100 pt-4">
+            <input id="search-city" type="text" oninput="load()" placeholder="🔎 Wpisz Miasto, aby pofiltrować..." class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-xs outline-none focus:border-blue-400 transition-all font-semibold">
+            <select id="search-category" onchange="load()" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-xs font-bold text-slate-600 outline-none focus:border-blue-400 transition-all select-dynamic-categories bg-white"></select>
+        </div>
+    </div>
+
+    <div id="details-view" class="hidden mb-12">
+        <button onclick="goBackToList()" class="mb-6 px-5 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-2xl font-bold text-xs uppercase hover:bg-slate-50 transition-all">← Powrót do listy</button>
+        <div id="details-content"></div>
+        <div id="opinions-section" class="hidden mt-8 bg-white p-8 rounded-[2.5rem] card-shadow border border-slate-100">
+            <h3 class="text-xl font-black mb-6 flex items-center gap-2">⭐ Opinie i Ocena wykonawcy</h3>
+            <div id="opinions-list" class="space-y-6 mb-8"></div>
+            <div class="bg-slate-50 p-6 rounded-3xl border border-slate-100 space-y-4">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Wystaw Opinię po wykonaniu usługi:</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <input id="op-email" type="email" placeholder="Twój e-mail zweryfikowany ze zlecenia" class="w-full bg-white border-2 border-slate-100 p-3 rounded-xl text-sm outline-none">
+                    <select id="op-stars" class="w-full bg-white border-2 border-slate-100 p-3 rounded-xl font-bold text-sm outline-none">
+                        <option value="5">⭐⭐⭐⭐⭐ 5 Gwiazdek (+5 pkt)</option>
+                        <option value="4">⭐⭐⭐⭐ 4 Gwiazdki (+4 pkt)</option>
+                        <option value="3">⭐⭐⭐ 3 Gwiazdki (+3 pkt)</option>
+                        <option value="2">⭐⭐ 2 Gwiazdki (+2 pkt)</option>
+                        <option value="1">⭐ 1 Gwiazdka (0 pkt)</option>
+                    </select>
+                </div>
+                <textarea id="op-text" placeholder="Jak oceniasz jakość i terminowość prac?..." class="w-full bg-white border-2 border-slate-100 p-3 rounded-xl h-24 text-sm outline-none"></textarea>
+                <button onclick="submitOpinion()" class="w-full bg-slate-800 text-white py-4 rounded-xl text-xs font-black uppercase hover:bg-slate-900 transition-all">Prześlij recenzję</button>
             </div>
         </div>
     </div>
 
-    <script>
-        const SUPABASE_URL = "https://wzbcshclmvyphwxtfhrn.supabase.co"; 
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6YmNzaGNsbXZ5cGh3eHRmaHJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDkxMjM0NTYsImV4cCI6MjAyNDcwOTExNn0.example_key_change_if_needed"; // Zostawiamy oryginalny klucz użytkownika
-        const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    <div id="list" class="grid grid-cols-1 gap-4 pb-20"></div>
 
-        let currentUser = null;
-        let currentProfile = null; 
-        let activeSection = 'zlecenia';
-        let authMode = 'login'; 
+    <div id="legal-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl p-6 max-w-lg w-full card-shadow max-h-[80vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-4">
+                <h3 id="legal-title" class="font-black text-lg text-slate-800">Dokument prawny</h3>
+                <button onclick="closeLegal()" class="text-slate-400 hover:text-slate-600 font-bold">✖</button>
+            </div>
+            <div id="legal-body" class="text-xs text-slate-600 space-y-3 leading-relaxed"></div>
+        </div>
+    </div>
 
-        // Funkcje sterowania widokami (Siatka Premium)
-        function showSection(sectionId) {
-            activeSection = sectionId;
-            document.getElementById('sec-zlecenia').classList.add('hidden');
-            document.getElementById('sec-dodaj').classList.add('hidden');
+    <footer class="mt-20 border-t border-slate-200 pt-10 pb-10 text-[10px] text-slate-400 leading-relaxed">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div>
+                <h4 onclick="openLegal('regulamin')" class="font-black text-slate-600 mb-2 uppercase tracking-widest cursor-pointer hover:text-blue-600">📄 Regulamin platformy</h4>
+                <p>Zasady przydzielania oraz odnawiania punktów dla firm budowlanych.</p>
+            </div>
+            <div>
+                <h4 onclick="openLegal('rodo')" class="font-black text-slate-600 mb-2 uppercase tracking-widest cursor-pointer hover:text-blue-600">🔒 RODO i Cookies</h4>
+                <p>Klauzule informacyjne dotyczące przetwarzania i weryfikacji adresów e-mail.</p>
+            </div>
+            <div>
+                <h4 onclick="openLegal('zasady')" class="font-black text-slate-600 mb-2 uppercase tracking-widest cursor-pointer hover:text-blue-600">💡 Jak to działa</h4>
+                <p>System pięciu chętnych i automatyczna blokada ogłoszeń.</p>
+            </div>
+        </div>
+        <div class="text-center mt-10 opacity-50 border-t border-slate-100 pt-4">© 2026 ZlećRemoncik.</div>
+    </footer>
+</main>
+
+<script>
+const SUPABASE_URL = "https://uodwrtpaesemcizdhcht.supabase.co";
+const SUPABASE_KEY = "sb_publishable_WVkoJLfkTfUD95EeSZMDQQ_VEhzlW6n";
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentUser = null, currentProfile = null, currentView = 'wszystko';
+let activePartnerId = null, activeZlecenieId = null;
+
+const SKLADNICA_SPECJALIZACJI = [
+    "Prace Ogólnobudowlane i Konstrukcyjne", "Wyburzenia, kucie ścian i wywóz gruzu", "Murowanie i betonowanie",
+    "Montaż okien i drzwi (Stolarka otworowa)", "Izolacje i docieplenia (Termomodernizacja)", "Wykończenie Wnętrz (Ściany i Sufity)",
+    "Gładzie gipsowe i szpachlowanie", "Malowanie tradycyjne i natryskowe", "Tapetowanie (Tradycyjne, fototapety, wielkoformatowe)",
+    "Sucha zabudowa (Ścianki G-K, sufity podwieszane i wielopoziomowe)", "Sztukateria i dekoracje ścienne", "Tynki dekoracyjne, strukturalne i mikrobeton",
+    "Podłogi i Okładziny (Glazurnictwo)", "Kompleksowy remont łazienek (Biały montaż, hydroizolacja)", "Układanie płytek, gresu i terakoty",
+    "Układanie spieków kwarcowych i płyt wielkoformatowych", "Układanie paneli, desek podłogowych i wykładzin", "Cyklinowanie, układanie i renowacja parkietów",
+    "Posadzki żywiczne i mikrocement podłogowy", "Instalacje i Technologia", "Instalacje elektryczne (Uprawnienia SEP)",
+    "Systemy Smart Home i automatyka domowa", "Instalacje hydrauliczne, wodno-kanalizacyjne i gazowe", "Klimatyzacja, wentylacja i rekuperacja",
+    "Montaż systemów grzewczych (Ogrzewanie podłogowe, pompy ciepła)", "Stolarka i Montaż", "Montaż mebli gotowych (IKEA itp.)",
+    "Meble na wymiar (Kuchnie, szafy wnękowe – usługi stolarskie)", "Montaż schodów i balustrad", "Specjalistyczne i Inne",
+    "Remonty obiektów zabytkowych / w kamienicach", "Prace na wysokościach / Alpinizm budowlany", "Pogotowie remontowe (Szybkie naprawy i awarie)",
+    "Inne / Prace nietypowe"
+];
+
+const selectNodes = document.querySelectorAll('.select-dynamic-categories');
+function setupCategorySelects() {
+    selectNodes.forEach(node => {
+        const isFilter = node.id === 'search-category';
+        let optionsHtml = isFilter ? '<option value="">📂 Wszystkie kategorie branżowe</option>' : '<option value="">Wybierz kategorię główną prac...</option>';
+        optionsHtml += SKLADNICA_SPECJALIZACJI.map(spec => `<option value="${spec}">${spec}</option>`).join("");
+        node.innerHTML = optionsHtml;
+    });
+    const editSelect = document.getElementById('edit-p-k');
+    if(editSelect) {
+        editSelect.innerHTML = SKLADNICA_SPECJALIZACJI.map(spec => `<option value="${spec}">${spec}</option>`).join("");
+    }
+}
+setupCategorySelects();
+
+const containerCheckboxes = document.getElementById('spec-checkboxes-container');
+containerCheckboxes.innerHTML = SKLADNICA_SPECJALIZACJI.map(spec => `
+    <label class="flex items-start gap-2 cursor-pointer p-1 rounded hover:bg-slate-100 transition-colors">
+        <input type="checkbox" value="${spec}" class="spec-checkbox-item mt-1 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+        <span>${spec}</span>
+    </label>
+`).join("");
+
+function switchAuthView(view) {
+    if(view === 'register') {
+        document.getElementById('view-login').classList.add('hidden');
+        document.getElementById('view-register').classList.remove('hidden');
+    } else {
+        document.getElementById('view-register').classList.add('hidden');
+        document.getElementById('view-login').classList.remove('hidden');
+    }
+}
+
+function toggleRegRoleFields(role) {
+    document.getElementById('pro-fields').classList.toggle('hidden', role !== 'wykonawca');
+    const tipText = document.getElementById('phone-tip');
+    tipText.innerText = role === 'klient' ? "Pamiętaj! Podanie numeru uskuteczni realizację Zlecenia." : "Numer telefonu ułatwi bezpośredni kontakt ze zleceniodawcami.";
+}
+
+async function checkUser() {
+    const { data: { session } } = await db.auth.getSession();
+    updateUI(session);
+}
+
+async function updateUI(session) {
+    currentUser = session?.user || null;
+    const authPanel = document.getElementById('auth-panel');
+    if (authPanel) authPanel.classList.toggle('hidden', !!session);
+    if (document.getElementById('logout-btn')) document.getElementById('logout-btn').classList.toggle('hidden', !session);
+    if (document.getElementById('my-account-btn')) document.getElementById('my-account-btn').classList.toggle('hidden', !session);
+    
+            if (currentUser) {
+        try {
+            document.getElementById('acc-email-display').innerText = currentUser.email;
+            const savedRole = localStorage.getItem('google_login_role');
             
-            document.getElementById('nav-btn-zlecenia').classList.remove('gold-gradient-btn', 'text-[#121212]', 'bg-[#121212]', 'text-white');
-            document.getElementById('nav-btn-dodaj').classList.remove('gold-gradient-btn', 'text-[#121212]', 'bg-[#121212]', 'text-white');
-
-            if(sectionId === 'zlecenia') {
-                document.getElementById('sec-zlecenia').classList.remove('hidden');
-                document.getElementById('nav-btn-zlecenia').classList.add('bg-[#121212]', 'text-white');
-                document.getElementById('nav-btn-dodaj').classList.add('gold-gradient-btn', 'text-[#121212]');
-                document.getElementById('page-title').innerText = "Ekskluzywne Oferty i Zlecenia";
-                renderZlecenia();
-            } else if(sectionId === 'dodaj') {
-                document.getElementById('sec-dodaj').classList.remove('hidden');
-                document.getElementById('nav-btn-dodaj').classList.add('bg-[#121212]', 'text-white');
-                document.getElementById('nav-btn-zlecenia').classList.add('gold-gradient-btn', 'text-[#121212]');
-                document.getElementById('page-title').innerText = "Dodaj Publikację Premium";
-            }
-        }
-
-        function toggleFormType() {
-            const typ = document.getElementById('form-typ').value;
-            const lblBudzet = document.getElementById('lbl-budzet');
-            const kategoriaSelect = document.getElementById('form-kategoria');
+            let { data: prof } = await db.from('profile_wykonawcow').select('*').eq('user_id', currentUser.id).maybeSingle();
             
-            if(typ === 'wizytowka') {
-                lblBudzet.innerText = "Cena za godzinę pracy / min. zlecenie (PLN)";
-                if(!kategoriaSelect.querySelector('option[value="Wizytówka"]')) {
-                    const opt = document.createElement('option');
-                    opt.value = "Wizytówka"; opt.innerText = "Wizytówka Fachowca";
-                    kategoriaSelect.appendChild(opt);
-                }
-                kategoriaSelect.value = "Wizytówka";
-            } else {
-                lblBudzet.innerText = "Budżet szacunkowy (PLN)";
-                if(kategoriaSelect.querySelector('option[value="Wizytówka"]')) {
-                    kategoriaSelect.removeChild(kategoriaSelect.querySelector('option[value="Wizytówka"]'));
-                }
-                kategoriaSelect.value = "Remonty";
-            }
-        }
-
-        // Modale i panele boczne (Luxury Animation)
-        function toggleProfilModal() {
-            const modal = document.getElementById('modal-profil');
-            const panel = document.getElementById('profil-panel');
-            if(modal.classList.contains('hidden')) {
-                modal.classList.remove('hidden');
-                setTimeout(() => panel.classList.add('active'), 10);
-                loadProfileIntoInputs();
-            } else {
-                panel.classList.remove('active');
-                setTimeout(() => modal.classList.add('hidden'), 400);
-            }
-        }
-
-        function openAuth(mode = 'login') {
-            authMode = mode;
-            document.getElementById('modal-auth').classList.remove('hidden');
-            updateAuthModalUI();
-        }
-
-        function closeAuth() {
-            document.getElementById('modal-auth').classList.add('hidden');
-        }
-
-        function switchAuthMode() {
-            authMode = (authMode === 'login') ? 'register' : 'login';
-            updateAuthModalUI();
-        }
-
-        function toggleAuthRole() {
-            const r = document.getElementById('auth-role').value;
-            document.getElementById('lbl-auth-nazwa').innerText = (r === 'wykonawca') ? "Pełna nazwa firmy wykonawczej" : "Imię i Nazwisko inwestora";
-        }
-
-        function updateAuthModalUI() {
-            if(authMode === 'login') {
-                document.getElementById('auth-title').innerText = "Witaj w panelu premium";
-                document.getElementById('auth-desc').innerText = "Zaloguj się, by zarządzać zleceniami najwyższej klasy.";
-                document.getElementById('register-only-fields').classList.add('hidden');
-                document.getElementById('auth-submit-btn').innerText = "Autoryzuj wejście";
-                document.getElementById('auth-switch-mode').innerText = "Nie posiadasz jeszcze dostępu? Utwórz konto";
-            } else {
-                document.getElementById('auth-title').innerText = "Dołącz do Elity Fachowców";
-                document.getElementById('auth-desc').innerText = "Rejestracja konta inwestorskiego lub prestiżowego profilu wykonawcy.";
-                document.getElementById('register-only-fields').classList.remove('hidden');
-                document.getElementById('auth-submit-btn').innerText = "Zarejestruj profil premium";
-                document.getElementById('auth-switch-mode').innerText = "Masz już konto? Zaloguj się bezpiecznie";
-                toggleAuthRole();
-            }
-        }
-
-        // Logika pobierania i autoryzacji danych profilu
-        async function checkUser() {
-            const { data : { session } } = await db.auth.getSession();
-            if(session && session.user) {
-                currentUser = session.user;
-                document.getElementById('user-guest').classList.add('hidden');
-                document.getElementById('user-logged').classList.remove('hidden');
+            if (savedRole === 'wykonawca' && !prof) {
+                const { data: created, error: err } = await db.from('profile_wykonawcow').insert([{
+                    user_id: currentUser.id,
+                    email: currentUser.email,
+                    nazwa_firmy: currentUser.user_metadata?.full_name || "Fachowiec Google",
+                    punkty: 10,
+                    miejscowosc: "Nie podano",
+                    specjalizacja: "Ogólne prace"
+                }]).select().maybeSingle();
                 
-                const { data } = await db.from('profile_wykonawcow').select('*').eq('user_id', currentUser.id).maybeSingle();
-                currentProfile = data;
-
-                let pkty = 0;
-                let pokazywanaNazwa = "Premium User";
-
-                if(currentProfile) {
-                    pkty = currentProfile.punkty || 0;
-                    pokazywanaNazwa = currentProfile.nazwa_firmy || "Ekspert Budowlany";
+                if (err) {
+                    console.error("Błąd tworzenia profilu Google:", err);
                 } else {
-                    pkty = currentUser.user_metadata?.punkty || 0;
-                    pokazywanaNazwa = currentUser.user_metadata?.full_name || "Inwestor";
+                    prof = created;
+                    localStorage.removeItem('google_login_role');
                 }
-
-                document.getElementById('user-points').innerText = pkty;
-                document.getElementById('user-name-display').innerText = pokazywanaNazwa;
-            } else {
-                currentUser = null; currentProfile = null;
-                document.getElementById('user-guest').classList.remove('hidden');
-                document.getElementById('user-logged').classList.add('hidden');
+            } else if (savedRole === 'klient' || prof) {
+                localStorage.removeItem('google_login_role');
             }
-            renderZlecenia();
-        }
 
-        async function handleAuth(e) {
-            e.preventDefault();
-            const email = document.getElementById('auth-email').value;
-            const password = document.getElementById('auth-password').value;
-
-            if(authMode === 'login') {
-                const { error } = await db.auth.signInWithPassword({ email, password });
-                if(error) alert("Błąd autoryzacji: " + error.message);
-                else { closeAuth(); window.location.reload(); }
-            } else {
-                const rola = document.getElementById('auth-role').value;
-                const nazwa = document.getElementById('auth-nazwa').value;
-                const tel = document.getElementById('auth-telefon').value;
-                const startowePunkty = (rola === 'wykonawca') ? 50 : 0;
-
-                const { data, error } = await db.auth.signUp({
-                    email, password,
-                    options: { data: { full_name: nazwa, telefon_kontaktowy: tel, rola: rola, punkty: startowePunkty } }
-                });
-
-                if(error) { alert("Błąd rejestracji: " + error.message); return; }
-                
-                if(data && data.user && rola === 'wykonawca') {
-                    await db.from('profile_wykonawcow').insert({
-                        user_id: data.user.id, nazwa_firmy: nazwa, telefon: tel, punkty: startowePunkty
-                    });
-                }
-                alert("Konto premium utworzone pomyślnie!"); closeAuth(); window.location.reload();
-            }
-        }
-
-        async function logout() {
-            await db.auth.signOut(); window.location.reload();
-        }
-
-        function loadProfileIntoInputs() {
-            if(currentUser) {
-                document.getElementById('profile-email-lbl').innerText = currentUser.email;
-                if(currentProfile) {
-                    document.getElementById('edit-nazwa').value = currentProfile.nazwa_firmy || "";
-                    document.getElementById('edit-tel').value = currentProfile.telefon || "";
-                } else {
-                    document.getElementById('edit-nazwa').value = currentUser.user_metadata?.full_name || "";
-                    document.getElementById('edit-tel').value = currentUser.user_metadata?.telefon_kontaktowy || "";
-                }
-            }
-        }
-
-        async function saveProfile() {
-            const nowaNazwa = document.getElementById('edit-nazwa').value;
-            const nowyTel = document.getElementById('edit-tel').value;
+            currentProfile = prof || null;
             
-            if(currentProfile) {
-                await db.from('profile_wykonawcow').update({ nazwa_firmy: nowaNazwa, telefon: nowyTel }).eq('user_id', currentUser.id);
-                await db.from('zlecenia').update({ telefon: nowyTel }).eq('user_id', currentUser.id);
-                alert("Dane wykonawcy zaktualizowane!"); window.location.reload();
+            // Po upewnieniu się, że profil został sprawdzony/utworzony, czyścimy flagę z pamięci
+            if (savedRole) {
+                localStorage.removeItem('google_login_role');
+            }
+
+            currentProfile = prof || null;
+            const pCounter = document.getElementById('points-counter');
+            const addJobBtn = document.getElementById('nav-add-job-btn');
+
+            if (currentProfile) {
+                if(pCounter) { pCounter.innerText = `Saldo: ${currentProfile.punkty} PKT`; pCounter.classList.remove('hidden'); }
+                if (addJobBtn) addJobBtn.classList.add('hidden');
             } else {
-                const { error } = await db.auth.updateUser({ data: { full_name: nowaNazwa, telefon_kontaktowy: nowyTel } });
-                await db.from('zlecenia').update({ telefon: nowyTel }).eq('user_id', currentUser.id);
-                if(!error) { alert("Dane inwestora zaktualizowane!"); window.location.reload(); }
-                else alert(error.message);
+                if(pCounter) pCounter.classList.add('hidden');
+                if (addJobBtn) addJobBtn.classList.remove('hidden');
             }
+            loadAccountPanel();
+        } catch (e) { console.error("Błąd profilu:", e); }
+    }
+    load();
+}
+db.auth.onAuthStateChange((event, session) => { updateUI(session); });
+checkUser();
+window.addEventListener('hashchange', checkUrlRoute);
+checkUrlRoute();
+
+if (localStorage.getItem('cookie-accept') === 'true') {
+    document.getElementById('cookie-banner').classList.add('hidden');
+}
+function acceptCookies() {
+    localStorage.setItem('cookie-accept', 'true');
+    document.getElementById('cookie-banner').classList.add('hidden');
+}
+
+async function executeLogin() {
+    const e = document.getElementById('login-email').value.trim();
+    const p = document.getElementById('login-password').value;
+    if(!e || !p) return alert("Podaj email i hasło!");
+    const { error } = await db.auth.signInWithPassword({ email: e, password: p });
+    if (error) alert("Błąd logowania: " + error.message);
+}
+
+async function loginWithGoogle() {
+    // Sprawdzamy czy użytkownik wybrał rolę w formularzu rejestracji przed kliknięciem Google
+    const selectedRole = document.getElementById('reg-role').value;
+    localStorage.setItem('google_login_role', selectedRole);
+
+    const { error } = await db.auth.signInWithOAuth({
+        provider: 'google',
+        options: { 
+            redirectTo: window.location.origin + window.location.pathname
         }
+    });
+    if (error) alert("Błąd Google: " + error.message);
+}
 
-        async function addPoints(ile) {
-            if(!currentUser) { alert("Zaloguj się najpierw."); return; }
-            if(currentProfile) {
-                const nowePkty = (currentProfile.punkty || 0) + ile;
-                await db.from('profile_wykonawcow').update({ punkty: nowePkty }).eq('user_id', currentUser.id);
-            } else {
-                const aktualne = currentUser.user_metadata?.punkty || 0;
-                await db.auth.updateUser({ data: { punkty: aktualne + ile } });
-            }
-            alert(`Konto zasilono o +${ile} punktów premium!`); window.location.reload();
+function validatePassword(p) {
+    return p.length >= 8 && /[A-Z]/.test(p) && /[0-9]/.test(p) && /[^A-Za-z0-9]/.test(p);
+}
+
+async function signUp() {
+    const e = document.getElementById('reg-email').value.trim();
+    const p = document.getElementById('reg-password').value;
+        const phone = document.getElementById('reg-phone').value.trim();
+    const role = document.getElementById('reg-role').value;
+
+    if(!e || !p) return alert("Podaj adres e-mail oraz hasło!");
+    if(role === 'wykonawca' && phone.length !== 9) return alert("Jako Wykonawca musisz podać 9-cyfrowy numer telefonu!");
+    if (!validatePassword(p)) return alert("Hasło musi zawierać min. 8 znaków, dużą literę, cyfrę oraz znak specjalny.");
+
+    const btn = document.querySelector("#view-register button");
+    if(btn) { btn.disabled = true; btn.innerText = "Trwa rejestracja..."; }
+
+    // 1. Zakładamy konto w systemie (Auth)
+    const { data, error } = await db.auth.signUp({ email: e, password: p });
+    
+    if (error) {
+        if(btn) { btn.disabled = false; btn.innerText = "Załóż konto"; }
+        return alert("Błąd rejestracji: " + error.message);
+    }
+
+    if (data.user) {
+        if (role === 'wykonawca') {
+            // Zapisujemy do tabeli WYKONAWCÓW
+            const checkedBoxes = document.querySelectorAll('.spec-checkbox-item:checked');
+            const wybraneSpecjalizacje = Array.from(checkedBoxes).map(cb => cb.value).join(", ") || "Ogólne prace";
+
+            const { error: profErr } = await db.from('profile_wykonawcow').insert([{
+                user_id: data.user.id,
+                email: e, // <--- TUTAJ ZAPISUJEMY EMAIL WYKONAWCY PRZY REJESTRACJI
+                nazwa_firmy: document.getElementById('reg-firma').value || "Fachowiec",
+                nip: document.getElementById('reg-nip').value || null,
+                miejscowosc: document.getElementById('reg-miejscowosc').value || "Nie podano",
+                kod_pocztowy: document.getElementById('reg-kod').value || "00-000",
+                specjalizacja: wybraneSpecjalizacje,
+                punkty: 10,
+                telefon: phone || null
+            }]);
+            if(profErr) console.error("Błąd tabeli wykonawcy:", profErr);
+            
+        } else {
+            // OPCJONALNIE: Tutaj możesz dodać zapis do tabeli 'profile_klientow' 
+            // jeśli stworzysz taką tabelę w Supabase (instrukcja poniżej)
+            await db.auth.updateUser({ data: { telefon_kontaktowy: phone, rola: 'klient' } });
         }
+    }
 
-        // Renderowanie ogłoszeń (Karty Luxury z dużą ilością wolnej przestrzeni)
-        async function renderZlecenia() {
-            const sText = document.getElementById('filter-search').value.toLowerCase();
-            const sKat = document.getElementById('filter-kategoria').value;
-            const sWoj = document.getElementById('filter-wojewodztwo').value;
+    alert("Rejestracja udana! Jeśli nie możesz się zalogować, sprawdź e-mail i kliknij link aktywacyjny (jeśli masz go włączonego w Supabase).");
+    window.location.reload();
+}
 
-            let query = db.from('zlecenia').select('*').order('created_at', { ascending: false });
-            if(sKat) query = query.eq('kategoria', sKat);
-            if(sWoj) query = query.eq('wojewodztwo', sWoj);
+async function signOut() { 
+    await db.auth.signOut(); 
+    localStorage.clear(); // Czyści role i sesje
+    toggleAccountMenu(false); 
+    window.location.href = window.location.origin + window.location.pathname; // Pełne odświeżenie strony
+}
 
-            const { data: zlecenia, error } = await query;
-            if(error) { console.error(error); return; }
+function toggleAccountMenu(open) {
+    const sidebar = document.getElementById('account-sidebar');
+    const overlay = document.getElementById('account-sidebar-overlay');
+    if (open) {
+        sidebar.className = "fixed top-0 right-0 h-full w-full sm:w-[450px] bg-white z-50 shadow-2xl slide-panel p-6 overflow-y-auto flex flex-col active";
+        overlay.classList.remove('hidden');
+        if(currentUser) loadAccountPanel();
+    } else {
+        sidebar.className = "fixed top-0 right-0 h-full w-full sm:w-[450px] bg-white z-50 shadow-2xl slide-panel p-6 overflow-y-auto flex flex-col";
+        overlay.classList.add('hidden');
+    }
+}
 
-            const container = document.getElementById('zlecenia-container');
-            container.innerHTML = "";
+function toggleAddModal(open) {
+    const modal = document.getElementById('add-modal-overlay');
+    if(open) modal.classList.remove('hidden'); else modal.classList.add('hidden');
+}
 
-            const filtered = zlecenia.filter(z => 
-                z.tytul.toLowerCase().includes(sText) || z.opis.toLowerCase().includes(sText)
-            );
+async function uploadFile(fileInputId) {
+    const fileInput = document.getElementById(fileInputId);
+    if (!fileInput || !fileInput.files || fileInput.files.length === 0) return null;
+    const file = fileInput.files[0];
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random()}_${Date.now()}.${fileExt}`;
+    const BUCKET_NAME = "zdjecia-zlecen";
+    
+    const { data, error } = await db.storage.from(BUCKET_NAME).upload(fileName, file);
+    
+    if (error) {
+        alert("Błąd przesyłania zdjęcia: " + error.message + " (Sprawdź czy Bucket 'zdjecia-zlecen' istnieje w Storage)");
+        return null;
+    }
+    
+    const { data: urlData } = db.storage.from(BUCKET_NAME).getPublicUrl(fileName);
+    return urlData?.publicUrl || null;
+}
 
-            document.getElementById('counter-offers').innerText = filtered.length;
+async function add() {
+    const btn = document.getElementById('add-btn');
+    const tVal = document.getElementById("t").value;
+    const pVal = document.getElementById("p").value;
+    const mVal = document.getElementById("m").value;
+    const kVal = document.getElementById("k").value;
+    const oVal = document.getElementById("o").value;
+    const pcVal = document.getElementById("postcode").value;
 
-            if(filtered.length === 0) {
-                container.innerHTML = `
-                    <div class="bg-white/80 rounded-3xl p-12 text-center gold-border max-w-lg mx-auto mt-6">
-                        <svg class="w-12 h-12 mx-auto text-[#C89B3C] mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0a2 2 0 01-2 2H6a2 2 0 01-2-2m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
-                        <h4 class="text-base font-bold text-[#121212] mb-1">Brak ofert spełniających kryteria</h4>
-                        <p class="text-xs text-gray-400">Zmień filtry lub utwórz nowe zgłoszenie już teraz.</p>
-                    </div>`;
-                return;
-            }
+        const noPhone = document.getElementById('no-phone').checked;
+    if (!tVal || !mVal || !oVal || (!noPhone && pVal.length !== 9)) {
+        return alert("Uzupełnij formularz! Pola Tytuł, Miasto i Opis są obowiązkowe. Podaj 9-cyfrowy telefon lub zaznacz 'Wolę nie podawać'.");
+    }
 
-            filtered.forEach(z => {
-                const card = document.createElement('div');
-                card.className = "bg-white card-shadow rounded-[24px] p-8 md:p-10 gold-border flex flex-col md:flex-row justify-between items-start md:items-center gap-8 hover:shadow-xl transition-all duration-300 relative overflow-hidden";
-                
-                const isWizytowka = (z.kategoria === 'Wizytówka');
-                
-                // Badge premium
-                const badge = isWizytowka 
-                    ? `<span class="bg-[#121212] text-[#E3C36B] text-[10px] uppercase tracking-wider px-3 py-1 rounded-full font-bold border border-[#D4AF37]/30">PRO EXPERT</span>`
-                    : `<span class="bg-[#FAF9F7] text-[#C89B3C] text-[10px] uppercase tracking-wider px-3 py-1 rounded-full font-bold border border-[#D4AF37]/20">ZLECENIE PREMIUM</span>`;
+    btn.disabled = true; btn.innerText = "Trwa publikowanie...";
+    
+    const imgUrl1 = await uploadFile('img1');
+    const imgUrl2 = await uploadFile('img2');
+    const imgUrl3 = await uploadFile('img3');
 
-                // Logika kosztu punktowego (1pkt za mniejsze, 2pkt za budowę/większe)
-                let kosztPkt = 1;
-                if(z.kategoria === 'Budowa' || (z.budzet && z.budzet >= 50000)) kosztPkt = 2;
+    const wyznaczonaRolaWpisu = currentProfile ? 'wykonawca' : 'klient';
+    
+    const insertData = {
+        tytul: tVal, miasto: mVal, opis: oVal, telefon: pVal, 
+        kategoria: kVal || 'Inne', user_id: currentUser.id, typ_wpisu: wyznaczonaRolaWpisu,
+        user_email: currentUser.email,
+        zdjecie1: imgUrl1, zdjecie2: imgUrl2, zdjecie3: imgUrl3
+    };
+    if (pcVal && pcVal.trim() !== "") insertData.kod_pocztowy = pcVal;
 
-                let actionButtonHtml = "";
-                if(isWizytowka) {
-                    actionButtonHtml = `
-                        <a href="tel:${z.telefon || ''}" class="gold-gradient-btn text-[#121212] text-xs font-bold uppercase tracking-wider px-6 py-3.5 rounded-full shadow-md text-center block w-full md:w-auto">
-                            Zadzwoń do firmy
-                        </a>`;
+    const { error } = await db.from("zlecenia").insert([insertData]).select();
+
+    if (error) {
+        alert("Błąd zapisu Supabase: " + error.message);
+        btn.disabled = false; btn.innerText = "Opublikuj ogłoszenie";
+    } else {
+        alert("Sukces! Ogłoszenie pojawiło się na tablicy.");
+        document.getElementById("t").value = "";
+        document.getElementById("p").value = "";
+        document.getElementById("o").value = "";
+        document.getElementById("m").value = "";
+        document.getElementById("postcode").value = "";
+        document.getElementById("img1").value = "";
+        document.getElementById("img2").value = "";
+        document.getElementById("img3").value = "";
+        btn.disabled = false; btn.innerText = "Opublikuj ogłoszenie";
+        toggleAddModal(false); load(); if(currentUser) loadAccountPanel(); 
+    }
+}
+
+async function load() {
+    // Pobieramy zlecenia wraz z ID zgłoszeń, aby móc je policzyć
+    let q = db.from("zlecenia").select("*, zgloszenia(id)").order("id", { ascending: false });
+    
+    const cityInput = document.getElementById('search-city').value.trim();
+    if (cityInput !== "") q = q.ilike('miasto', `%${cityInput}%`);
+    const categorySelect = document.getElementById('search-category').value;
+    if (categorySelect !== "") q = q.eq('kategoria', categorySelect);
+
+    const { data, error } = await q;
+    const listEl = document.getElementById("list");
+    if (!data || data.length === 0) { listEl.innerHTML = `<p class='text-center text-slate-400 py-16 text-xs font-semibold bg-white rounded-2xl border'>Brak wpisów.</p>`; return; }
+
+    listEl.innerHTML = data.map(z => {
+        const totalReq = z.zgloszenia ? z.zgloszenia.length : 0;
+        const isFull = totalReq >= 5;
+                const hasTel = (z.telefon && z.telefon.trim().length === 9) ? "✅ Podano" : "❌ Brak";
+        const hasMail = "✅ Podano";  
+
+        return `
+        <div onclick="openDetails(${z.id})" class="group bg-white rounded-2xl card-shadow overflow-hidden border border-slate-100 cursor-pointer hover:border-blue-300 transition-all p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative">
+            <div class="space-y-1.5 flex-1">
+                <div class="flex items-center gap-2 text-[9px] font-black uppercase">
+                    <span class="${z.typ_wpisu === 'wykonawca' ? 'text-amber-500' : 'text-blue-600'}">${z.typ_wpisu === 'wykonawca' ? '⭐ Fachowiec' : '📝 Zlecenie'}</span>
+                    <span class="text-slate-300">|</span>
+                    <span class="text-slate-400">📍 ${z.miasto}</span>
+                </div>
+                <h3 class="text-base font-bold text-slate-800 group-hover:text-blue-600 transition-colors leading-tight">${z.tytul}</h3>
+                <div class="flex gap-3 mt-1 text-[8px] font-bold uppercase text-slate-400">
+                    <span>📞 Tel: ${hasTel}</span>
+                    <span>📧 Email: ${hasMail}</span>
+                </div>
+            </div>
+            <div class="sm:text-right shrink-0 flex flex-col items-start sm:items-end gap-1 min-w-[120px]">
+                <span class="text-[9px] font-bold text-slate-400">${totalReq}/5 chętnych</span>
+                <div class="h-1.5 w-24 bg-slate-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-blue-500" style="width: ${totalReq * 20}%"></div>
+                </div>
+            </div>
+        </div>`;
+    }).join("");
+}
+// 2. Automatyczne odświeżanie co 30 sekund
+setInterval(load, 30000);
+setInterval(() => { if(currentUser) loadConversations(); }, 10000);
+
+function openDetails(id) { window.location.hash = `ogloszenie-${id}`; }
+function goBackToList() { window.location.hash = ""; document.getElementById('details-view').classList.add('hidden'); document.getElementById('list').classList.remove('hidden'); document.getElementById('filter-panel').classList.remove('hidden'); }
+
+async function checkUrlRoute() {
+    const hash = window.location.hash;
+    if (!hash.startsWith('#ogloszenie-')) return;
+    const id = hash.replace('#ogloszenie-', '');
+
+    document.getElementById('list').classList.add('hidden');
+    document.getElementById('filter-panel').classList.add('hidden');
+    document.getElementById('details-view').classList.remove('hidden');
+
+    // Pobieramy zlecenie bezpośrednio
+    const { data: z } = await db.from("zlecenia").select("*").eq('id', id).single();
+    if (!z) return;
+
+    const { count: totalApplicants } = await db.from('zgloszenia').select('*', { count: 'exact', head: true }).eq('zlecenie_id', id);
+    
+    // Sprawdzamy czy bieżący wykonawca zakupił już to zlecenie
+    let bzgloszenie = null;
+    if (currentUser) {
+        const { data: appData } = await db.from('zgloszenia').select('id').eq('zlecenie_id', id).eq('wykonawca_id', currentUser.id).maybeSingle();
+        bzgoszenie = appData;
+    }
+
+    const ownerEmail = z.user_email || 'Brak';
+    const ownerName = ownerEmail !== 'Brak' ? ownerEmail.split('@')[0] : 'Brak';
+
+    let actionBtn = "";
+    let deleteBtnHtml = "";
+
+    if (currentUser && z.typ_wpisu === 'klient' && z.user_id !== currentUser.id) {
+        if (bzgoszenie) {
+            // Jeśli wykonawca już kupił to zlecenie, pokazujemy duży czerwony przycisk USUŃ według wzoru tak.jpg
+            deleteBtnHtml = `
+                <div class="flex justify-end pt-4 border-t border-slate-100">
+                    <button onclick="delBought('${bzgoszenie.id}')" class="bg-red-50 text-red-600 border border-red-200 px-6 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider hover:bg-red-100 transition-all shadow-sm">USUŃ</button>
+                </div>
+            `;
+        } else if (totalApplicants >= 5) {
+            actionBtn = `<div class="bg-red-50 text-red-600 p-4 rounded-2xl text-center font-black text-xs uppercase">Zebrano już komplet chętnych</div>`;
                 } else {
-                    actionButtonHtml = `
-                        <div class="text-right w-full md:w-auto">
-                            <button onclick="revealContact('${z.id}', ${kosztPkt})" class="gold-gradient-btn text-[#121212] text-xs font-extrabold uppercase tracking-wider px-7 py-3.5 rounded-full w-full md:w-auto block shadow-md">
-                                Odblokuj kontakt
-                            </button>
-                            <span class="block text-[10px] text-gray-400 mt-2 font-medium">Koszt odsłonięcia: <b class="text-[#C89B3C]">${kosztPkt} pkt</b></span>
-                        </div>`;
-                }
+            const cost = (z.telefon && z.telefon.trim().length === 9) ? 2 : 1;
+            actionBtn = `<button onclick="applyForJob(${z.id})" class="w-full bg-amber-500 text-white py-5 rounded-2xl font-black uppercase text-sm shadow-lg shadow-amber-100 hover:scale-[1.01] transition-all">🙋 Jestem Zainteresowany (-${cost} pkt)</button>`;
+        }
+   }
 
-                card.innerHTML = `
-                    <div class="space-y-4 flex-1">
-                        <div class="flex items-center space-x-3">
-                            ${badge}
-                            <span class="text-xs font-semibold text-gray-400 flex items-center">
-                                <svg class="w-3.5 h-3.5 mr-1 text-[#C89B3C]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
-                                Woj. ${z.wojewodztwo.toUpperCase()}, ${z.miasto}
-                            </span>
-                        </div>
-                        <div>
-                            <h3 class="text-xl font-bold text-[#121212] tracking-tight mb-2 hover:text-[#C89B3C] transition-colors cursor-pointer">${z.tytul}</h3>
-                            <p class="text-sm text-gray-600 leading-relaxed max-w-3xl font-medium">${z.opis}</p>
-                        </div>
-                        <div class="flex flex-wrap gap-4 pt-2 text-xs font-bold text-gray-500 uppercase tracking-wide">
-                            <div class="bg-[#FAF9F7] px-3 py-1.5 rounded-lg border border-gray-100">
-                                Branża: <span class="text-[#121212]">${z.kategoria}</span>
-                            </div>
-                            <div class="bg-[#FAF9F7] px-3 py-1.5 rounded-lg border border-gray-100">
-                                ${isWizytowka ? 'Stawka' : 'Budżet'}: <span class="text-[#C89B3C]">${z.budzet ? Number(z.budzet).toLocaleString() + ' PLN' : 'Do negocjacji'}</span>
-                            </div>
-                            <div id="phone-box-${z.id}" class="bg-[#121212] text-[#FAF9F7] px-3 py-1.5 rounded-lg border border-[#D4AF37]/30 hidden tracking-normal font-mono text-xs">
-                                Tel: <span class="text-[#E3C36B] font-bold font-sans">${z.telefon || 'Brak'}</span>
-                            </div>
-                        </div>
+    const finalLocString = z.kod_pocztowy ? `${z.miasto} (${z.kod_pocztowy})` : z.miasto;
+
+    // Sprawdzamy czy bieżący użytkownik wykupił już to zlecenie lub jest jego autorem
+    let hasAccess = false;
+    if (currentUser) {
+        if (z.user_id === currentUser.id) {
+            hasAccess = true;
+        } else {
+            const { data: bz } = await db.from('zgloszenia').select('id').eq('zlecenie_id', z.id).eq('wykonawca_id', currentUser.id).maybeSingle();
+            if (bz) hasAccess = true;
+        }
+    }
+
+    // Jeśli brak dostępu, ukrywamy prawdziwy e-mail i telefon
+    const displayPhone = hasAccess ? (z.telefon || 'Brak') : "Ukryty (wykup kontakt)";
+    const displayEmail = hasAccess ? ownerEmail : "Ukryty (wykup kontakt)";
+
+    // Generowanie sekcji zdjęć - odfiltrowujemy puste oraz zepsute wpisy [object Object]
+    let imagesHtml = "";
+    const availableImages = [z.zdjecie1, z.zdjecie2, z.zdjecie3].filter(img => {
+        return img && img.trim() !== "" && !img.includes("[object") && img !== "undefined";
+    });
+    if (availableImages.length > 0) {
+        imagesHtml = `
+            <div class="border-t border-slate-100 pt-4">
+                <p class="text-[10px] font-black text-slate-400 uppercase mb-2 tracking-wider">Załączone zdjęcia (kliknij, aby powiększyć):</p>
+                <div class="flex flex-wrap gap-2">
+                    ${availableImages.map(imgUrl => `
+                        <img src="${imgUrl}" onclick="openImageModal('${imgUrl}')" class="w-24 h-24 object-cover rounded-xl border border-slate-200 cursor-zoom-in hover:opacity-90 transition-all shadow-sm">
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    document.getElementById('details-content').innerHTML = `
+        <div class="bg-white p-8 rounded-[2.5rem] card-shadow border border-slate-100 space-y-6 relative">
+            <div class="flex justify-between items-start">
+                <h1 class="text-3xl font-black leading-tight text-slate-900">${z.tytul}</h1>
+                <span class="bg-blue-50 text-blue-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-tighter">${z.kategoria || 'Inne'}</span>
+            </div>
+            
+            <div class="flex flex-wrap gap-4 text-xs font-bold text-slate-400 uppercase">
+                <span class="text-pink-600 font-extrabold">📍 ${finalLocString.toUpperCase()}</span>
+            </div>
+
+            <div class="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 max-w-sm text-xs space-y-1">
+                <p><span class="text-slate-400">Dane Zleceniodawcy:</span> <span class="font-bold text-slate-800">${ownerName}</span></p>
+                <p><span class="text-slate-400">Telefon:</span> <span class="font-bold ${hasAccess ? 'text-slate-900' : 'text-amber-600 italic'}">${displayPhone}</span></p>
+                <p><span class="text-slate-400">Email:</span> <span class="font-bold ${hasAccess ? 'text-slate-800' : 'text-amber-600 italic'}">${displayEmail}</span></p>
+            </div>
+
+            <div class="text-slate-600 leading-relaxed whitespace-pre-wrap border-t border-slate-50 pt-4 text-sm">${z.opis}</div>
+
+            ${imagesHtml}
+
+            ${z.typ_wpisu === 'klient' ? `
+            <div class="p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                <p class="text-[10px] font-black text-blue-600 uppercase mb-2">Status zgłoszeń:</p>
+                <div class="flex items-center gap-4">
+                    <div class="h-3 flex-1 bg-white rounded-full overflow-hidden border border-slate-200">
+                        <div class="h-full bg-blue-500" style="width: ${totalApplicants * 20}%"></div>
                     </div>
-                    <div class="w-full md:w-auto border-t md:border-t-0 border-gray-100 pt-4 md:pt-0 flex justify-end">
-                        ${actionButtonHtml}
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        // Akcja pobierania danych kontaktowych premium za punkty SaaS
-        async function revealContact(zlecenieId, koszt) {
-            if(!currentUser) { openAuth('login'); return; }
+                    <span class="text-sm font-black">${totalApplicants} / 5 Fachowców</span>
+                </div>
+            </div>` : ''}
             
-            let aktualnePunkty = 0;
-            if(currentProfile) aktualnePunkty = currentProfile.punkty || 0;
-            else aktualnePunkty = currentUser.user_metadata?.punkty || 0;
+            <div class="space-y-4 pt-2">
+                ${actionBtn}
+                ${deleteBtnHtml ? `
+                    <div class="flex justify-end pt-2">
+                        <button onclick="delBought('${bzgoszenie.id}')" class="bg-red-50 hover:bg-red-100 text-red-500 border border-red-100 px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-sm">USUŃ</button>
+                    </div>
+                ` : ''}
+            </div>
+        </div>
+    `;
 
-            if(aktualnePunkty < koszt) {
-                alert(`Niewystarczająca ilość punktów premium. Potrzebujesz ${koszt} pkt, a posiadasz ${aktualnePunkty} pkt. Doładuj konto w panelu profilu.`);
-                toggleProfilModal();
-                return;
-            }
+    const opinionsSec = document.getElementById('opinions-section');
+    if (z.typ_wpisu === 'wykonawca') { opinionsSec.classList.remove('hidden'); loadOpinions(z.user_id); } else { opinionsSec.classList.add('hidden'); }
+}
 
-            if(confirm(`Czy chcesz przeznaczyć ${koszt} punktów na odsłonięcie danych kontaktowych tego inwestora?`)) {
-                const nowePunkty = aktualnePunkty - koszt;
-                
-                if(currentProfile) {
-                    await db.from('profile_wykonawcow').update({ punkty: nowePunkty }).eq('user_id', currentUser.id);
-                } else {
-                    await db.auth.updateUser({ data: { punkty: nowePunkty } });
-                }
+// Funkcje do obsługi modala powiększania zdjęć
+function openImageModal(url) {
+    let imgModal = document.getElementById('image-fullscreen-modal');
+    if (!imgModal) {
+        imgModal = document.createElement('div');
+        imgModal.id = 'image-fullscreen-modal';
+        imgModal.className = 'fixed inset-0 bg-slate-900/90 backdrop-blur-md z-[60] flex items-center justify-center p-4 cursor-zoom-out';
+        imgModal.onclick = () => imgModal.classList.add('hidden');
+        imgModal.innerHTML = `<img id='fullscreen-target-img' class='max-w-full max-h-[90vh] rounded-2xl shadow-2xl border border-white/10'>`;
+        document.body.appendChild(imgModal);
+    }
+    document.getElementById('fullscreen-target-img').src = url;
+    imgModal.classList.remove('hidden');
+}
 
-                document.getElementById(`phone-box-${zlecenieId}`).classList.remove('hidden');
-                document.getElementById('user-points').innerText = nowePunkty;
-                alert("Dane zostały pomyślnie odblokowane. Telefon pojawił się w karcie zlecenia.");
-                checkUser(); 
-            }
+// Funkcje do obsługi modala powiększania zdjęć
+function openImageModal(url) {
+    let imgModal = document.getElementById('image-fullscreen-modal');
+    if (!imgModal) {
+        imgModal = document.createElement('div');
+        imgModal.id = 'image-fullscreen-modal';
+        imgModal.className = 'fixed inset-0 bg-slate-900/90 backdrop-blur-md z-[60] flex items-center justify-center p-4 cursor-zoom-out';
+        imgModal.onclick = () => imgModal.classList.add('hidden');
+        imgModal.innerHTML = `<img id='fullscreen-target-img' class='max-w-full max-h-[90vh] rounded-2xl shadow-2xl border border-white/10'>`;
+        document.body.appendChild(imgModal);
+    }
+    document.getElementById('fullscreen-target-img').src = url;
+    imgModal.classList.remove('hidden');
+}
+
+async function applyForJob(zlecenieId) {
+    if (!currentProfile) return alert("Tylko Wykonawca może zgłaszać chęć realizacji!");
+    
+    // 1. Pobieramy dane zlecenia, żeby sprawdzić czy jest telefon
+    const { data: z } = await db.from('zlecenia').select('*').eq('id', zlecenieId).single();
+    if (!z) return alert("Nie znaleziono takiego zlecenia.");
+    
+    // Koszt: 2 punkty jeśli jest poprawny numer telefonu, w przeciwnym wypadku 1 punkt (sam email)
+    const cost = (z.telefon && z.telefon.trim().length === 9) ? 2 : 1;
+    if (currentProfile.punkty < cost) return alert(`To zlecenie kosztuje ${cost} PKT. Masz tylko ${currentProfile.punkty}.`);
+
+    const { data: existing } = await db.from('zgloszenia').select('id').eq('zlecenie_id', zlecenieId).eq('wykonawca_id', currentUser.id).maybeSingle();
+    if(existing) return alert("Już zgłosiłeś się do tego zlecenia!");
+
+    // 2. Dodajemy zgłoszenie
+    const { error } = await db.from('zgloszenia').insert([{ zlecenie_id: zlecenieId, wykonawca_id: currentUser.id }]);
+    
+    if (!error) {
+        // 3. Pobieramy punkty
+        await db.from('profile_wykonawcow').update({ punkty: currentProfile.punkty - cost }).eq('user_id', currentUser.id);
+        
+        // 4. Wysyłamy WIADOMOŚĆ SYSTEMOWĄ z danymi
+        const systemMsg = `SYSTEM: Wykupiłeś kontakt do zlecenia "${z.tytul}". \n📞 Tel: ${z.telefon || 'Nie podano'} \n📧 Email autora: ${z.user_email || 'Nie podano'}`;
+        await db.from('wiadomosci').insert([{ 
+            zlecenie_id: zlecenieId, 
+            nadawca_id: '00000000-0000-0000-0000-000000000000', 
+            odbiorca_id: currentUser.id, 
+            tresc: systemMsg 
+        }]);
+
+        alert(`Sukces! Pobrano ${cost} PKT. Dane kontaktowe znajdziesz w zakładce Konwersacje.`);
+        checkUrlRoute();
+        updateUI({user: currentUser});
+    }
+}
+
+async function loadOpinions(wykonawcaId) {
+    const { data } = await db.from('opinie').select('*').eq('wykonawca_id', wykonawcaId).order('id', {ascending: false});
+    const list = document.getElementById('opinions-list');
+    if (!data || data.length === 0) { list.innerHTML = `<p class="text-center py-10 text-slate-400 italic">Ten fachowiec nie posiada jeszcze opinii.</p>`; return; }
+    list.innerHTML = data.map(o => `
+        <div class="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+            <div class="flex justify-between items-center mb-3">
+                <div class="flex text-amber-400 font-bold">${'⭐'.repeat(o.gwiazdki)}</div>
+                <span class="text-[10px] font-bold text-slate-400">${o.autor_email}</span>
+            </div>
+            <p class="text-sm text-slate-600 leading-relaxed">${o.tresc}</p>
+        </div>
+    `).join("");
+}
+
+async function submitOpinion() {
+    const hash = window.location.hash;
+    const id = hash.replace('#ogloszenie-', '');
+    const { data: targetZlecenie } = await db.from("zlecenia").select("user_id").eq('id', id).single();
+
+    const em = document.getElementById('op-email').value;
+    const stars = parseInt(document.getElementById('op-stars').value);
+    const text = document.getElementById('op-text').value;
+
+    if(!em || !text) return alert("Uzupełnij swój e-mail oraz opis!");
+
+    const { error } = await db.from('opinie').insert([{ wykonawca_id: targetZlecenie.user_id, autor_email: em, gwiazdki: stars, tresc: text }]);
+    if (error) { alert("Błąd dodawania opinii: " + error.message); } else {
+        let bonus = 0;
+        if(stars === 5) bonus = 5; else if(stars === 4) bonus = 4; else if(stars === 3) bonus = 3; else if(stars === 2) bonus = 2;
+        if(bonus > 0) {
+            const { data: prof } = await db.from('profile_wykonawcow').select('punkty').eq('user_id', targetZlecenie.user_id).maybeSingle();
+            if(prof) await db.from('profile_wykonawcow').update({ punkty: prof.punkty + bonus }).eq('user_id', targetZlecenie.user_id);
         }
+        alert(`Opinia została zapisana! Wykonawca otrzymał bonus: +${bonus} punktów.`);
+        loadOpinions(targetZlecenie.user_id);
+    }
+}
 
-        // Zapis nowego ogłoszenia na Supabase
-        async function saveZlecenie(e) {
-            e.preventDefault();
-            if(!currentUser) { alert("Musisz być zalogowany, aby móc dodawać ogłoszenia."); openAuth('login'); return; }
+async function loadAccountPanel(page = 1) {
+    const postsList = document.getElementById('user-posts-list');
+    const actTitle = document.getElementById('activity-title');
+    const perPage = 5;
 
-            const tytul = document.getElementById('form-tytul').value;
-            const opis = document.getElementById('form-opis').value;
-            const kategoria = document.getElementById('form-kategoria').value;
-            const wojewodztwo = document.getElementById('form-wojewodztwo').value;
-            const miasto = document.getElementById('form-miasto').value;
-            const budzet = document.getElementById('form-budzet').value ? parseFloat(document.getElementById('form-budzet').value) : null;
-            const telefon = document.getElementById('form-telefon').value;
+    if (!currentProfile) {
+        // WIDOK ZLECENIODAWCY (Moje ogłoszenia)
+        actTitle.innerText = "📂 MOJE ZLECENIA";
+        const { data: posts } = await db.from('zlecenia').select('*').eq('user_id', currentUser.id).order('created_at', {ascending: false});
+        
+        postsList.innerHTML = posts?.map(p => `
+            <div class="border border-slate-200 rounded-2xl p-4 bg-white mb-3 shadow-sm cursor-pointer" onclick="openDetails(${p.id})">
+                <div class="flex justify-between items-center mb-2">
+                    <h4 class="font-bold text-xs uppercase">${p.tytul}</h4>
+                    <span class="text-[9px] font-bold text-slate-400">AKTYWNE</span>
+                </div>
+                <p class="text-[10px] text-slate-500 mb-2 line-clamp-1">${p.opis}</p>
+                <div class="flex gap-2">
+                    <button onclick="event.stopPropagation(); editPost(${p.id})" class="text-[9px] font-bold text-blue-600">EDYTUJ</button>
+                    <button onclick="event.stopPropagation(); del(${p.id})" class="text-[9px] font-bold text-red-500">USUŃ</button>
+                </div>
+            </div>
+        `).join('') || "Brak ogłoszeń.";
 
-            const { error } = await db.from('zlecenia').insert({
-                user_id: currentUser.id, tytul, opis, kategoria, wojewodztwo, miasto, budzet, telefon
-            });
+    } else {
+        // WIDOK WYKONAWCY (Kupione - Zgodnie ze screenem)
+        actTitle.innerText = "🛒 KUPIONE ZLECENIA (WYKONAWCA)";
+        
+        // Pobieramy zgłoszenia oraz dane zlecenia wraz z adresem email autora zlecenia (użytkownika auth)
+        const { data: apps } = await db.from('zgloszenia').select('*, zlecenie:zlecenia(*, autor:user_id(email))').eq('wykonawca_id', currentUser.id).order('created_at', {ascending: false});
+        
+        const start = (page - 1) * perPage;
+        const pagedApps = apps?.slice(start, start + perPage);
 
-            if(error) alert("Wystąpił błąd zapisu: " + error.message);
-            else {
-                alert("Ogłoszenie premium opublikowane poprawnie!");
-                document.getElementById('form-zlecenie').reset();
-                showSection('zlecenia');
+        postsList.innerHTML = pagedApps?.map(a => {
+            const zol = a.zlecenie;
+            const ownerEmail = zol?.autor?.email || 'Brak';
+            const ownerName = ownerEmail !== 'Brak' ? ownerEmail.split('@')[0] : 'Brak';
+
+            return `
+            <div class="border border-blue-200 rounded-xl p-3 bg-white shadow-sm mb-2 cursor-pointer hover:border-blue-400 transition-all" onclick="openDetails(${zol?.id})">
+                <div class="flex justify-between items-center mb-1">
+                    <h4 class="font-bold text-xs uppercase tracking-tight text-slate-800">${zol?.tytul || 'Brak tytułu'}</h4>
+                    <span class="text-[8px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-bold border border-blue-100 uppercase">Opłacone</span>
+                </div>
+                <p class="text-[10px] text-slate-500 mb-1.5 line-clamp-1">${zol?.opis || ''}</p>
+                <div class="bg-slate-50 p-2 rounded-lg mb-2 text-[10px] space-y-0.5 border border-slate-100">
+                    <p><span class="text-slate-400">Dane Zleceniodawcy:</span> <span class="font-bold text-slate-700">${ownerName}</span></p>
+                    <p><span class="text-slate-400">Telefon:</span> <span class="font-bold text-slate-700">${zol?.telefon || 'Brak'}</span></p>
+                    <p><span class="text-slate-400">Email:</span> <span class="font-bold text-slate-700">${ownerEmail}</span></p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="event.stopPropagation(); openChatBox('${zol?.user_id}', ${zol?.id}, '${ownerName}')" class="w-full bg-slate-900 text-white py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-black transition-colors">Czat</button>
+                </div>
+            </div>`;
+        }).join('') || "Brak zakupionych zleceń.";
+
+        // Paginacja
+        const totalPages = Math.ceil((apps?.length || 0) / perPage);
+        if (totalPages > 1) {
+            let paginHtml = `<div class="flex gap-2 justify-center mt-4 text-[10px] font-bold">`;
+            for(let i=1; i<=totalPages; i++) {
+                paginHtml += `<button onclick="loadAccountPanel(${i})" class="${i===page ? 'text-blue-600 underline' : 'text-slate-400'}">${i}</button>`;
             }
+            paginHtml += `</div>`;
+            postsList.innerHTML += paginHtml;
         }
+    }
+    loadConversations();
+}
 
-        // Inicjalizacja przy starcie
-        checkUser();
-    </script>
+async function loadConversations() {
+    const { data: chats } = await db.from('wiadomosci').select('zlecenie_id, zlecenie:zlecenia(tytul), nadawca_id, odbiorca_id, czy_przeczytane').or(`nadawca_id.eq.${currentUser.id},odbiorca_id.eq.${currentUser.id}`);
+    const chatsList = document.getElementById('user-chats-list');
+    let unique = []; let seen = new Set(); let unreadTotal = 0;
+    
+    chats?.forEach(c => {
+        const partner = c.nadawca_id === currentUser.id ? c.odbiorca_id : c.nadawca_id;
+        const key = `${partner}-${c.zlecenie_id}`;
+        if(c.odbiorca_id === currentUser.id && !c.czy_przeczytane) unreadTotal++;
+        if(!seen.has(key)) { seen.add(key); unique.push({ partner, title: c.zlecenie?.tytul || "Ogłoszenie", zlecenie_id: c.zlecenie_id, unread: (c.odbiorca_id === currentUser.id && !c.czy_przeczytane) }); }
+    });
+
+    const notifyNode = document.getElementById('nav-notify');
+    const badgeNode = document.getElementById('chat-notify-count');
+    if (unreadTotal > 0) { notifyNode.classList.remove('hidden'); badgeNode.innerText = unreadTotal; badgeNode.classList.remove('hidden'); } else { notifyNode.classList.add('hidden'); badgeNode.classList.add('hidden'); }
+
+        chatsList.innerHTML = unique.map(c => `
+        <button onclick="openChatBox('${c.partner}', ${c.zlecenie_id}, 'Konwersacja')" class="w-full text-left bg-slate-50 p-3 rounded-xl text-[11px] font-black border ${c.unread ? 'border-red-400 bg-red-50/50' : 'border-slate-100'} hover:bg-white hover:border-blue-300 transition-all block relative">
+            💬 Dotyczy: "${c.title}"
+            ${c.unread ? '<span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>' : ''}
+        </button>
+    `).join("") || `<p class="text-xs text-slate-400 text-center py-6">Brak rozpoczętych konwersacji.</p>`;
+}
+
+async function openChatBox(partnerId, zlId, partnerName) {
+    activePartnerId = partnerId; activeZlecenieId = zlId;
+    document.getElementById('chat-partner-name').innerText = partnerName || "Rozmowa";
+    document.getElementById('chat-box').classList.remove('hidden');
+    document.getElementById('user-chats-list').classList.add('hidden');
+    await db.from('wiadomosci').update({ czy_przeczytane: true }).eq('zlecenie_id', zlId).eq('nadawca_id', partnerId).eq('odbiorca_id', currentUser.id);
+    loadMessages();
+}
+
+function closeChatBox() {
+    document.getElementById('chat-box').classList.add('hidden');
+    document.getElementById('user-chats-list').classList.remove('hidden');
+    loadAccountPanel();
+}
+
+async function loadMessages() {
+    if(!activePartnerId || !activeZlecenieId) return;
+    // Pobieramy wiadomości dla konkretnego zlecenia, gdzie użytkownik jest nadawcą LUB odbiorcą
+    const { data, error } = await db.from('wiadomosci')
+        .select('*')
+        .eq('zlecenie_id', activeZlecenieId)
+        .or(`nadawca_id.eq.${currentUser.id},odbiorca_id.eq.${currentUser.id}`)
+        .order('created_at', { ascending: true });
+
+    if(error) return console.error("Błąd czatu:", error);
+
+    const msgBox = document.getElementById('chat-messages');
+    // Filtrujemy tylko wiadomości wymieniane z konkretnym partnerem
+    const filtered = data.filter(m => m.nadawca_id === activePartnerId || m.odbiorca_id === activePartnerId);
+
+    msgBox.innerHTML = filtered.map(m => `
+        <div class="max-w-[80%] mb-3 p-3 shadow-sm ${m.nadawca_id === currentUser.id ? 'ml-auto chat-bubble-me' : 'mr-auto chat-bubble-them'}">
+            <p class="text-xs leading-relaxed">${m.tresc}</p>
+            <p class="text-[6px] mt-1 opacity-50 text-right uppercase">${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</p>
+        </div>
+    `).join("") || '<div class="text-center py-10 text-[10px] text-slate-400 font-bold uppercase tracking-widest">Napisz pierwszą wiadomość...</div>';
+    msgBox.scrollTop = msgBox.scrollHeight;
+}
+
+async function sendMessage() {
+    const input = document.getElementById('chat-input');
+    if(!input.value.trim()) return;
+    await db.from('wiadomosci').insert([{ zlecenie_id: activeZlecenieId, nadawca_id: currentUser.id, odbiorca_id: activePartnerId, tresc: input.value, czy_przeczytane: false }]);
+    input.value = ""; loadMessages();
+}
+
+async function del(id) { if(confirm("Czy na pewno chcesz usunąć to ogłoszenie?")) { await db.from("zlecenia").delete().eq('id', id); loadAccountPanel(); } }
+async function delBought(zgloszenieId) { 
+    if(confirm("Czy na pewno chcesz usunąć to zlecenie ze swojej listy?")) { 
+        await db.from("zgloszenia").delete().eq('id', zgloszenieId); 
+        goBackToList(); 
+        loadAccountPanel(); 
+    } 
+}
+function toggleEditPostModal(open) {
+    const modal = document.getElementById('edit-post-modal-overlay');
+    if(open) modal.classList.remove('hidden'); else modal.classList.add('hidden');
+}
+
+async function editPost(id) {
+    toggleAccountMenu(false);
+    const { data: z, error } = await db.from('zlecenia').select('*').eq('id', id).single();
+    if (error || !z) return alert("Nie udało się pobrać danych ogłoszenia.");
+
+    document.getElementById('edit-post-id').value = z.id;
+    document.getElementById('edit-p-t').value = z.tytul || "";
+    document.getElementById('edit-p-m').value = z.miasto || "";
+    document.getElementById('edit-p-postcode').value = z.kod_pocztowy || "";
+    document.getElementById('edit-p-k').value = z.kategoria || "";
+    document.getElementById('edit-p-o').value = z.opis || "";
+    document.getElementById('edit-p-p').value = z.telefon || "";
+    
+    // Pokazywanie podglądu istniejących zdjęć w edycji
+    const previewBox = document.getElementById('edit-media-preview');
+    if(previewBox) {
+        const oldImgs = [z.zdjecie1, z.zdjecie2, z.zdjecie3].filter(img => img && img.trim() !== "" && !img.includes("[object"));
+        if(oldImgs.length > 0) {
+            previewBox.classList.remove('hidden');
+            previewBox.innerHTML = oldImgs.map(url => `<img src="${url}" class="w-12 h-12 object-cover rounded-lg border">`).join('');
+        } else {
+            previewBox.classList.add('hidden');
+        }
+    }
+
+    // Czyszczenie pól plików
+    document.getElementById('edit-p-img1').value = "";
+    document.getElementById('edit-p-img2').value = "";
+    document.getElementById('edit-p-img3').value = "";
+
+    toggleEditPostModal(true);
+}
+
+async function saveEditedPost() {
+    const id = document.getElementById('edit-post-id').value;
+    const btn = document.getElementById('edit-post-save-btn');
+    
+    const tVal = document.getElementById('edit-p-t').value;
+    const mVal = document.getElementById('edit-p-m').value;
+    const pcVal = document.getElementById('edit-p-postcode').value;
+    const kVal = document.getElementById('edit-p-k').value;
+    const oVal = document.getElementById('edit-p-o').value;
+    const pVal = document.getElementById('edit-p-p').value;
+
+    if (!tVal || !mVal || !oVal || pVal.length !== 9) {
+        return alert("Pola Tytuł, Miasto, Opis oraz 9-cyfrowy Telefon są obowiązkowe.");
+    }
+
+    btn.disabled = true; btn.innerText = "Trwa zapisywanie zmian...";
+
+    // Pobieramy stare dane, aby zachować zdjęcia, jeśli użytkownik nie wybrał nowych
+    const { data: oldPost } = await db.from('zlecenia').select('zdjecie1, zdjecie2, zdjecie3').eq('id', id).single();
+
+    const newImg1 = await uploadFile('edit-p-img1');
+    const newImg2 = await uploadFile('edit-p-img2');
+    const newImg3 = await uploadFile('edit-p-img3');
+
+    const updateData = {
+        tytul: tVal,
+        miasto: mVal,
+        kod_pocztowy: pcVal || null,
+        kategoria: kVal,
+        opis: oVal,
+        telefon: pVal,
+        zdjecie1: newImg1 ? newImg1 : oldPost.zdjecie1,
+        zdjecie2: newImg2 ? newImg2 : oldPost.zdjecie2,
+        zdjecie3: newImg3 ? newImg3 : oldPost.zdjecie3
+    };
+
+    const { error } = await db.from('zlecenia').update(updateData).eq('id', id);
+
+    if (error) {
+        alert("Błąd aktualizacji: " + error.message);
+    } else {
+        alert("Ogłoszenie zostało pomyślnie zaktualizowane!");
+        toggleEditPostModal(false);
+        load();
+    }
+    btn.disabled = false; btn.innerText = "Zapisz zmiany w ogłoszeniu";
+}
+function openLegal(type) {
+    const modal = document.getElementById('legal-modal');
+    const title = document.getElementById('legal-title');
+    const body = document.getElementById('legal-body');
+    modal.classList.remove('hidden');
+    if(type === 'regulamin') {
+        title.innerText = "Regulamin platformy ZlećRemoncik";
+        body.innerHTML = `<p>1. Każdy wykonawca otrzymuje 10 punktów na start.</p><p>2. Zgłoszenie kosztuje 1 punkt.</p><p>3. Pula odnawia się o +3 pkt w każdy poniedziałek o 00:00.</p><p>4. Maksymalny limit zgłoszeń na jedno ogłoszenie wynosi 5 osób.</p>`;
+    } else if(type === 'rodo') {
+        title.innerText = "Polityka Prywatności i RODO";
+        body.innerHTML = `<p>Dane takie jak adres e-mail oraz telefon kontaktowy są przetwarzane wyłącznie w celu komunikacji i parowania stron zlecenia.</p>`;
+    } else {
+        title.innerText = "Zasady działania";
+        body.innerHTML = `<p>System nagradza rzetelnych wykonawców dodatkowymi punktami w zależności od przyznanej oceny (gwiazdek) przez zleceniodawcę.</p>`;
+    }
+}
+function closeLegal() { document.getElementById('legal-modal').classList.add('hidden'); }
+    function openEditProfileForm() {
+    const box = document.getElementById('edit-profile-box');
+    box.classList.toggle('hidden');
+    if(!box.classList.contains('hidden')) {
+        document.getElementById('edit-email').value = currentUser.email;
+        if(currentProfile) {
+            document.getElementById('edit-nazwa').value = currentProfile.nazwa_firmy || "";
+            document.getElementById('edit-tel').value = currentProfile.telefon || "";
+        } else {
+            document.getElementById('edit-nazwa').value = currentUser.user_metadata?.full_name || "";
+            document.getElementById('edit-tel').value = currentUser.user_metadata?.telefon_kontaktowy || "";
+        }
+    }
+}
+
+async function saveProfile() {
+    const nowaNazwa = document.getElementById('edit-nazwa').value;
+    const nowyTel = document.getElementById('edit-tel').value;
+    
+    if(currentProfile) {
+        await db.from('profile_wykonawcow').update({ nazwa_firmy: nowaNazwa, telefon: nowyTel }).eq('user_id', currentUser.id);
+        // Wykonawca często ma też wpisy w 'zlecenia' jako wizytówki
+        await db.from('zlecenia').update({ telefon: nowyTel }).eq('user_id', currentUser.id);
+        alert("Dane wykonawcy zaktualizowane!"); window.location.reload();
+    } else {
+        // Klient - aktualizujemy telefon we wszystkich jego ogłoszeniach, żeby cena (1/2pkt) się zmieniła
+        const { error } = await db.auth.updateUser({ data: { full_name: nowaNazwa, telefon_kontaktowy: nowyTel } });
+        await db.from('zlecenia').update({ telefon: nowyTel }).eq('user_id', currentUser.id);
+        if(!error) { alert("Dane klienta i jego ogłoszeń zaktualizowane!"); window.location.reload(); }
+    }
+}
+
+
+</script>
 </body>
 </html>
