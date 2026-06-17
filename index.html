@@ -70,7 +70,14 @@
                 <input id="img2" type="file" accept="image/*" class="text-[9px] bg-slate-50 p-2 rounded-xl border border-slate-100">
                 <input id="img3" type="file" accept="image/*" class="text-[9px] bg-slate-50 p-2 rounded-xl border border-slate-100">
             </div>
-            <input id="p" type="tel" maxlength="9" placeholder="Telefon kontaktowy (9 cyfr)" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl outline-none focus:border-blue-400">
+                        <div>
+                <div class="flex items-center gap-2 mb-2 px-2">
+                    <input type="checkbox" id="no-phone" onchange="document.getElementById('p').disabled = this.checked; if(this.checked) document.getElementById('p').value='';" class="w-4 h-4 rounded border-slate-300">
+                    <label for="no-phone" class="text-[10px] font-bold text-slate-500 uppercase">Wolę nie podawać numeru</label>
+                </div>
+                <input id="p" type="tel" maxlength="9" placeholder="Telefon kontaktowy (9 cyfr)" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl outline-none focus:border-blue-400 disabled:opacity-50">
+                <p class="text-[9px] text-blue-500 font-bold mt-2 px-2 leading-tight">Zastanów się: zlecenia z numerem telefonu zdobywają średnio o 80% więcej ofert od sprawdzonych wykonawców.</p>
+            </div>
             <button onclick="add()" id="add-btn" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase shadow-xl hover:bg-blue-700 transition-all">Opublikuj ogłoszenie</button>
         </div>
     </div>
@@ -568,8 +575,9 @@ async function add() {
     const oVal = document.getElementById("o").value;
     const pcVal = document.getElementById("postcode").value;
 
-    if (!tVal || !mVal || !oVal || pVal.length !== 9) {
-        return alert("Uzupełnij formularz! Pola Tytuł, Miasto, Opis oraz 9-cyfrowy Telefon są obowiązkowe.");
+        const noPhone = document.getElementById('no-phone').checked;
+    if (!tVal || !mVal || !oVal || (!noPhone && pVal.length !== 9)) {
+        return alert("Uzupełnij formularz! Pola Tytuł, Miasto i Opis są obowiązkowe. Podaj 9-cyfrowy telefon lub zaznacz 'Wolę nie podawać'.");
     }
 
     btn.disabled = true; btn.innerText = "Trwa publikowanie...";
@@ -696,8 +704,9 @@ async function checkUrlRoute() {
             `;
         } else if (totalApplicants >= 5) {
             actionBtn = `<div class="bg-red-50 text-red-600 p-4 rounded-2xl text-center font-black text-xs uppercase">Zebrano już komplet chętnych</div>`;
-        } else {
-            actionBtn = `<button onclick="applyForJob(${z.id})" class="w-full bg-amber-500 text-white py-5 rounded-2xl font-black uppercase text-sm shadow-lg shadow-amber-100 hover:scale-[1.01] transition-all">🙋 Jestem Zainteresowany (-1 pkt)</button>`;
+                } else {
+            const cost = (z.telefon && z.telefon.trim().length === 9) ? 2 : 1;
+            actionBtn = `<button onclick="applyForJob(${z.id})" class="w-full bg-amber-500 text-white py-5 rounded-2xl font-black uppercase text-sm shadow-lg shadow-amber-100 hover:scale-[1.01] transition-all">🙋 Jestem Zainteresowany (-${cost} pkt)</button>`;
         }
    }
 
