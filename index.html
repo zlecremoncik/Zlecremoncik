@@ -196,9 +196,9 @@
                 <div class="relative flex justify-center text-xs uppercase"><span class="bg-white px-2 text-slate-400 font-bold">Lub przez Google</span></div>
             </div>
 
-            <select id="google-role" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-[10px] font-bold uppercase mb-2">
-                <option value="klient">Chcę Zlecać (Zleceniodawca)</option>
-                <option value="wykonawca">Chcę Zarabiać (Wykonawca)</option>
+                        <select id="google-role" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-[10px] font-bold uppercase mb-2">
+                <option value="klient">Zleceniodawca</option>
+                <option value="wykonawca">Wykonawca</option>
             </select>
             
             <button onclick="loginWithGoogle()" class="w-full bg-white border-2 border-slate-100 hover:border-blue-400 text-slate-700 py-3 rounded-2xl font-bold text-xs transition-all flex items-center justify-center gap-2 shadow-sm">
@@ -384,19 +384,17 @@ async function updateUI(session) {
     if (document.getElementById('logout-btn')) document.getElementById('logout-btn').classList.toggle('hidden', !session);
     if (document.getElementById('my-account-btn')) document.getElementById('my-account-btn').classList.toggle('hidden', !session);
     
-    if (currentUser) {
+        if (currentUser) {
         try {
             document.getElementById('acc-email-display').innerText = currentUser.email;
-            
-            // Pobieramy informację o wybranej roli z localStorage
             const savedRole = localStorage.getItem('google_login_role');
             
-            // Sprawdzamy, czy w bazie istnieje już profil wykonawcy
+            // Najpierw sprawdzamy czy profil już jest
             let { data: prof } = await db.from('profile_wykonawcow').select('*').eq('user_id', currentUser.id).maybeSingle();
             
-            // JEŚLI użytkownik wybrał "Chcę Zarabiać (Wykonawca)" i nie ma jeszcze profilu w bazie -> tworzymy go natychmiast
+            // Jeśli loguje się przez Google jako Wykonawca i nie ma profilu -> TWÓRZ GO
             if (savedRole === 'wykonawca' && !prof) {
-                const { data: newProf, error: insErr } = await db.from('profile_wykonawcow').insert([{
+                const { data: created, error: err } = await db.from('profile_wykonawcow').insert([{
                     user_id: currentUser.id,
                     email: currentUser.email,
                     nazwa_firmy: currentUser.user_metadata?.full_name || "Fachowiec Google",
@@ -404,14 +402,8 @@ async function updateUI(session) {
                     miejscowosc: "Nie podano",
                     specjalizacja: "Ogólne prace"
                 }]).select().maybeSingle();
-                
-                if (!insErr && newProf) {
-                    prof = newProf;
-                } else {
-                    // W razie opóźnień bazy próbujemy pobrać wpis ponownie
-                    const { data: retryProf } = await db.from('profile_wykonawcow').select('*').eq('user_id', currentUser.id).maybeSingle();
-                    if (retryProf) prof = retryProf;
-                }
+                if (!err) prof = created;
+                localStorage.removeItem('google_login_role'); // Czyścimy po utworzeniu
             }
             
             // Po upewnieniu się, że profil został sprawdzony/utworzony, czyścimy flagę z pamięci
