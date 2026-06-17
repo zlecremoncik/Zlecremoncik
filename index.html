@@ -124,9 +124,12 @@
                     <input id="edit-p-img3" type="file" accept="image/*" class="text-[9px] bg-slate-50 p-2 rounded-xl border border-slate-100">
                 </div>
             </div>
-            <div>
-                <label class="text-[10px] font-bold text-slate-400 uppercase">Telefon kontaktowy</label>
-                <input id="edit-p-p" type="tel" maxlength="9" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl outline-none focus:border-blue-400">
+                        <div>
+                <div class="flex items-center gap-2 mb-2 px-2">
+                    <input type="checkbox" id="edit-no-phone" onchange="document.getElementById('edit-p-p').disabled = this.checked; if(this.checked) document.getElementById('edit-p-p').value='';" class="w-4 h-4 rounded border-slate-300">
+                    <label for="edit-no-phone" class="text-[10px] font-bold text-slate-500 uppercase">Wolę nie podawać numeru</label>
+                </div>
+                <input id="edit-p-p" type="tel" maxlength="9" placeholder="Telefon kontaktowy" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl outline-none focus:border-blue-400 disabled:opacity-50">
             </div>
             <button onclick="saveEditedPost()" id="edit-post-save-btn" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase shadow-xl hover:bg-blue-700 transition-all">Zapisz zmiany w ogłoszeniu</button>
         </div>
@@ -1149,10 +1152,11 @@ function toggleEditPostModal(open) {
     if(open) modal.classList.remove('hidden'); else modal.classList.add('hidden');
 }
 
+let imagesToDelete = [];
 async function editPost(id) {
-    toggleAccountMenu(false);
+    toggleAccountMenu(false); imagesToDelete = [];
     const { data: z, error } = await db.from('zlecenia').select('*').eq('id', id).single();
-    if (error || !z) return alert("Nie udało się pobrać danych ogłoszenia.");
+    if (error || !z) return alert("Błąd pobierania.");
 
     document.getElementById('edit-post-id').value = z.id;
     document.getElementById('edit-p-t').value = z.tytul || "";
@@ -1160,73 +1164,71 @@ async function editPost(id) {
     document.getElementById('edit-p-postcode').value = z.kod_pocztowy || "";
     document.getElementById('edit-p-k').value = z.kategoria || "";
     document.getElementById('edit-p-o').value = z.opis || "";
-    document.getElementById('edit-p-p').value = z.telefon || "";
     
-    // Pokazywanie podglądu istniejących zdjęć w edycji
-    const previewBox = document.getElementById('edit-media-preview');
-    if(previewBox) {
-        const oldImgs = [z.zdjecie1, z.zdjecie2, z.zdjecie3].filter(img => img && img.trim() !== "" && !img.includes("[object"));
-        if(oldImgs.length > 0) {
-            previewBox.classList.remove('hidden');
-            previewBox.innerHTML = oldImgs.map(url => `<img src="${url}" class="w-12 h-12 object-cover rounded-lg border">`).join('');
-        } else {
-            previewBox.classList.add('hidden');
-        }
+    // Obsługa telefonu i checkboxa
+    const phoneInput = document.getElementById('edit-p-p');
+    const noPhoneCheck = document.getElementById('edit-no-phone');
+    phoneInput.value = z.telefon || "";
+    if(!z.telefon || z.telefon.trim() === "") {
+        noPhoneCheck.checked = true; phoneInput.disabled = true;
+    } else {
+        noPhoneCheck.checked = false; phoneInput.disabled = false;
     }
+    
+    // Podgląd zdjęć z opcją usuwania
+    const previewBox = document.getElementById('edit-media-preview');
+    previewBox.classList.remove('hidden');
+    previewBox.innerHTML = [1,2,3].map(num => {
+        const url = z['zdjecie'+num];
+        if(!url || url.includes("[object") || url === "undefined") return "";
+        return `<div class="relative w-16 h-16 group" id="prev-slot-${num}">
+            <img src="${url}" class="w-full h-full object-cover rounded-lg border">
+            <button onclick="markImgDelete(${num})" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 text-[8px] flex items-center justify-center">✖</button>
+        </div>`;
+    }).join('');
 
-    // Czyszczenie pól plików
-    document.getElementById('edit-p-img1').value = "";
-    document.getElementById('edit-p-img2').value = "";
-    document.getElementById('edit-p-img3').value = "";
-
+    [1,2,3].forEach(n => document.getElementById('edit-p-img'+n).value = "");
     toggleEditPostModal(true);
+}
+
+function markImgDelete(num) {
+    imagesToDelete.push(num);
+    document.getElementById('prev-slot-'+num).classList.add('hidden');
 }
 
 async function saveEditedPost() {
     const id = document.getElementById('edit-post-id').value;
     const btn = document.getElementById('edit-post-save-btn');
+    const noPhone = document.getElementById('edit-no-phone').checked;
+    const phone = document.getElementById('edit-p-p').value;
+
+    if (!document.getElementById('edit-p-t').value || (!noPhone && phone.length !== 9)) return alert("Uzupełnij poprawnie dane.");
+
+    btn.disabled = true; btn.innerText = "Trwa zapisywanie...";
+    const { data: old } = await db.from('zlecenia').select('zdjecie1, zdjecie2, zdjecie3').eq('id', id).single();
     
-    const tVal = document.getElementById('edit-p-t').value;
-    const mVal = document.getElementById('edit-p-m').value;
-    const pcVal = document.getElementById('edit-p-postcode').value;
-    const kVal = document.getElementById('edit-p-k').value;
-    const oVal = document.getElementById('edit-p-o').value;
-    const pVal = document.getElementById('edit-p-p').value;
-
-    if (!tVal || !mVal || !oVal || pVal.length !== 9) {
-        return alert("Pola Tytuł, Miasto, Opis oraz 9-cyfrowy Telefon są obowiązkowe.");
-    }
-
-    btn.disabled = true; btn.innerText = "Trwa zapisywanie zmian...";
-
-    // Pobieramy stare dane, aby zachować zdjęcia, jeśli użytkownik nie wybrał nowych
-    const { data: oldPost } = await db.from('zlecenia').select('zdjecie1, zdjecie2, zdjecie3').eq('id', id).single();
-
-    const newImg1 = await uploadFile('edit-p-img1');
-    const newImg2 = await uploadFile('edit-p-img2');
-    const newImg3 = await uploadFile('edit-p-img3');
-
     const updateData = {
-        tytul: tVal,
-        miasto: mVal,
-        kod_pocztowy: pcVal || null,
-        kategoria: kVal,
-        opis: oVal,
-        telefon: pVal,
-        zdjecie1: newImg1 ? newImg1 : oldPost.zdjecie1,
-        zdjecie2: newImg2 ? newImg2 : oldPost.zdjecie2,
-        zdjecie3: newImg3 ? newImg3 : oldPost.zdjecie3
+        tytul: document.getElementById('edit-p-t').value,
+        miasto: document.getElementById('edit-p-m').value,
+        kod_pocztowy: document.getElementById('edit-p-postcode').value || null,
+        kategoria: document.getElementById('edit-p-k').value,
+        opis: document.getElementById('edit-p-o').value,
+        telefon: noPhone ? "" : phone
     };
 
-    const { error } = await db.from('zlecenia').update(updateData).eq('id', id);
-
-    if (error) {
-        alert("Błąd aktualizacji: " + error.message);
-    } else {
-        alert("Ogłoszenie zostało pomyślnie zaktualizowane!");
-        toggleEditPostModal(false);
-        load();
+    for(let i=1; i<=3; i++) {
+        const newImg = await uploadFile('edit-p-img'+i);
+        if(newImg) {
+            updateData['zdjecie'+i] = newImg;
+        } else if(imagesToDelete.includes(i)) {
+            updateData['zdjecie'+i] = null;
+        } else {
+            updateData['zdjecie'+i] = old['zdjecie'+i];
+        }
     }
+
+    const { error } = await db.from('zlecenia').update(updateData).eq('id', id);
+    if (!error) { alert("Ogłoszenie zaktualizowane!"); toggleEditPostModal(false); load(); }
     btn.disabled = false; btn.innerText = "Zapisz zmiany w ogłoszeniu";
 }
 function openLegal(type) {
