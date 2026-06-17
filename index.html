@@ -872,6 +872,11 @@ async function checkUrlRoute() {
     }
 }
 
+// Deklaracje zmiennych globalnych dla czatu na poziomie skryptu
+if (typeof activePartnerId === 'undefined') var activePartnerId = null;
+if (typeof activeZlecenieId === 'undefined') var activeZlecenieId = null;
+if (typeof chatRefreshInterval === 'undefined') var chatRefreshInterval = null;
+
 async function chooseContractor(zlecenieId, wykonawcaId) {
     if(!confirm("Czy chcesz wybrać tego fachowcę?")) return;
     await db.from('zlecenia').update({ wybrany_wykonawca_id: wykonawcaId }).eq('id', zlecenieId);
@@ -884,22 +889,6 @@ async function completeJob(zlecenieId) {
     openDetails(zlecenieId);
 }
 
-// Funkcje do obsługi modala powiększania zdjęć
-function openImageModal(url) {
-    let imgModal = document.getElementById('image-fullscreen-modal');
-    if (!imgModal) {
-        imgModal = document.createElement('div');
-        imgModal.id = 'image-fullscreen-modal';
-        imgModal.className = 'fixed inset-0 bg-slate-900/90 backdrop-blur-md z-[60] flex items-center justify-center p-4 cursor-zoom-out';
-        imgModal.onclick = () => imgModal.classList.add('hidden');
-        imgModal.innerHTML = `<img id='fullscreen-target-img' class='max-w-full max-h-[90vh] rounded-2xl shadow-2xl border border-white/10'>`;
-        document.body.appendChild(imgModal);
-    }
-    document.getElementById('fullscreen-target-img').src = url;
-    imgModal.classList.remove('hidden');
-}
-
-// Funkcje do obsługi modala powiększania zdjęć
 function openImageModal(url) {
     let imgModal = document.getElementById('image-fullscreen-modal');
     if (!imgModal) {
@@ -917,25 +906,20 @@ function openImageModal(url) {
 async function applyForJob(zlecenieId) {
     if (!currentProfile) return alert("Tylko Wykonawca może zgłaszać chęć realizacji!");
     
-    // 1. Pobieramy dane zlecenia, żeby sprawdzić czy jest telefon
     const { data: z } = await db.from('zlecenia').select('*').eq('id', zlecenieId).single();
     if (!z) return alert("Nie znaleziono takiego zlecenia.");
     
-    // Koszt: 2 punkty jeśli jest poprawny numer telefonu, w przeciwnym wypadku 1 punkt (sam email)
     const cost = (z.telefon && z.telefon.trim().length === 9) ? 2 : 1;
     if (currentProfile.punkty < cost) return alert(`To zlecenie kosztuje ${cost} PKT. Masz tylko ${currentProfile.punkty}.`);
 
     const { data: existing } = await db.from('zgloszenia').select('id').eq('zlecenie_id', zlecenieId).eq('wykonawca_id', currentUser.id).maybeSingle();
     if(existing) return alert("Już zgłosiłeś się do tego zlecenia!");
 
-    // 2. Dodajemy zgłoszenie
     const { error } = await db.from('zgloszenia').insert([{ zlecenie_id: zlecenieId, wykonawca_id: currentUser.id }]);
     
     if (!error) {
-        // 3. Pobieramy punkty
         await db.from('profile_wykonawcow').update({ punkty: currentProfile.punkty - cost }).eq('user_id', currentUser.id);
         
-        // 4. Wysyłamy WIADOMOŚĆ SYSTEMOWĄ z danymi
         const systemMsg = `SYSTEM: Wykupiłeś kontakt do zlecenia "${z.tytul}". \n📞 Tel: ${z.telefon || 'Nie podano'} \n📧 Email autora: ${z.user_email || 'Nie podano'}`;
         await db.from('wiadomosci').insert([{ 
             zlecenie_id: zlecenieId, 
@@ -988,8 +972,9 @@ async function submitOpinion() {
         if(prof) await db.from('profile_wykonawcow').update({ punkty: (prof.punkty + bonus) }).eq('user_id', targetWykonawcaId);
 
         if (targetZlecenie.typ_wpisu !== 'wykonawca') {
-            await db.from('zlecenia').delete().eq('id', targetZlecenie.id);
-            alert("Opinia dodana. Zlecenie zostało trwale usunięte z bazy!");
+            // BEZPIECZNA NAPRAWA: Zamiast usuwać rekord (co niszczyło historię czatu), zmieniamy jego status na archiwalny
+            await db.from('zlecenia').update({ status_zlecenia: 'zakonczone' }).eq('id', targetZlecenie.id);
+            alert("Opinia dodana. Zlecenie zostało pomyślnie zakończone i schowane do archiwum!");
             goBackToList();
             return;
         }
@@ -1004,7 +989,6 @@ async function loadAccountPanel(page = 1) {
     const perPage = 5;
 
     if (!currentProfile) {
-        // WIDOK ZLECENIODAWCY (Moje ogłoszenia + Lista chętnych fachowców)
         actTitle.innerText = "📂 MOJE ZLECENIA";
         const { data: posts, error: pErr } = await db.from('zlecenia').select('*, zgloszenia(*)').eq('user_id', currentUser.id).order('created_at', {ascending: false});
         
@@ -1087,7 +1071,6 @@ async function loadAccountPanel(page = 1) {
             postsList.innerHTML += paginHtml;
         }
     } else {
-        // WIDOK WYKONAWCY (Bez zmian)
         actTitle.innerText = "🛒 KUPIONE ZLECENIA";
         const { data: apps } = await db.from('zgloszenia').select('*, zlecenie:zlecenia(*)').eq('wykonawca_id', currentUser.id).order('created_at', {ascending: false});
         const start = (page - 1) * perPage;
@@ -1120,6 +1103,7 @@ async function completeAndRefresh(zlId) {
     loadAccountPanel();
     openDetails(zlId);
 }
+
 async function loadConversations() {
     const { data: chats } = await db.from('wiadomosci').select('zlecenie_id, zlecenie:zlecenia(tytul), nadawca_id, odbiorca_id, czy_przeczytane').or(`nadawca_id.eq.${currentUser.id},odbiorca_id.eq.${currentUser.id}`);
     const chatsList = document.getElementById('user-chats-list');
@@ -1134,9 +1118,9 @@ async function loadConversations() {
 
     const notifyNode = document.getElementById('nav-notify');
     const badgeNode = document.getElementById('chat-notify-count');
-    if (unreadTotal > 0) { notifyNode.classList.remove('hidden'); badgeNode.innerText = unreadTotal; badgeNode.classList.remove('hidden'); } else { notifyNode.classList.add('hidden'); badgeNode.classList.add('hidden'); }
+    if (unreadTotal > 0) { if(notifyNode) notifyNode.classList.remove('hidden'); if(badgeNode) { badgeNode.innerText = unreadTotal; badgeNode.classList.remove('hidden'); } } else { if(notifyNode) notifyNode.classList.add('hidden'); if(badgeNode) badgeNode.classList.add('hidden'); }
 
-        chatsList.innerHTML = unique.map(c => `
+    chatsList.innerHTML = unique.map(c => `
         <button onclick="openChatBox('${c.partner}', ${c.zlecenie_id}, 'Konwersacja')" class="w-full text-left bg-slate-50 p-3 rounded-xl text-[11px] font-black border ${c.unread ? 'border-red-400 bg-red-50/50' : 'border-slate-100'} hover:bg-white hover:border-blue-300 transition-all block relative">
             💬 Dotyczy: "${c.title}"
             ${c.unread ? '<span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>' : ''}
@@ -1144,14 +1128,19 @@ async function loadConversations() {
     `).join("") || `<p class="text-xs text-slate-400 text-center py-6">Brak rozpoczętych konwersacji.</p>`;
 }
 
-let chatRefreshInterval = null;
-
-async function openChatBox(partnerId, zlId, partnerName) {
-    activePartnerId = partnerId.toString(); 
+async function openChatBox(partnerId, zlId, partnerName = "Rozmowa") {
+    if (!partnerId || partnerId === 'undefined' || partnerId === 'null') return console.error("Błąd: Nieprawidłowe ID partnera");
+    
+    activePartnerId = String(partnerId).trim(); 
     activeZlecenieId = parseInt(zlId);
+    
+    if (currentUser && activePartnerId === String(currentUser.id)) return;
+
     document.getElementById('chat-partner-name').innerText = partnerName || "Rozmowa";
     document.getElementById('chat-box').classList.remove('hidden');
-    document.getElementById('user-chats-list').classList.add('hidden');
+    
+    const userChatsList = document.getElementById('user-chats-list');
+    if(userChatsList) userChatsList.classList.add('hidden');
     
     await db.from('wiadomosci').update({ czy_przeczytane: true })
         .eq('zlecenie_id', activeZlecenieId).eq('nadawca_id', activePartnerId).eq('odbiorca_id', currentUser.id);
@@ -1160,278 +1149,21 @@ async function openChatBox(partnerId, zlId, partnerName) {
     chatRefreshInterval = setInterval(loadMessages, 3000);
     loadMessages();
     
-    // Obsługa wysyłania Enterem
     document.getElementById('chat-input').onkeydown = (e) => { if(e.key === 'Enter') sendMessage(); };
 }
 
 function closeChatBox() {
     if(chatRefreshInterval) clearInterval(chatRefreshInterval);
     document.getElementById('chat-box').classList.add('hidden');
-    document.getElementById('user-chats-list').classList.remove('hidden');
-    loadAccountPanel();
-}
-
-async function loadMessages() {
-    if(!activePartnerId || !activeZlecenieId || !currentUser) return;
     
-    const { data, error } = await db.from('wiadomosci')
-        .select('*')
-        .eq('zlecenie_id', activeZlecenieId)
-        .order('created_at', { ascending: true });
-
-    if(error) return;
-
-    const msgBox = document.getElementById('chat-messages');
-    // Filtrujemy wiadomości tylko między mną a wybranym partnerem
-    const filtered = data.filter(m => 
-        (m.nadawca_id === currentUser.id && m.odbiorca_id === activePartnerId) || 
-        (m.nadawca_id === activePartnerId && m.odbiorca_id === currentUser.id)
-    );
-
-    const newHtml = filtered.map(m => `
-        <div class="max-w-[85%] mb-3 p-3 shadow-sm ${m.nadawca_id === currentUser.id ? 'ml-auto chat-bubble-me' : 'mr-auto chat-bubble-them'}">
-            <p class="text-[7px] mb-1 opacity-70 font-black uppercase">${m.nadawca_id === currentUser.id ? 'Ty' : 'Rozmówca'}</p>
-            <p class="text-xs leading-relaxed">${m.tresc}</p>
-            <p class="text-[6px] mt-1 opacity-50 text-right uppercase">${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</p>
-        </div>
-    `).join("");
+    const userChatsList = document.getElementById('user-chats-list');
+    if(userChatsList) userChatsList.classList.remove('hidden');
     
-    if (msgBox.innerHTML !== newHtml) {
-        msgBox.innerHTML = newHtml || '<div class="text-center py-10 text-[10px] text-slate-400 font-bold uppercase tracking-widest">Napisz wiadomość...</div>';
-        msgBox.scrollTop = msgBox.scrollHeight;
-    }
-}
-
-async function sendMessage() {
-    const input = document.getElementById('chat-input');
-    const tresc = input.value.trim();
-    if(!tresc || !activePartnerId || !activeZlecenieId) return;
-
-    const { error } = await db.from('wiadomosci').insert([{ 
-        zlecenie_id: activeZlecenieId, 
-        nadawca_id: currentUser.id, 
-        odbiorca_id: activePartnerId, 
-        tresc: tresc, 
-        czy_przeczytane: false 
-    }]);
-
-    if(error) {
-        alert("Błąd: " + error.message);
-    } else {
-        input.value = ""; 
-        await loadMessages(); // Natychmiastowe odświeżenie po wysłaniu
-    }
-}
-
-function closeChatBox() {
-    document.getElementById('chat-box').classList.add('hidden');
-    document.getElementById('user-chats-list').classList.remove('hidden');
-    loadAccountPanel();
-}
-
-async function loadMessages() {
-    if(!activePartnerId || !activeZlecenieId) return;
-    // Pobieramy wiadomości dla konkretnego zlecenia, gdzie użytkownik jest nadawcą LUB odbiorcą
-    const { data, error } = await db.from('wiadomosci')
-        .select('*')
-        .eq('zlecenie_id', activeZlecenieId)
-        .or(`nadawca_id.eq.${currentUser.id},odbiorca_id.eq.${currentUser.id}`)
-        .order('created_at', { ascending: true });
-
-    if(error) return console.error("Błąd czatu:", error);
-
-    const msgBox = document.getElementById('chat-messages');
-    // Filtrujemy tylko wiadomości wymieniane z konkretnym partnerem
-    const filtered = data.filter(m => m.nadawca_id === activePartnerId || m.odbiorca_id === activePartnerId);
-
-    msgBox.innerHTML = filtered.map(m => `
-        <div class="max-w-[80%] mb-3 p-3 shadow-sm ${m.nadawca_id === currentUser.id ? 'ml-auto chat-bubble-me' : 'mr-auto chat-bubble-them'}">
-            <p class="text-xs leading-relaxed">${m.tresc}</p>
-            <p class="text-[6px] mt-1 opacity-50 text-right uppercase">${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</p>
-        </div>
-    `).join("") || '<div class="text-center py-10 text-[10px] text-slate-400 font-bold uppercase tracking-widest">Napisz pierwszą wiadomość...</div>';
-    msgBox.scrollTop = msgBox.scrollHeight;
-}
-
-async function sendMessage() {
-    const input = document.getElementById('chat-input');
-    if(!input.value.trim()) return;
-    await db.from('wiadomosci').insert([{ zlecenie_id: activeZlecenieId, nadawca_id: currentUser.id, odbiorca_id: activePartnerId, tresc: input.value, czy_przeczytane: false }]);
-    input.value = ""; loadMessages();
-}
-
-async function del(id) { if(confirm("Czy na pewno chcesz usunąć to ogłoszenie?")) { await db.from("zlecenia").delete().eq('id', id); loadAccountPanel(); } }
-async function delBought(zgloszenieId) { 
-    if(confirm("Czy na pewno chcesz usunąć to zlecenie ze swojej listy?")) { 
-        await db.from("zgloszenia").delete().eq('id', zgloszenieId); 
-        goBackToList(); 
-        loadAccountPanel(); 
-    } 
-}
-function toggleEditPostModal(open) {
-    const modal = document.getElementById('edit-post-modal-overlay');
-    if(open) modal.classList.remove('hidden'); else modal.classList.add('hidden');
-}
-
-let imagesToDelete = [];
-async function editPost(id) {
-    toggleAccountMenu(false); imagesToDelete = [];
-    const { data: z, error } = await db.from('zlecenia').select('*').eq('id', id).single();
-    if (error || !z) return alert("Błąd pobierania.");
-
-    document.getElementById('edit-post-id').value = z.id;
-    document.getElementById('edit-p-t').value = z.tytul || "";
-    document.getElementById('edit-p-m').value = z.miasto || "";
-    document.getElementById('edit-p-postcode').value = z.kod_pocztowy || "";
-    document.getElementById('edit-p-k').value = z.kategoria || "";
-    document.getElementById('edit-p-o').value = z.opis || "";
-    
-    // Obsługa telefonu i checkboxa
-    const phoneInput = document.getElementById('edit-p-p');
-    const noPhoneCheck = document.getElementById('edit-no-phone');
-    phoneInput.value = z.telefon || "";
-    if(!z.telefon || z.telefon.trim() === "") {
-        noPhoneCheck.checked = true; phoneInput.disabled = true;
-    } else {
-        noPhoneCheck.checked = false; phoneInput.disabled = false;
-    }
-    
-    // Podgląd zdjęć z opcją usuwania
-    const previewBox = document.getElementById('edit-media-preview');
-    previewBox.classList.remove('hidden');
-    previewBox.innerHTML = [1,2,3].map(num => {
-        const url = z['zdjecie'+num];
-        if(!url || url.includes("[object") || url === "undefined") return "";
-        return `<div class="relative w-16 h-16 group" id="prev-slot-${num}">
-            <img src="${url}" class="w-full h-full object-cover rounded-lg border">
-            <button onclick="markImgDelete(${num})" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 text-[8px] flex items-center justify-center">✖</button>
-        </div>`;
-    }).join('');
-
-    [1,2,3].forEach(n => document.getElementById('edit-p-img'+n).value = "");
-    toggleEditPostModal(true);
-}
-
-function markImgDelete(num) {
-    imagesToDelete.push(num);
-    document.getElementById('prev-slot-'+num).classList.add('hidden');
-}
-
-async function saveEditedPost() {
-    const id = document.getElementById('edit-post-id').value;
-    const btn = document.getElementById('edit-post-save-btn');
-    const noPhone = document.getElementById('edit-no-phone').checked;
-    const phone = document.getElementById('edit-p-p').value;
-
-    if (!document.getElementById('edit-p-t').value || (!noPhone && phone.length !== 9)) return alert("Uzupełnij poprawnie dane.");
-
-    btn.disabled = true; btn.innerText = "Trwa zapisywanie...";
-    const { data: old } = await db.from('zlecenia').select('zdjecie1, zdjecie2, zdjecie3').eq('id', id).single();
-    
-    const updateData = {
-        tytul: document.getElementById('edit-p-t').value,
-        miasto: document.getElementById('edit-p-m').value,
-        kod_pocztowy: document.getElementById('edit-p-postcode').value || null,
-        kategoria: document.getElementById('edit-p-k').value,
-        opis: document.getElementById('edit-p-o').value,
-        telefon: noPhone ? "" : phone
-    };
-
-    for(let i=1; i<=3; i++) {
-        const newImg = await uploadFile('edit-p-img'+i);
-        if(newImg) {
-            updateData['zdjecie'+i] = newImg;
-        } else if(imagesToDelete.includes(i)) {
-            updateData['zdjecie'+i] = null;
-        } else {
-            updateData['zdjecie'+i] = old['zdjecie'+i];
-        }
-    }
-
-    const { error } = await db.from('zlecenia').update(updateData).eq('id', id);
-    if (!error) { alert("Ogłoszenie zaktualizowane!"); toggleEditPostModal(false); load(); }
-    btn.disabled = false; btn.innerText = "Zapisz zmiany w ogłoszeniu";
-}
-function openLegal(type) {
-    const modal = document.getElementById('legal-modal');
-    const title = document.getElementById('legal-title');
-    const body = document.getElementById('legal-body');
-    modal.classList.remove('hidden');
-    if(type === 'regulamin') {
-        title.innerText = "Regulamin platformy ZlećRemoncik";
-        body.innerHTML = `<p>1. Każdy wykonawca otrzymuje 10 punktów na start.</p><p>2. Zgłoszenie kosztuje 1 punkt.</p><p>3. Pula odnawia się o +3 pkt w każdy poniedziałek o 00:00.</p><p>4. Maksymalny limit zgłoszeń na jedno ogłoszenie wynosi 5 osób.</p>`;
-    } else if(type === 'rodo') {
-        title.innerText = "Polityka Prywatności i RODO";
-        body.innerHTML = `<p>Dane takie jak adres e-mail oraz telefon kontaktowy są przetwarzane wyłącznie w celu komunikacji i parowania stron zlecenia.</p>`;
-    } else {
-        title.innerText = "Zasady działania";
-        body.innerHTML = `<p>System nagradza rzetelnych wykonawców dodatkowymi punktami w zależności od przyznanej oceny (gwiazdek) przez zleceniodawcę.</p>`;
-    }
-}
-function closeLegal() { document.getElementById('legal-modal').classList.add('hidden'); }
-    function openEditProfileForm() {
-    const box = document.getElementById('edit-profile-box');
-    box.classList.toggle('hidden');
-    if(!box.classList.contains('hidden')) {
-        document.getElementById('edit-email').value = currentUser.email;
-        if(currentProfile) {
-            document.getElementById('edit-nazwa').value = currentProfile.nazwa_firmy || "";
-            document.getElementById('edit-tel').value = currentProfile.telefon || "";
-        } else {
-            document.getElementById('edit-nazwa').value = currentUser.user_metadata?.full_name || "";
-            document.getElementById('edit-tel').value = currentUser.user_metadata?.telefon_kontaktowy || "";
-        }
-    }
-}
-
-async function saveProfile() {
-    const nowaNazwa = document.getElementById('edit-nazwa').value;
-    const nowyTel = document.getElementById('edit-tel').value;
-    
-    if(currentProfile) {
-        await db.from('profile_wykonawcow').update({ nazwa_firmy: nowaNazwa, telefon: nowyTel }).eq('user_id', currentUser.id);
-        // Wykonawca często ma też wpisy w 'zlecenia' jako wizytówki
-        await db.from('zlecenia').update({ telefon: nowyTel }).eq('user_id', currentUser.id);
-        alert("Dane wykonawcy zaktualizowane!"); window.location.reload();
-    } else {
-        // Klient - aktualizujemy telefon we wszystkich jego ogłoszeniach, żeby cena (1/2pkt) się zmieniła
-        const { error } = await db.auth.updateUser({ data: { full_name: nowaNazwa, telefon_kontaktowy: nowyTel } });
-        await db.from('zlecenia').update({ telefon: nowyTel }).eq('user_id', currentUser.id);
-        if(!error) { alert("Dane klienta i jego ogłoszeń zaktualizowane!"); window.location.reload(); }
-    }
-}
-
-// Funkcja otwierająca okno rozmowy w panelu bocznym
-function openChatBox(partnerId, zlecenieId, partnerName = "Rozmówca") {
-    if (!partnerId || partnerId === 'undefined' || partnerId === 'null') {
-        console.error("Błąd: Nieprawidłowe ID partnera");
-        return;
-    }
-    
-    activePartnerId = String(partnerId).trim();
-    activeZlecenieId = String(zlecenieId).trim();
-    
-    // Zabezpieczenie przed pisaniem do samego siebie
-    if (currentUser && activePartnerId === String(currentUser.id)) {
-        return;
-    }
-    
-    // Ustawienie nagłówka i pokazanie okna czatu
-    document.getElementById('chat-partner-name').innerText = partnerName;
-    document.getElementById('chat-box').classList.remove('hidden');
-    
-    // Załadowanie wiadomości
-    loadMessages();
-}
-
-// Funkcja zamykająca okno rozmowy
-function closeChatBox() {
-    document.getElementById('chat-box').classList.add('hidden');
     activePartnerId = null;
     activeZlecenieId = null;
+    loadAccountPanel();
 }
 
-// Funkcja ładująca wiadomości z bazy danych
 async function loadMessages() {
     if(!activePartnerId || !activeZlecenieId) return;
     if(!currentUser) {
@@ -1443,17 +1175,16 @@ async function loadMessages() {
         .select('*')
         .eq('zlecenie_id', activeZlecenieId)
         .order('created_at', { ascending: true });
-        
+
     if(error) return;
+
     const msgBox = document.getElementById('chat-messages');
-    
-    // Filtrowanie wiadomości pomiędzy zalogowanym a rozmówcą
     const filtered = data.filter(m => 
         (String(m.nadawca_id) === String(currentUser.id) && String(m.odbiorca_id) === String(activePartnerId)) || 
         (String(m.nadawca_id) === String(activePartnerId) && String(m.odbiorca_id) === String(currentUser.id)) ||
         (String(m.nadawca_id) === '00000000-0000-0000-0000-000000000000' && String(m.odbiorca_id) === String(currentUser.id))
     );
-    
+
     const newHtml = filtered.map(m => `
         <div class="max-w-[85%] mb-2 p-2 rounded-xl shadow-sm ${String(m.nadawca_id) === String(currentUser.id) ? 'ml-auto chat-bubble-me' : 'mr-auto chat-bubble-them'}">
             <p class="text-[7px] mb-0.5 opacity-70 font-black uppercase">${String(m.nadawca_id) === String(currentUser.id) ? 'Ty' : (String(m.nadawca_id) === '00000000-0000-0000-0000-000000000000' ? 'SYSTEM' : 'Rozmówca')}</p>
@@ -1462,11 +1193,12 @@ async function loadMessages() {
         </div>
     `).join("");
     
-    msgBox.innerHTML = newHtml || '<div class="text-center py-6 text-[10px] text-slate-400 font-bold uppercase tracking-widest">Napisz pierwszą wiadomość...</div>';
-    msgBox.scrollTop = msgBox.scrollHeight;
+    if (msgBox.innerHTML !== newHtml) {
+        msgBox.innerHTML = newHtml || '<div class="text-center py-6 text-[10px] text-slate-400 font-bold uppercase tracking-widest">Napisz pierwszą wiadomość...</div>';
+        msgBox.scrollTop = msgBox.scrollHeight;
+    }
 }
 
-// Funkcja wysyłająca wiadomość do bazy danych
 async function sendMessage() {
     const input = document.getElementById('chat-input');
     const tresc = input.value.trim();
@@ -1490,6 +1222,153 @@ async function sendMessage() {
     } else {
         input.value = "";
         await loadMessages();
+    }
+}
+
+async function del(id) { if(confirm("Czy na pewno chcesz usunąć to ogłoszenie?")) { await db.from("zlecenia").delete().eq('id', id); loadAccountPanel(); } }
+async function delBought(zgloszenieId) { 
+    if(confirm("Czy na pewno chcesz usunąć to zlecenie ze swojej listy?")) { 
+        await db.from("zgloszenia").delete().eq('id', zzgloszenieId); 
+        goBackToList(); 
+        loadAccountPanel(); 
+    } 
+}
+function toggleEditPostModal(open) {
+    const modal = document.getElementById('edit-post-modal-overlay');
+    if(open) modal.classList.remove('hidden'); else modal.classList.add('hidden');
+}
+
+let imagesToDelete = [];
+async function editPost(id) {
+    if (typeof toggleAccountMenu === 'function') toggleAccountMenu(false); 
+    imagesToDelete = [];
+    const { data: z, error } = await db.from('zlecenia').select('*').eq('id', id).single();
+    if (error || !z) return alert("Błąd pobierania.");
+
+    document.getElementById('edit-post-id').value = z.id;
+    document.getElementById('edit-p-t').value = z.tytul || "";
+    document.getElementById('edit-p-m').value = z.miasto || "";
+    document.getElementById('edit-p-postcode').value = z.kod_pocztowy || "";
+    document.getElementById('edit-p-k').value = z.kategoria || "";
+    document.getElementById('edit-p-o').value = z.opis || "";
+    
+    const phoneInput = document.getElementById('edit-p-p');
+    const noPhoneCheck = document.getElementById('edit-no-phone');
+    phoneInput.value = z.telefon || "";
+    if(!z.telefon || z.telefon.trim() === "") {
+        if(noPhoneCheck) noPhoneCheck.checked = true; phoneInput.disabled = true;
+    } else {
+        if(noPhoneCheck) noPhoneCheck.checked = false; phoneInput.disabled = false;
+    }
+    
+    const previewBox = document.getElementById('edit-media-preview');
+    if(previewBox) {
+        previewBox.classList.remove('hidden');
+        previewBox.innerHTML = [1,2,3].map(num => {
+            const url = z['zdjecie'+num];
+            if(!url || url.includes("[object") || url === "undefined") return "";
+            return `<div class="relative w-16 h-16 group" id="prev-slot-${num}">
+                <img src="${url}" class="w-full h-full object-cover rounded-lg border">
+                <button onclick="markImgDelete(${num})" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 text-[8px] flex items-center justify-center">✖</button>
+            </div>`;
+        }).join('');
+    }
+
+    [1,2,3].forEach(n => { const el = document.getElementById('edit-p-img'+n); if(el) el.value = ""; });
+    toggleEditPostModal(true);
+}
+
+function markImgDelete(num) {
+    imagesToDelete.push(num);
+    const slot = document.getElementById('prev-slot-'+num);
+    if(slot) slot.classList.add('hidden');
+}
+
+async function saveEditedPost() {
+    const id = document.getElementById('edit-post-id').value;
+    const btn = document.getElementById('edit-post-save-btn');
+    const noPhoneCheck = document.getElementById('edit-no-phone');
+    const noPhone = noPhoneCheck ? noPhoneCheck.checked : false;
+    const phone = document.getElementById('edit-p-p').value;
+
+    if (!document.getElementById('edit-p-t').value || (!noPhone && phone.length !== 9)) return alert("Uzupełnij poprawnie dane.");
+
+    btn.disabled = true; btn.innerText = "Trwa zapisywanie...";
+    const { data: old } = await db.from('zlecenia').select('zdjecie1, zdjecie2, zdjecie3').eq('id', id).single();
+    
+    const updateData = {
+        tytul: document.getElementById('edit-p-t').value,
+        miasto: document.getElementById('edit-p-m').value,
+        kod_pocztowy: document.getElementById('edit-p-postcode').value || null,
+        kategoria: document.getElementById('edit-p-k').value,
+        opis: document.getElementById('edit-p-o').value,
+        telefon: noPhone ? "" : phone
+    };
+
+    for(let i=1; i<=3; i++) {
+        if (typeof uploadFile === 'function') {
+            const newImg = await uploadFile('edit-p-img'+i);
+            if(newImg) {
+                updateData['zdjecie'+i] = newImg;
+            } else if(imagesToDelete.includes(i)) {
+                updateData['zdjecie'+i] = null;
+            } else {
+                updateData['zdjecie'+i] = old['zdjecie'+i];
+            }
+        }
+    }
+
+    const { error } = await db.from('zlecenia').update(updateData).eq('id', id);
+    if (!error) { alert("Ogłoszenie zaktualizowane!"); toggleEditPostModal(false); if(typeof load === 'function') load(); }
+    btn.disabled = false; btn.innerText = "Zapisz zmiany w ogłoszeniu";
+}
+
+function openLegal(type) {
+    const modal = document.getElementById('legal-modal');
+    const title = document.getElementById('legal-title');
+    const body = document.getElementById('legal-body');
+    modal.classList.remove('hidden');
+    if(type === 'regulamin') {
+        title.innerText = "Regulamin platformy ZlećRemoncik";
+        body.innerHTML = `<p>1. Każdy wykonawca otrzymuje 10 punktów na start.</p><p>2. Zgłoszenie kosztuje 1 punkt.</p><p>3. Pula odnawia się o +3 pkt w każdy poniedziałek o 00:00.</p><p>4. Maksymalny limit zgłoszeń na jedno ogłoszenie wynosi 5 osób.</p>`;
+    } else if(type === 'rodo') {
+        title.innerText = "Polityka Prywatności i RODO";
+        body.innerHTML = `<p>Dane takie jak adres e-mail oraz telefon kontaktowy są przetwarzane wyłącznie w celu komunikacji i parowania stron zlecenia.</p>`;
+    } else {
+        title.innerText = "Zasady działania";
+        body.innerHTML = `<p>System nagradza rzetelnych wykonawców dodatkowymi punktami w zależności od przyznanej oceny (gwiazdek) przez zleceniodawcę.</p>`;
+    }
+}
+
+function closeLegal() { document.getElementById('legal-modal').classList.add('hidden'); }
+
+function openEditProfileForm() {
+    const box = document.getElementById('edit-profile-box');
+    box.classList.toggle('hidden');
+    if(!box.classList.contains('hidden')) {
+        document.getElementById('edit-email').value = currentUser.email;
+        if(currentProfile) {
+            document.getElementById('edit-nazwa').value = currentProfile.nazwa_firmy || "";
+            document.getElementById('edit-tel').value = currentProfile.telefon || "";
+        } else {
+            document.getElementById('edit-nazwa').value = currentUser.user_metadata?.full_name || "";
+            document.getElementById('edit-tel').value = currentUser.user_metadata?.telefon_kontaktowy || "";
+        }
+    }
+}
+
+async function saveProfile() {
+    const nowaNazwa = document.getElementById('edit-nazwa').value;
+    const nowyTel = document.getElementById('edit-tel').value;
+    
+    if(currentProfile) {
+        await db.from('profile_wykonawcow').update({ nazwa_firmy: nowaNazwa, telefon: nowyTel }).eq('user_id', currentUser.id);
+        await db.from('zlecenia').update({ telefon: nowyTel }).eq('user_id', currentUser.id);
+        alert("Dane wykonawcy zaktualizowane!"); window.location.reload();
+    } else {
+        const { error } = await db.auth.updateUser({ data: { full_name: nowaNazwa, telefon_kontaktowy: nowyTel } });
+        await db.from('zlecenia').update({ telefon: nowyTel }).eq('user_id', currentUser.id);
+        if(!error) { alert("Dane klienta i jego ogłoszeń zaktualizowane!"); window.location.reload(); }
     }
 }
 </script>
