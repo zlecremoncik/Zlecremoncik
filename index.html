@@ -1144,13 +1144,77 @@ async function loadConversations() {
     `).join("") || `<p class="text-xs text-slate-400 text-center py-6">Brak rozpoczętych konwersacji.</p>`;
 }
 
+let chatRefreshInterval = null;
+
 async function openChatBox(partnerId, zlId, partnerName) {
-    activePartnerId = partnerId; activeZlecenieId = zlId;
+    activePartnerId = partnerId; 
+    activeZlecenieId = zlId;
     document.getElementById('chat-partner-name').innerText = partnerName || "Rozmowa";
     document.getElementById('chat-box').classList.remove('hidden');
     document.getElementById('user-chats-list').classList.add('hidden');
-    await db.from('wiadomosci').update({ czy_przeczytane: true }).eq('zlecenie_id', zlId).eq('nadawca_id', partnerId).eq('odbiorca_id', currentUser.id);
+    
+    // Oznacz jako przeczytane
+    await db.from('wiadomosci').update({ czy_przeczytane: true })
+        .eq('zlecenie_id', zlId).eq('nadawca_id', partnerId).eq('odbiorca_id', currentUser.id);
+    
+    if(chatRefreshInterval) clearInterval(chatRefreshInterval);
+    chatRefreshInterval = setInterval(loadMessages, 3000); // Odświeżaj co 3 sekundy
     loadMessages();
+}
+
+function closeChatBox() {
+    if(chatRefreshInterval) clearInterval(chatRefreshInterval);
+    document.getElementById('chat-box').classList.add('hidden');
+    document.getElementById('user-chats-list').classList.remove('hidden');
+    loadAccountPanel();
+}
+
+async function loadMessages() {
+    if(!activePartnerId || !activeZlecenieId || !currentUser) return;
+    
+    const { data, error } = await db.from('wiadomosci')
+        .select('*')
+        .eq('zlecenie_id', activeZlecenieId)
+        .or(`nadawca_id.eq.${currentUser.id},odbiorca_id.eq.${currentUser.id}`)
+        .order('created_at', { ascending: true });
+
+    if(error) return;
+
+    const msgBox = document.getElementById('chat-messages');
+    const filtered = data.filter(m => m.nadawca_id === activePartnerId || m.odbiorca_id === activePartnerId);
+
+    const newHtml = filtered.map(m => `
+        <div class="max-w-[80%] mb-3 p-3 shadow-sm ${m.nadawca_id === currentUser.id ? 'ml-auto chat-bubble-me' : 'mr-auto chat-bubble-them'}">
+            <p class="text-xs leading-relaxed">${m.tresc}</p>
+            <p class="text-[6px] mt-1 opacity-50 text-right uppercase">${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</p>
+        </div>
+    `).join("") || '<div class="text-center py-10 text-[10px] text-slate-400 font-bold uppercase tracking-widest">Brak wiadomości. Napisz pierwszy!</div>';
+    
+    if (msgBox.innerHTML !== newHtml) {
+        msgBox.innerHTML = newHtml;
+        msgBox.scrollTop = msgBox.scrollHeight;
+    }
+}
+
+async function sendMessage() {
+    const input = document.getElementById('chat-input');
+    const tresc = input.value.trim();
+    if(!tresc || !activePartnerId || !activeZlecenieId) return;
+
+    const { error } = await db.from('wiadomosci').insert([{ 
+        zlecenie_id: activeZlecenieId, 
+        nadawca_id: currentUser.id, 
+        odbiorca_id: activePartnerId, 
+        tresc: tresc, 
+        czy_przeczytane: false 
+    }]);
+
+    if(error) {
+        alert("Błąd wysyłania: " + error.message);
+    } else {
+        input.value = ""; 
+        loadMessages();
+    }
 }
 
 function closeChatBox() {
