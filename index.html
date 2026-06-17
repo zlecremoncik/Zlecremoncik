@@ -458,10 +458,14 @@ async function executeLogin() {
 }
 
 async function loginWithGoogle() {
+    // Sprawdzamy czy użytkownik wybrał rolę w formularzu rejestracji przed kliknięciem Google
+    const selectedRole = document.getElementById('reg-role').value;
+    localStorage.setItem('google_login_role', selectedRole);
+
     const { error } = await db.auth.signInWithOAuth({
         provider: 'google',
         options: { 
-            redirectTo: window.location.href.split('#')[0]
+            redirectTo: window.location.origin + window.location.pathname
         }
     });
     if (error) alert("Błąd Google: " + error.message);
