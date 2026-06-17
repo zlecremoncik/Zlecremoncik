@@ -1022,40 +1022,40 @@ async function loadAccountPanel(page = 1) {
             </div>
         `).join('') || "Brak ogłoszeń.";
 
-    } else {
-        // WIDOK WYKONAWCY (Kupione - Zgodnie ze screenem)
-        actTitle.innerText = "🛒 KUPIONE ZLECENIA (WYKONAWCA)";
+        } else {
+        // WIDOK WYKONAWCY (Kupione zlecenia)
+        actTitle.innerText = "🛒 KUPIONE ZLECENIA";
         
-        // Pobieramy zgłoszenia oraz dane zlecenia wraz z adresem email autora zlecenia (użytkownika auth)
-        const { data: apps } = await db.from('zgloszenia').select('*, zlecenie:zlecenia(*, autor:user_id(email))').eq('wykonawca_id', currentUser.id).order('created_at', {ascending: false});
+        // Pobieramy zgłoszenia oraz dane zlecenia bezpośrednio z tabeli zlecenia
+        const { data: apps, error } = await db.from('zgloszenia').select('*, zlecenie:zlecenia(*)').eq('wykonawca_id', currentUser.id).order('created_at', {ascending: false});
         
-        const start = (page - 1) * perPage;
-        const pagedApps = apps?.slice(start, start + perPage);
+        if (error) console.error("Błąd pobierania zgloszen:", error);
 
-        postsList.innerHTML = pagedApps?.map(a => {
+        const start = (page - 1) * perPage;
+        const pagedApps = apps?.slice(start, start + perPage) || [];
+
+        postsList.innerHTML = pagedApps.map(a => {
             const zol = a.zlecenie;
-            const ownerEmail = zol?.autor?.email || 'Brak';
-            const ownerName = ownerEmail !== 'Brak' ? ownerEmail.split('@')[0] : 'Brak';
+            if (!zol) return ""; // Zabezpieczenie przed usuniętymi zleceniami
+            
+            const ownerEmail = zol.user_email || 'Brak';
+            const ownerName = ownerEmail !== 'Brak' ? ownerEmail.split('@')[0] : 'Klient';
 
             return `
-            <div class="border border-blue-200 rounded-xl p-3 bg-white shadow-sm mb-2 cursor-pointer hover:border-blue-400 transition-all" onclick="openDetails(${zol?.id})">
-                <div class="flex justify-between items-center mb-1">
-                    <h4 class="font-bold text-xs uppercase tracking-tight text-slate-800">${zol?.tytul || 'Brak tytułu'}</h4>
-                    <span class="text-[8px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-bold border border-blue-100 uppercase">Opłacone</span>
+            <div class="border border-blue-200 rounded-xl p-4 bg-white shadow-sm mb-3 cursor-pointer hover:border-blue-400 transition-all" onclick="openDetails(${zol.id})">
+                <div class="flex justify-between items-center mb-2">
+                    <h4 class="font-bold text-xs uppercase tracking-tight text-slate-800">${zol.tytul}</h4>
+                    <span class="text-[8px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded font-bold border border-blue-100 uppercase">Opłacone</span>
                 </div>
-                <p class="text-[10px] text-slate-500 mb-1.5 line-clamp-1">${zol?.opis || ''}</p>
-                <div class="bg-slate-50 p-2 rounded-lg mb-2 text-[10px] space-y-0.5 border border-slate-100">
-                    <p><span class="text-slate-400">Dane Zleceniodawcy:</span> <span class="font-bold text-slate-700">${ownerName}</span></p>
-                    <p><span class="text-slate-400">Telefon:</span> <span class="font-bold text-slate-700">${zol?.telefon || 'Brak'}</span></p>
+                <div class="bg-slate-50 p-3 rounded-xl mb-3 text-[10px] space-y-1 border border-slate-100">
+                    <p><span class="text-slate-400">Zleceniodawca:</span> <span class="font-bold text-slate-700">${ownerName}</span></p>
+                    <p><span class="text-slate-400">Telefon:</span> <span class="font-bold text-slate-700">${zol.telefon || 'Brak'}</span></p>
                     <p><span class="text-slate-400">Email:</span> <span class="font-bold text-slate-700">${ownerEmail}</span></p>
                 </div>
-                <div class="flex gap-2">
-                    <button onclick="event.stopPropagation(); openChatBox('${zol?.user_id}', ${zol?.id}, '${ownerName}')" class="w-full bg-slate-900 text-white py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-black transition-colors">Czat</button>
-                </div>
+                <button onclick="event.stopPropagation(); openChatBox('${zol.user_id}', ${zol.id}, '${ownerName}')" class="w-full bg-slate-900 text-white py-2.5 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-black transition-colors">Czat z klientem</button>
             </div>`;
-        }).join('') || "Brak zakupionych zleceń.";
+        }).join('') || `<p class="text-xs text-slate-400 text-center py-10 font-bold uppercase">Brak zakupionych zleceń.</p>`;
 
-        // Paginacja
         const totalPages = Math.ceil((apps?.length || 0) / perPage);
         if (totalPages > 1) {
             let paginHtml = `<div class="flex gap-2 justify-center mt-4 text-[10px] font-bold">`;
