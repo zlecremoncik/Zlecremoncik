@@ -624,25 +624,26 @@ async function add() {
     }
 }
 
-async function load() {
-    // Pobieramy zlecenia wraz z ID zgłoszeń, aby móc je policzyć
-    let q = db.from("zlecenia").select("*, zgloszenia(id)").order("id", { ascending: false });
+async function load(page = 1) {
+    const pSize = 40;
+    const start = (page - 1) * pSize;
+    const limitDate = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
+    let q = db.from("zlecenia").select("*, zgloszenia(id)", { count: 'exact' })
+        .gt('created_at', limitDate)
+        .order("id", { ascending: false }).range(start, start + pSize - 1);
     
     const cityInput = document.getElementById('search-city').value.trim();
     if (cityInput !== "") q = q.ilike('miasto', `%${cityInput}%`);
     const categorySelect = document.getElementById('search-category').value;
     if (categorySelect !== "") q = q.eq('kategoria', categorySelect);
 
-    const { data, error } = await q;
+    const { data, count, error } = await q;
     const listEl = document.getElementById("list");
     if (!data || data.length === 0) { listEl.innerHTML = `<p class='text-center text-slate-400 py-16 text-xs font-semibold bg-white rounded-2xl border'>Brak wpisów.</p>`; return; }
 
     listEl.innerHTML = data.map(z => {
         const totalReq = z.zgloszenia ? z.zgloszenia.length : 0;
-        const isFull = totalReq >= 5;
-                const hasTel = (z.telefon && z.telefon.trim().length === 9) ? "✅ Podano" : "❌ Brak";
-        const hasMail = "✅ Podano";  
-
+        const hasTel = (z.telefon && z.telefon.trim().length === 9) ? "✅" : "❌";
         return `
         <div onclick="openDetails(${z.id})" class="group bg-white rounded-2xl card-shadow overflow-hidden border border-slate-100 cursor-pointer hover:border-blue-300 transition-all p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative">
             <div class="space-y-1.5 flex-1">
@@ -652,21 +653,24 @@ async function load() {
                     <span class="text-slate-400">📍 ${z.miasto}</span>
                 </div>
                 <h3 class="text-base font-bold text-slate-800 group-hover:text-blue-600 transition-colors leading-tight">${z.tytul}</h3>
-                <div class="flex gap-3 mt-1 text-[8px] font-bold uppercase text-slate-400">
-                    <span>📞 Tel: ${hasTel}</span>
-                    <span>📧 Email: ${hasMail}</span>
-                </div>
+                <div class="flex gap-3 mt-1 text-[8px] font-bold uppercase text-slate-400"><span>📞 Tel: ${hasTel}</span><span>📧 Email: ✅</span></div>
             </div>
             <div class="sm:text-right shrink-0 flex flex-col items-start sm:items-end gap-1 min-w-[120px]">
                 <span class="text-[9px] font-bold text-slate-400">${totalReq}/5 chętnych</span>
-                <div class="h-1.5 w-24 bg-slate-100 rounded-full overflow-hidden">
-                    <div class="h-full bg-blue-500" style="width: ${totalReq * 20}%"></div>
-                </div>
+                <div class="h-1.5 w-24 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-blue-500" style="width: ${totalReq * 20}%"></div></div>
             </div>
         </div>`;
     }).join("");
+    
+    if (count > pSize) {
+        let paginHtml = `<div class="flex justify-center gap-2 mt-8 flex-wrap pb-10">`;
+        for(let i=1; i<=Math.ceil(count/pSize); i++) {
+            paginHtml += `<button onclick="load(${i})" class="w-10 h-10 rounded-xl font-bold ${i === page ? 'bg-blue-600 text-white' : 'bg-white border text-slate-400'}">${i}</button>`;
+        }
+        listEl.innerHTML += paginHtml + `</div>`;
+    }
 }
-// 2. Automatyczne odświeżanie co 30 sekund
+setInterval(() => load(1), 30000);
 setInterval(load, 30000);
 setInterval(() => { if(currentUser) loadConversations(); }, 10000);
 
@@ -677,126 +681,78 @@ async function checkUrlRoute() {
     const hash = window.location.hash;
     if (!hash.startsWith('#ogloszenie-')) return;
     const id = hash.replace('#ogloszenie-', '');
+    document.getElementById('list').classList.add('hidden'); document.getElementById('filter-panel').classList.add('hidden'); document.getElementById('details-view').classList.remove('hidden');
 
-    document.getElementById('list').classList.add('hidden');
-    document.getElementById('filter-panel').classList.add('hidden');
-    document.getElementById('details-view').classList.remove('hidden');
-
-    // Pobieramy zlecenie bezpośrednio
-    const { data: z } = await db.from("zlecenia").select("*").eq('id', id).single();
+    const { data: z } = await db.from("zlecenia").select("*, zgloszenia(*, profile_wykonawcow(nazwa_firmy))").eq('id', id).single();
     if (!z) return;
 
-    const { count: totalApplicants } = await db.from('zgloszenia').select('*', { count: 'exact', head: true }).eq('zlecenie_id', id);
-    
-    // Sprawdzamy czy bieżący wykonawca zakupił już to zlecenie
-    let bzgloszenie = null;
-    if (currentUser) {
-        const { data: appData } = await db.from('zgloszenia').select('id').eq('zlecenie_id', id).eq('wykonawca_id', currentUser.id).maybeSingle();
-        bzgoszenie = appData;
-    }
+    const totalApplicants = z.zgloszenia ? z.zgloszenia.length : 0;
+    const isOwner = currentUser && z.user_id === currentUser.id;
+    let bzgloszenie = currentUser ? z.zgloszenia.find(a => a.wykonawca_id === currentUser.id) : null;
 
-    const ownerEmail = z.user_email || 'Brak';
-    const ownerName = ownerEmail !== 'Brak' ? ownerEmail.split('@')[0] : 'Brak';
-
-    let actionBtn = "";
-    let deleteBtnHtml = "";
-
-    if (currentUser && z.typ_wpisu === 'klient' && z.user_id !== currentUser.id) {
-        if (bzgoszenie) {
-            // Jeśli wykonawca już kupił to zlecenie, pokazujemy duży czerwony przycisk USUŃ według wzoru tak.jpg
-            deleteBtnHtml = `
-                <div class="flex justify-end pt-4 border-t border-slate-100">
-                    <button onclick="delBought('${bzgoszenie.id}')" class="bg-red-50 text-red-600 border border-red-200 px-6 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider hover:bg-red-100 transition-all shadow-sm">USUŃ</button>
+    let actionBtn = "", managementHtml = "", deleteBtnHtml = "";
+    if (isOwner && z.typ_wpisu === 'klient') {
+        if (z.status === 'zakonczone') {
+            managementHtml = `<div class="bg-green-50 text-green-700 p-6 rounded-3xl text-center font-black text-xs uppercase border border-green-100 mb-4">Zlecenie zakończone. Możesz wystawić opinię wybranemu fachowcowi poniżej.</div>`;
+        } else if (z.wybrany_wykonawca_id) {
+            managementHtml = `<div class="bg-blue-50 p-6 rounded-3xl border border-blue-100 mb-4 text-center">
+                <p class="text-[10px] font-black text-blue-600 uppercase mb-3">Wybrany fachowiec realizuje zlecenie</p>
+                <button onclick="finishJob(${z.id})" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase text-xs shadow-md">Zakończ zlecenie i oceń fachowca</button>
+            </div>`;
+        } else if (totalApplicants > 0) {
+            managementHtml = `<div class="bg-slate-50 p-6 rounded-3xl border border-slate-100 mb-4">
+                <p class="text-[10px] font-black text-slate-400 uppercase mb-4 text-center">Zatwierdź Wykonawcę (zablokuje to możliwość oceny innych):</p>
+                <div class="space-y-2">
+                    ${z.zgloszenia.map(a => `<div class="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-200">
+                        <span class="text-xs font-bold text-slate-700">${a.profile_wykonawcow?.nazwa_firmy || 'Fachowiec'}</span>
+                        <button onclick="selectContractor(${z.id}, '${a.wykonawca_id}')" class="bg-amber-500 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-amber-600">Wybierz</button>
+                    </div>`).join('')}
                 </div>
-            `;
+            </div>`;
+        }
+    } else if (currentUser && z.typ_wpisu === 'klient' && !isOwner) {
+        if (bzgloszenie) {
+            deleteBtnHtml = `<div class="flex justify-end pt-4 border-t border-slate-100"><button onclick="delBought('${bzgloszenie.id}')" class="bg-red-50 text-red-600 border border-red-200 px-6 py-2.5 rounded-2xl font-black text-xs uppercase hover:bg-red-100 transition-all shadow-sm">USUŃ</button></div>`;
         } else if (totalApplicants >= 5) {
             actionBtn = `<div class="bg-red-50 text-red-600 p-4 rounded-2xl text-center font-black text-xs uppercase">Zebrano już komplet chętnych</div>`;
-                } else {
+        } else {
             const cost = (z.telefon && z.telefon.trim().length === 9) ? 2 : 1;
             actionBtn = `<button onclick="applyForJob(${z.id})" class="w-full bg-amber-500 text-white py-5 rounded-2xl font-black uppercase text-sm shadow-lg shadow-amber-100 hover:scale-[1.01] transition-all">🙋 Jestem Zainteresowany (-${cost} pkt)</button>`;
         }
-   }
-
-    const finalLocString = z.kod_pocztowy ? `${z.miasto} (${z.kod_pocztowy})` : z.miasto;
-
-    // Sprawdzamy czy bieżący użytkownik wykupił już to zlecenie lub jest jego autorem
-    let hasAccess = false;
-    if (currentUser) {
-        if (z.user_id === currentUser.id) {
-            hasAccess = true;
-        } else {
-            const { data: bz } = await db.from('zgloszenia').select('id').eq('zlecenie_id', z.id).eq('wykonawca_id', currentUser.id).maybeSingle();
-            if (bz) hasAccess = true;
-        }
     }
 
-    // Jeśli brak dostępu, ukrywamy prawdziwy e-mail i telefon
+    const hasAccess = isOwner || bzgloszenie;
+    const finalLocString = z.kod_pocztowy ? `${z.miasto} (${z.kod_pocztowy})` : z.miasto;
     const displayPhone = hasAccess ? (z.telefon || 'Brak') : "Ukryty (wykup kontakt)";
-    const displayEmail = hasAccess ? ownerEmail : "Ukryty (wykup kontakt)";
+    const displayEmail = hasAccess ? z.user_email : "Ukryty (wykup kontakt)";
 
-    // Generowanie sekcji zdjęć - odfiltrowujemy puste oraz zepsute wpisy [object Object]
     let imagesHtml = "";
-    const availableImages = [z.zdjecie1, z.zdjecie2, z.zdjecie3].filter(img => {
-        return img && img.trim() !== "" && !img.includes("[object") && img !== "undefined";
-    });
+    const availableImages = [z.zdjecie1, z.zdjecie2, z.zdjecie3].filter(img => img && img.trim() !== "" && !img.includes("[object") && img !== "undefined");
     if (availableImages.length > 0) {
-        imagesHtml = `
-            <div class="border-t border-slate-100 pt-4">
-                <p class="text-[10px] font-black text-slate-400 uppercase mb-2 tracking-wider">Załączone zdjęcia (kliknij, aby powiększyć):</p>
-                <div class="flex flex-wrap gap-2">
-                    ${availableImages.map(imgUrl => `
-                        <img src="${imgUrl}" onclick="openImageModal('${imgUrl}')" class="w-24 h-24 object-cover rounded-xl border border-slate-200 cursor-zoom-in hover:opacity-90 transition-all shadow-sm">
-                    `).join('')}
-                </div>
-            </div>
-        `;
+        imagesHtml = `<div class="border-t border-slate-100 pt-4"><p class="text-[10px] font-black text-slate-400 uppercase mb-2">Załączone zdjęcia:</p><div class="flex flex-wrap gap-2">${availableImages.map(imgUrl => `<img src="${imgUrl}" onclick="openImageModal('${imgUrl}')" class="w-24 h-24 object-cover rounded-xl border border-slate-200 cursor-zoom-in hover:opacity-90 transition-all shadow-sm">`).join('')}</div></div>`;
     }
 
     document.getElementById('details-content').innerHTML = `
         <div class="bg-white p-8 rounded-[2.5rem] card-shadow border border-slate-100 space-y-6 relative">
-            <div class="flex justify-between items-start">
-                <h1 class="text-3xl font-black leading-tight text-slate-900">${z.tytul}</h1>
-                <span class="bg-blue-50 text-blue-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-tighter">${z.kategoria || 'Inne'}</span>
-            </div>
-            
-            <div class="flex flex-wrap gap-4 text-xs font-bold text-slate-400 uppercase">
-                <span class="text-pink-600 font-extrabold">📍 ${finalLocString.toUpperCase()}</span>
-            </div>
-
+            <div class="flex justify-between items-start"><h1 class="text-3xl font-black text-slate-900">${z.tytul}</h1><span class="bg-blue-50 text-blue-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase">${z.kategoria || 'Inne'}</span></div>
+            <div class="flex flex-wrap gap-4 text-xs font-bold text-pink-600 uppercase">📍 ${finalLocString.toUpperCase()}</div>
             <div class="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 max-w-sm text-xs space-y-1">
-                <p><span class="text-slate-400">Dane Zleceniodawcy:</span> <span class="font-bold text-slate-800">${ownerName}</span></p>
                 <p><span class="text-slate-400">Telefon:</span> <span class="font-bold ${hasAccess ? 'text-slate-900' : 'text-amber-600 italic'}">${displayPhone}</span></p>
                 <p><span class="text-slate-400">Email:</span> <span class="font-bold ${hasAccess ? 'text-slate-800' : 'text-amber-600 italic'}">${displayEmail}</span></p>
             </div>
-
-            <div class="text-slate-600 leading-relaxed whitespace-pre-wrap border-t border-slate-50 pt-4 text-sm">${z.opis}</div>
-
+            <div class="text-slate-600 text-sm whitespace-pre-wrap border-t border-slate-50 pt-4 leading-relaxed">${z.opis}</div>
             ${imagesHtml}
-
-            ${z.typ_wpisu === 'klient' ? `
-            <div class="p-6 bg-slate-50 rounded-3xl border border-slate-100">
-                <p class="text-[10px] font-black text-blue-600 uppercase mb-2">Status zgłoszeń:</p>
-                <div class="flex items-center gap-4">
-                    <div class="h-3 flex-1 bg-white rounded-full overflow-hidden border border-slate-200">
-                        <div class="h-full bg-blue-500" style="width: ${totalApplicants * 20}%"></div>
-                    </div>
-                    <span class="text-sm font-black">${totalApplicants} / 5 Fachowców</span>
-                </div>
-            </div>` : ''}
-            
-            <div class="space-y-4 pt-2">
-                ${actionBtn}
-                ${deleteBtnHtml ? `
-                    <div class="flex justify-end pt-2">
-                        <button onclick="delBought('${bzgoszenie.id}')" class="bg-red-50 hover:bg-red-100 text-red-500 border border-red-100 px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-sm">USUŃ</button>
-                    </div>
-                ` : ''}
-            </div>
-        </div>
-    `;
+            ${z.typ_wpisu === 'klient' ? `<div class="p-6 bg-slate-50 rounded-3xl border border-slate-100"><p class="text-[10px] font-black text-blue-600 uppercase mb-2">Status zgłoszeń: ${totalApplicants}/5</p><div class="h-3 w-full bg-white rounded-full overflow-hidden border border-slate-200"><div class="h-full bg-blue-500" style="width: ${totalApplicants * 20}%"></div></div></div>` : ''}
+            ${managementHtml} ${actionBtn} ${deleteBtnHtml}
+        </div>`;
 
     const opinionsSec = document.getElementById('opinions-section');
-    if (z.typ_wpisu === 'wykonawca') { opinionsSec.classList.remove('hidden'); loadOpinions(z.user_id); } else { opinionsSec.classList.add('hidden'); }
+    if (z.typ_wpisu === 'wykonawca' || (z.typ_wpisu === 'klient' && z.status === 'zakonczone')) {
+        opinionsSec.classList.remove('hidden'); loadOpinions(z.wybrany_wykonawca_id || z.user_id);
+    } else { opinionsSec.classList.add('hidden'); }
+}
+async function selectContractor(zId, wId) { if(confirm("Wybierasz tego wykonawcę? Tylko on będzie mógł otrzymać opinię.")) { await db.from('zlecenia').update({ wybrany_wykonawca_id: wId, status: 'w_trakcie' }).eq('id', zId); checkUrlRoute(); } }
+async function finishJob(zId) { if(confirm("Zakończyć zlecenie? Od teraz możesz wystawić opinię.")) { await db.from('zlecenia').update({ status: 'zakonczone' }).eq('id', zId); checkUrlRoute(); } }
 }
 
 // Funkcje do obsługi modala powiększania zdjęć
@@ -883,24 +839,23 @@ async function loadOpinions(wykonawcaId) {
 async function submitOpinion() {
     const hash = window.location.hash;
     const id = hash.replace('#ogloszenie-', '');
-    const { data: targetZlecenie } = await db.from("zlecenia").select("user_id").eq('id', id).single();
+    const { data: z } = await db.from("zlecenia").select("*").eq('id', id).single();
 
+    if (!z.wybrany_wykonawca_id || z.status !== 'zakonczone') return alert("Musisz najpierw wybrać wykonawcę i zakończyć zlecenie!");
+    
     const em = document.getElementById('op-email').value;
     const stars = parseInt(document.getElementById('op-stars').value);
     const text = document.getElementById('op-text').value;
 
-    if(!em || !text) return alert("Uzupełnij swój e-mail oraz opis!");
+    if(!em || !text) return alert("Uzupełnij formularz!");
 
-    const { error } = await db.from('opinie').insert([{ wykonawca_id: targetZlecenie.user_id, autor_email: em, gwiazdki: stars, tresc: text }]);
-    if (error) { alert("Błąd dodawania opinii: " + error.message); } else {
-        let bonus = 0;
-        if(stars === 5) bonus = 5; else if(stars === 4) bonus = 4; else if(stars === 3) bonus = 3; else if(stars === 2) bonus = 2;
-        if(bonus > 0) {
-            const { data: prof } = await db.from('profile_wykonawcow').select('punkty').eq('user_id', targetZlecenie.user_id).maybeSingle();
-            if(prof) await db.from('profile_wykonawcow').update({ punkty: prof.punkty + bonus }).eq('user_id', targetZlecenie.user_id);
-        }
-        alert(`Opinia została zapisana! Wykonawca otrzymał bonus: +${bonus} punktów.`);
-        loadOpinions(targetZlecenie.user_id);
+    const { error } = await db.from('opinie').insert([{ wykonawca_id: z.wybrany_wykonawca_id, autor_email: em, gwiazdki: stars, tresc: text }]);
+    if (!error) {
+        let bonus = stars > 1 ? stars : 0;
+        await db.from('profile_wykonawcow').update({ punkty: (currentProfile?.punkty || 0) + bonus }).eq('user_id', z.wybrany_wykonawca_id);
+        await db.from('zlecenia').delete().eq('id', id); // TRWAŁE USUNIĘCIE PO OPINII
+        alert("Opinia zapisana. Zlecenie zostało trwale usunięte z bazy.");
+        goBackToList();
     }
 }
 
