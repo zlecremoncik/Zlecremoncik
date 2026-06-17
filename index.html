@@ -1401,7 +1401,97 @@ async function saveProfile() {
     }
 }
 
+// Funkcja otwierająca okno rozmowy w panelu bocznym
+function openChatBox(partnerId, zlecenieId, partnerName = "Rozmówca") {
+    if (!partnerId || partnerId === 'undefined' || partnerId === 'null') {
+        console.error("Błąd: Nieprawidłowe ID partnera");
+        return;
+    }
+    
+    activePartnerId = String(partnerId).trim();
+    activeZlecenieId = String(zlecenieId).trim();
+    
+    // Zabezpieczenie przed pisaniem do samego siebie
+    if (currentUser && activePartnerId === String(currentUser.id)) {
+        return;
+    }
+    
+    // Ustawienie nagłówka i pokazanie okna czatu
+    document.getElementById('chat-partner-name').innerText = partnerName;
+    document.getElementById('chat-box').classList.remove('hidden');
+    
+    // Załadowanie wiadomości
+    loadMessages();
+}
 
+// Funkcja zamykająca okno rozmowy
+function closeChatBox() {
+    document.getElementById('chat-box').classList.add('hidden');
+    activePartnerId = null;
+    activeZlecenieId = null;
+}
+
+// Funkcja ładująca wiadomości z bazy danych
+async function loadMessages() {
+    if(!activePartnerId || !activeZlecenieId) return;
+    if(!currentUser) {
+        const { data: { user } } = await db.auth.getUser();
+        if(user) currentUser = user; else return;
+    }
+
+    const { data, error } = await db.from('wiadomosci')
+        .select('*')
+        .eq('zlecenie_id', activeZlecenieId)
+        .order('created_at', { ascending: true });
+        
+    if(error) return;
+    const msgBox = document.getElementById('chat-messages');
+    
+    // Filtrowanie wiadomości pomiędzy zalogowanym a rozmówcą
+    const filtered = data.filter(m => 
+        (String(m.nadawca_id) === String(currentUser.id) && String(m.odbiorca_id) === String(activePartnerId)) || 
+        (String(m.nadawca_id) === String(activePartnerId) && String(m.odbiorca_id) === String(currentUser.id)) ||
+        (String(m.nadawca_id) === '00000000-0000-0000-0000-000000000000' && String(m.odbiorca_id) === String(currentUser.id))
+    );
+    
+    const newHtml = filtered.map(m => `
+        <div class="max-w-[85%] mb-2 p-2 rounded-xl shadow-sm ${String(m.nadawca_id) === String(currentUser.id) ? 'ml-auto chat-bubble-me' : 'mr-auto chat-bubble-them'}">
+            <p class="text-[7px] mb-0.5 opacity-70 font-black uppercase">${String(m.nadawca_id) === String(currentUser.id) ? 'Ty' : (String(m.nadawca_id) === '00000000-0000-0000-0000-000000000000' ? 'SYSTEM' : 'Rozmówca')}</p>
+            <p class="text-xs leading-tight">${m.tresc}</p>
+            <p class="text-[6px] mt-0.5 opacity-50 text-right uppercase">${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</p>
+        </div>
+    `).join("");
+    
+    msgBox.innerHTML = newHtml || '<div class="text-center py-6 text-[10px] text-slate-400 font-bold uppercase tracking-widest">Napisz pierwszą wiadomość...</div>';
+    msgBox.scrollTop = msgBox.scrollHeight;
+}
+
+// Funkcja wysyłająca wiadomość do bazy danych
+async function sendMessage() {
+    const input = document.getElementById('chat-input');
+    const tresc = input.value.trim();
+    if(!tresc || !activePartnerId || !activeZlecenieId || activePartnerId === 'undefined') return;
+
+    if(!currentUser) {
+        const { data: { user } } = await db.auth.getUser();
+        if(user) currentUser = user; else return;
+    }
+
+    const { error } = await db.from('wiadomosci').insert([{ 
+        zlecenie_id: activeZlecenieId, 
+        nadawca_id: currentUser.id, 
+        odbiorca_id: activePartnerId, 
+        tresc: tresc, 
+        czy_przeczytane: false 
+    }]);
+
+    if(error) {
+        alert("Błąd wysyłania: " + error.message);
+    } else {
+        input.value = "";
+        await loadMessages();
+    }
+}
 </script>
 </body>
 </html>
