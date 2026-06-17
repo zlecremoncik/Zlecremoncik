@@ -196,14 +196,17 @@
                 <div class="relative flex justify-center text-xs uppercase"><span class="bg-white px-2 text-slate-400 font-bold">Lub przez Google</span></div>
             </div>
 
-                        <select id="google-role" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-[10px] font-bold uppercase mb-2">
-                <option value="klient">Zleceniodawca</option>
-                <option value="wykonawca">Wykonawca</option>
-            </select>
-            
-            <button onclick="loginWithGoogle()" class="w-full bg-white border-2 border-slate-100 hover:border-blue-400 text-slate-700 py-3 rounded-2xl font-bold text-xs transition-all flex items-center justify-center gap-2 shadow-sm">
+                                    <button onclick="loginWithGoogle()" class="w-full bg-white border-2 border-slate-100 hover:border-blue-400 text-slate-700 py-3 rounded-2xl font-bold text-xs transition-all flex items-center justify-center gap-2 shadow-sm mb-2">
                 <img src="https://www.google.com/favicon.ico" class="w-4 h-4"> Zaloguj przez Google
             </button>
+            <div class="relative group mb-4 text-center">
+                <p class="text-[9px] text-red-500 font-bold leading-tight flex items-center justify-center gap-1">
+                    Uwaga. Pierwsza rejestracja jako Wykonawca musi nastąpić przez standardowy formularz <span class="inline-flex items-center justify-center bg-red-100 text-red-600 rounded-full w-3.5 h-3.5 text-[10px] cursor-help">!</span>
+                </p>
+                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-slate-800 text-white text-[10px] p-3 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-[200] shadow-xl text-left">
+                    ...z podaniem wszystkich informacji. Dopiero od drugiego razu użytkownik zarejestrowany jako Wykonawca może logować się kontem Google podając ten sam e-mail co przy rejestracji standardowej.
+                </div>
+            </div>
 
                         <div class="text-left pt-4">
                 <button onclick="switchAuthView('register')" class="text-xs font-bold text-slate-500 hover:text-blue-600 transition-colors">Brak konta? Zarejestruj się</button>
@@ -224,9 +227,8 @@
                 <span class="font-bold text-slate-600 block mb-0.5">Wymogi bezpieczeństwa hasła:</span>
                 • min. 8 znaków | • duża litera | • liczba | • znak specjalny
             </div>
-            <div id="phone-field-wrapper" class="space-y-1">
-                <input id="reg-phone" type="tel" maxlength="9" placeholder="Numer telefonu (Opcjonalnie)" class="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none focus:border-blue-400 font-medium text-sm transition-all">
-                <p id="phone-tip" class="text-[9px] text-amber-600 font-bold px-1">Pamiętaj! Podanie numeru uskuteczni realizację Zlecenia.</p>
+                        <div id="phone-field-wrapper" class="space-y-1">
+                <input id="reg-phone" type="tel" maxlength="9" placeholder="Numer telefonu (9 cyfr)" class="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none focus:border-blue-400 font-medium text-sm transition-all">
             </div>
             <div id="pro-fields" class="hidden space-y-3 pt-2 border-t border-dashed border-slate-200">
                 <input id="reg-firma" placeholder="Nazwa firmy / Imię i Nazwisko" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm outline-none">
@@ -474,10 +476,11 @@ function validatePassword(p) {
 async function signUp() {
     const e = document.getElementById('reg-email').value.trim();
     const p = document.getElementById('reg-password').value;
-    const phone = document.getElementById('reg-phone').value.trim();
+        const phone = document.getElementById('reg-phone').value.trim();
     const role = document.getElementById('reg-role').value;
 
     if(!e || !p) return alert("Podaj adres e-mail oraz hasło!");
+    if(role === 'wykonawca' && phone.length !== 9) return alert("Jako Wykonawca musisz podać 9-cyfrowy numer telefonu!");
     if (!validatePassword(p)) return alert("Hasło musi zawierać min. 8 znaków, dużą literę, cyfrę oraz znak specjalny.");
 
     const btn = document.querySelector("#view-register button");
@@ -631,9 +634,8 @@ async function load() {
     listEl.innerHTML = data.map(z => {
         const totalReq = z.zgloszenia ? z.zgloszenia.length : 0;
         const isFull = totalReq >= 5;
-        const hasTel = z.telefon && z.telefon.length === 9 ? "✅ Podano" : "❌ Brak";
-        // Zakładamy, że email jest zawsze (bo użytkownik musi być zalogowany)
-        const hasMail = "✅ Podano"; 
+                const hasTel = (z.telefon && z.telefon.trim().length === 9) ? "✅ Podano" : "❌ Brak";
+        const hasMail = "✅ Podano";  
 
         return `
         <div onclick="openDetails(${z.id})" class="group bg-white rounded-2xl card-shadow overflow-hidden border border-slate-100 cursor-pointer hover:border-blue-300 transition-all p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative">
@@ -1167,17 +1169,15 @@ async function saveProfile() {
     const nowyTel = document.getElementById('edit-tel').value;
     
     if(currentProfile) {
-        const { error } = await db.from('profile_wykonawcow').update({ 
-            nazwa_firmy: nowaNazwa,
-            telefon: nowyTel 
-        }).eq('user_id', currentUser.id);
-        
-        if(!error) { alert("Dane zaktualizowane!"); window.location.reload(); }
+        await db.from('profile_wykonawcow').update({ nazwa_firmy: nowaNazwa, telefon: nowyTel }).eq('user_id', currentUser.id);
+        // Wykonawca często ma też wpisy w 'zlecenia' jako wizytówki
+        await db.from('zlecenia').update({ telefon: nowyTel }).eq('user_id', currentUser.id);
+        alert("Dane wykonawcy zaktualizowane!"); window.location.reload();
     } else {
-        const { error } = await db.auth.updateUser({
-            data: { full_name: nowaNazwa, telefon_kontaktowy: nowyTel }
-        });
-        if(!error) { alert("Dane klienta zaktualizowane!"); window.location.reload(); }
+        // Klient - aktualizujemy telefon we wszystkich jego ogłoszeniach, żeby cena (1/2pkt) się zmieniła
+        const { error } = await db.auth.updateUser({ data: { full_name: nowaNazwa, telefon_kontaktowy: nowyTel } });
+        await db.from('zlecenia').update({ telefon: nowyTel }).eq('user_id', currentUser.id);
+        if(!error) { alert("Dane klienta i jego ogłoszeń zaktualizowane!"); window.location.reload(); }
     }
 }
 
