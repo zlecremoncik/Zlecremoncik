@@ -458,8 +458,6 @@ async function executeLogin() {
 }
 
 async function loginWithGoogle() {
-    const role = document.getElementById('google-role').value;
-    localStorage.setItem('google_login_role', role); 
     const { error } = await db.auth.signInWithOAuth({
         provider: 'google',
         options: { 
