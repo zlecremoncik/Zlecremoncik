@@ -384,15 +384,13 @@ async function updateUI(session) {
     if (document.getElementById('logout-btn')) document.getElementById('logout-btn').classList.toggle('hidden', !session);
     if (document.getElementById('my-account-btn')) document.getElementById('my-account-btn').classList.toggle('hidden', !session);
     
-        if (currentUser) {
+            if (currentUser) {
         try {
             document.getElementById('acc-email-display').innerText = currentUser.email;
             const savedRole = localStorage.getItem('google_login_role');
             
-            // Najpierw sprawdzamy czy profil już jest
             let { data: prof } = await db.from('profile_wykonawcow').select('*').eq('user_id', currentUser.id).maybeSingle();
             
-            // Jeśli loguje się przez Google jako Wykonawca i nie ma profilu -> TWÓRZ GO
             if (savedRole === 'wykonawca' && !prof) {
                 const { data: created, error: err } = await db.from('profile_wykonawcow').insert([{
                     user_id: currentUser.id,
@@ -402,9 +400,18 @@ async function updateUI(session) {
                     miejscowosc: "Nie podano",
                     specjalizacja: "Ogólne prace"
                 }]).select().maybeSingle();
-                if (!err) prof = created;
-                localStorage.removeItem('google_login_role'); // Czyścimy po utworzeniu
+                
+                if (err) {
+                    console.error("Błąd tworzenia profilu Google:", err);
+                } else {
+                    prof = created;
+                    localStorage.removeItem('google_login_role');
+                }
+            } else if (savedRole === 'klient' || prof) {
+                localStorage.removeItem('google_login_role');
             }
+
+            currentProfile = prof || null;
             
             // Po upewnieniu się, że profil został sprawdzony/utworzony, czyścimy flagę z pamięci
             if (savedRole) {
