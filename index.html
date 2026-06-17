@@ -1147,19 +1147,21 @@ async function loadConversations() {
 let chatRefreshInterval = null;
 
 async function openChatBox(partnerId, zlId, partnerName) {
-    activePartnerId = partnerId; 
-    activeZlecenieId = zlId;
+    activePartnerId = partnerId.toString(); 
+    activeZlecenieId = parseInt(zlId);
     document.getElementById('chat-partner-name').innerText = partnerName || "Rozmowa";
     document.getElementById('chat-box').classList.remove('hidden');
     document.getElementById('user-chats-list').classList.add('hidden');
     
-    // Oznacz jako przeczytane
     await db.from('wiadomosci').update({ czy_przeczytane: true })
-        .eq('zlecenie_id', zlId).eq('nadawca_id', partnerId).eq('odbiorca_id', currentUser.id);
+        .eq('zlecenie_id', activeZlecenieId).eq('nadawca_id', activePartnerId).eq('odbiorca_id', currentUser.id);
     
     if(chatRefreshInterval) clearInterval(chatRefreshInterval);
-    chatRefreshInterval = setInterval(loadMessages, 3000); // Odświeżaj co 3 sekundy
+    chatRefreshInterval = setInterval(loadMessages, 3000);
     loadMessages();
+    
+    // Obsługa wysyłania Enterem
+    document.getElementById('chat-input').onkeydown = (e) => { if(e.key === 'Enter') sendMessage(); };
 }
 
 function closeChatBox() {
@@ -1175,23 +1177,27 @@ async function loadMessages() {
     const { data, error } = await db.from('wiadomosci')
         .select('*')
         .eq('zlecenie_id', activeZlecenieId)
-        .or(`nadawca_id.eq.${currentUser.id},odbiorca_id.eq.${currentUser.id}`)
         .order('created_at', { ascending: true });
 
     if(error) return;
 
     const msgBox = document.getElementById('chat-messages');
-    const filtered = data.filter(m => m.nadawca_id === activePartnerId || m.odbiorca_id === activePartnerId);
+    // Filtrujemy wiadomości tylko między mną a wybranym partnerem
+    const filtered = data.filter(m => 
+        (m.nadawca_id === currentUser.id && m.odbiorca_id === activePartnerId) || 
+        (m.nadawca_id === activePartnerId && m.odbiorca_id === currentUser.id)
+    );
 
     const newHtml = filtered.map(m => `
-        <div class="max-w-[80%] mb-3 p-3 shadow-sm ${m.nadawca_id === currentUser.id ? 'ml-auto chat-bubble-me' : 'mr-auto chat-bubble-them'}">
+        <div class="max-w-[85%] mb-3 p-3 shadow-sm ${m.nadawca_id === currentUser.id ? 'ml-auto chat-bubble-me' : 'mr-auto chat-bubble-them'}">
+            <p class="text-[7px] mb-1 opacity-70 font-black uppercase">${m.nadawca_id === currentUser.id ? 'Ty' : 'Rozmówca'}</p>
             <p class="text-xs leading-relaxed">${m.tresc}</p>
             <p class="text-[6px] mt-1 opacity-50 text-right uppercase">${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</p>
         </div>
-    `).join("") || '<div class="text-center py-10 text-[10px] text-slate-400 font-bold uppercase tracking-widest">Brak wiadomości. Napisz pierwszy!</div>';
+    `).join("");
     
     if (msgBox.innerHTML !== newHtml) {
-        msgBox.innerHTML = newHtml;
+        msgBox.innerHTML = newHtml || '<div class="text-center py-10 text-[10px] text-slate-400 font-bold uppercase tracking-widest">Napisz wiadomość...</div>';
         msgBox.scrollTop = msgBox.scrollHeight;
     }
 }
@@ -1210,10 +1216,10 @@ async function sendMessage() {
     }]);
 
     if(error) {
-        alert("Błąd wysyłania: " + error.message);
+        alert("Błąd: " + error.message);
     } else {
         input.value = ""; 
-        loadMessages();
+        await loadMessages(); // Natychmiastowe odświeżenie po wysłaniu
     }
 }
 
