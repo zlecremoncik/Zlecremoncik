@@ -235,8 +235,9 @@
                 • min. 8 znaków | • duża litera | • liczba | • znak specjalny
             </div>
                         <div id="phone-field-wrapper" class="space-y-1">
-                <input id="reg-phone" type="tel" maxlength="9" placeholder="Numer telefonu (9 cyfr)" class="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none focus:border-blue-400 font-medium text-sm transition-all">
-            </div>
+    <input id="reg-phone" type="tel" maxlength="9" placeholder="Numer telefonu (9 cyfr)" class="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none focus:border-blue-400 font-medium text-sm transition-all">
+    <p id="phone-tip" class="text-[9px] text-blue-500 font-bold mt-1 px-2 leading-tight">Pamiętaj! Podanie numeru uskuteczni realizację Zlecenia.</p>
+</div>
             <div id="pro-fields" class="hidden space-y-3 pt-2 border-t border-dashed border-slate-200">
                 <input id="reg-firma" placeholder="Nazwa firmy / Imię i Nazwisko" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm outline-none">
                 <input id="reg-nip" placeholder="NIP (Opcjonalnie)" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm outline-none">
@@ -379,9 +380,11 @@ function switchAuthView(view) {
 function toggleRegRoleFields(role) {
     document.getElementById('pro-fields').classList.toggle('hidden', role !== 'wykonawca');
     const tipText = document.getElementById('phone-tip');
-    tipText.innerText = role === 'klient' ? "Pamiętaj! Podanie numeru uskuteczni realizację Zlecenia." : "Numer telefonu ułatwi bezpośredni kontakt ze zleceniodawcami.";
+    // DODANE ZABEZPIECZENIE: Jeśli element istnieje, zmień tekst. Jeśli go nie ma, nie rób nic.
+    if (tipText) {
+        tipText.innerText = role === 'klient' ? "Pamiętaj! Podanie numeru uskuteczni realizację Zlecenia." : "Numer telefonu ułatwi bezpośredni kontakt ze zleceniodawcami.";
+    }
 }
-
 async function checkUser() {
     const { data: { session } } = await db.auth.getSession();
     updateUI(session);
