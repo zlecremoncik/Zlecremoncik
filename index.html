@@ -353,22 +353,26 @@
         </div>
     </div>
 
-    <footer class="mt-20 border-t border-slate-200 pt-10 pb-10 text-[10px] text-slate-400 leading-relaxed">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <footer class="mt-20 border-t border-slate-200 pt-10 pb-10 text-[11px] text-slate-400 leading-relaxed bg-white/50 backdrop-blur-sm">
+        <div class="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 px-4">
             <div>
-                <h4 onclick="openLegal('regulamin')" class="font-black text-slate-600 mb-2 uppercase tracking-widest cursor-pointer hover:text-blue-600">📄 Regulamin platformy</h4>
-                <p>Zasady przydzielania oraz odnawiania punktów dla firm budowlanych.</p>
+                <h4 onclick="openLegal('regulamin')" class="font-black text-slate-700 mb-2 uppercase tracking-wider cursor-pointer hover:text-blue-600 transition-colors">📄 Regulamin</h4>
+                <p>Zasady korzystania, czyszczenie bazy po 14 dniach i odnowienia +6 PKT.</p>
             </div>
             <div>
-                <h4 onclick="openLegal('rodo')" class="font-black text-slate-600 mb-2 uppercase tracking-widest cursor-pointer hover:text-blue-600">🔒 RODO i Cookies</h4>
-                <p>Klauzule informacyjne dotyczące przetwarzania i weryfikacji adresów e-mail.</p>
+                <h4 onclick="openLegal('rodo')" class="font-black text-slate-700 mb-2 uppercase tracking-wider cursor-pointer hover:text-blue-600 transition-colors">🔒 Polityka Prywatności</h4>
+                <p>Klauzule RODO oraz zasady dobrowolnego przetwarzania danych osobowych.</p>
             </div>
             <div>
-                <h4 onclick="openLegal('zasady')" class="font-black text-slate-600 mb-2 uppercase tracking-widest cursor-pointer hover:text-blue-600">💡 Jak to działa</h4>
-                <p>System pięciu chętnych i automatyczna blokada ogłoszeń.</p>
+                <h4 onclick="openLegal('kontakt')" class="font-black text-slate-700 mb-2 uppercase tracking-wider cursor-pointer hover:text-blue-600 transition-colors">💡 Pomoc</h4>
+                <p>Instrukcje dla zleceniodawców i rozwiązywanie problemów technicznych.</p>
+            </div>
+            <div>
+                <h4 onclick="openLegal('kontakt')" class="font-black text-slate-700 mb-2 uppercase tracking-wider cursor-pointer hover:text-blue-600 transition-colors">✉️ Kontakt</h4>
+                <p>Skontaktuj się z administratorem platformy za pośrednictwem e-mail.</p>
             </div>
         </div>
-        <div class="text-center mt-10 opacity-50 border-t border-slate-100 pt-4">© 2026 ZlećRemoncik.</div>
+        <div class="text-center mt-10 opacity-60 border-t border-slate-100 pt-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">© 2026 ZlećRemoncik. Wszelkie prawa zastrzeżone.</div>
     </footer>
 </main>
 
@@ -1397,16 +1401,42 @@ function openLegal(type) {
     const modal = document.getElementById('legal-modal');
     const title = document.getElementById('legal-title');
     const body = document.getElementById('legal-body');
+    if (!modal || !title || !body) return;
+    
     modal.classList.remove('hidden');
+    
     if(type === 'regulamin') {
         title.innerText = "Regulamin platformy ZlećRemoncik";
-        body.innerHTML = `<p>1. Każdy wykonawca otrzymuje 10 punktów na start.</p><p>2. Zgłoszenie kosztuje 1 punkt.</p><p>3. Pula odnawia się o +3 pkt w każdy poniedziałek o 00:00.</p><p>4. Maksymalny limit zgłoszeń na jedno ogłoszenie wynosi 5 osób.</p>`;
+        body.innerHTML = `
+            <div class="space-y-3 text-slate-700 text-xs leading-relaxed">
+                <p class="font-bold text-red-600 uppercase text-[10px]">§1. POSTANOWIENIA OGÓLNE I WYŁĄCZENIE ODPOWIEDZIALNOŚCI</p>
+                <p>1. Korzystanie z platformy ZlećRemoncik jest całkowicie dobrowolne. Administrator nie jest stroną umów, transakcji ani ustaleń pomiędzy Użytkownikami.</p>
+                <p>2. Serwis pełni wyłącznie rolę tablicy ogłoszeniowej i cyfrowego pośrednika (łącznika) ułatwiającego nawiązanie kontaktu. Administrator w najszerszym dopuszczalnym przez prawo zakresie nie ponosi odpowiedzialności za treść ogłoszeń, rzetelność wykonawców, jakość robót, szkody majątkowe, straty finansowe ani za jakiekolwiek negatywne doświadczenia wynikające z kontaktu między stronami.</p>
+                <p class="font-bold text-slate-800 uppercase text-[10px]">§2. SYSTEM PUNKTOWY I REJESTRACJA</p>
+                <p>1. Każdy Wykonawca otrzymuje na start 10 punktów (PKT).</p>
+                <p>2. Pula punktów odnawia się automatycznie o <strong>+6 PKT</strong> w każdy poniedziałek o godzinie 00:00.</p>
+                <p>3. Za wystawione przez Klienta opinie, Wykonawca otrzymuje bonus punktowy równy liczbie przyznanych gwiazdek (1-5 PKT).</p>
+                <p class="font-bold text-slate-800 uppercase text-[10px]">§3. CZAS TRWANIA OGŁOSZEŃ</p>
+                <p>1. Wszystkie ogłoszenia są publicznie dostępne na tablicy przez maksymalny okres <strong>14 dni od momentu publikacji</strong>.</p>
+                <p>2. Po upływie 14 dni ogłoszenie zostaje automatycznie wygaszone i trwale usunięte z bazy danych serwisu.</p>
+            </div>`;
     } else if(type === 'rodo') {
         title.innerText = "Polityka Prywatności i RODO";
-        body.innerHTML = `<p>Dane takie jak adres e-mail oraz telefon kontaktowy są przetwarzane wyłącznie w celu komunikacji i parowania stron zlecenia.</p>`;
-    } else {
-        title.innerText = "Zasady działania";
-        body.innerHTML = `<p>System nagradza rzetelnych wykonawców dodatkowymi punktami w zależności od przyznanej oceny (gwiazdek) przez zleceniodawcę.</p>`;
+        body.innerHTML = `
+            <div class="space-y-3 text-slate-700 text-xs leading-relaxed">
+                <p class="font-bold text-slate-800 uppercase text-[10px]">§1. DOBROWOLNOŚĆ DANYCH</p>
+                <p>1. Podanie jakichkolwiek danych osobowych, numerów telefonu czy adresów e-mail jest w 100% dobrowolne i stanowi wyłączną decyzję Użytkownika. Użytkownik sam bierze odpowiedzialność za upublicznianie swoich danych.</p>
+                <p>2. Dane kontaktowe Zleceniodawców są szyfrowane i ukryte. Zostają udostępnione Wykonawcy wyłącznie w momencie poprawnego zaaplikowania do ogłoszenia i pobrania punktów z salda.</p>
+                <p>3. Każdy użytkownik ma prawo do wglądu, edycji oraz żądania trwałego usunięcia swoich danych z serwisu w dowolnym momencie.</p>
+            </div>`;
+    } else if(type === 'kontakt') {
+        title.innerText = "Pomoc i Kontakt";
+        body.innerHTML = `
+            <div class="space-y-3 text-slate-700 text-xs leading-relaxed">
+                <p>Masz pytania dotyczące działania systemu punktowego lub technicznych aspektów działania tablicy?</p>
+                <p>📩 <strong>Napisz do nas:</strong> <a href="mailto:zlecremoncik@gmail.com" class="text-blue-600 font-bold underline">zlecremoncik@gmail.com</a></p>
+                <p>Odpowiedzi na zgłoszenia techniczne staramy się udzielać w ciągu 48 godzin.</p>
+            </div>`;
     }
 }
 function closeLegal() { document.getElementById('legal-modal').classList.add('hidden'); }
