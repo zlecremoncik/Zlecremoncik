@@ -1052,12 +1052,21 @@ async function loadAccountPanel(page = 1) {
                                 </div>
                                                                     <div class="flex gap-1">
                                         <button onclick="event.stopPropagation(); openChatBox('${app.wykonawca_id}', ${p.id}, '${name}')" class="bg-white border border-slate-200 text-slate-700 px-3 py-1.5 rounded-xl text-[8px] font-black uppercase hover:bg-blue-50 transition-all">Czat</button>
-                                        ${!p.wybrany_wykonawca_id ? `
-                                            <button onclick="event.stopPropagation(); chooseAndRefresh(${p.id}, '${app.wykonawca_id}')" class="bg-blue-600 text-white px-3 py-1.5 rounded-xl text-[8px] font-black uppercase hover:bg-blue-700 shadow-md">Wybierz</button>
-                                        ` : (isChosen ? `
-                                            <button disabled class="bg-slate-200 text-slate-400 px-3 py-1.5 rounded-xl text-[8px] font-black uppercase">Wybrano</button>
-                                            <button onclick="event.stopPropagation(); openOpinionModal('${app.wykonawca_id}', ${p.id}, '${name}')" class="bg-amber-500 text-white px-3 py-1.5 rounded-xl text-[8px] font-black uppercase hover:bg-amber-600 shadow-md">Dodaj opinię</button>
-                                        ` : '')}
+                                        ${(() => {
+                                            // Wyliczamy isChosen na bieżąco dla każdego elementu pętli
+                                            const isChosen = String(p.wybrany_wykonawca_id) === String(app.wykonawca_id);
+                                            
+                                            if (!p.wybrany_wykonawca_id) {
+                                                return `<button onclick="event.stopPropagation(); chooseAndRefresh(${p.id}, '${app.wykonawca_id}')" class="bg-blue-600 text-white px-3 py-1.5 rounded-xl text-[8px] font-black uppercase hover:bg-blue-700 shadow-md">Wybierz</button>`;
+                                            } else if (isChosen) {
+                                                return `
+                                                    <button disabled class="bg-slate-200 text-slate-400 px-3 py-1.5 rounded-xl text-[8px] font-black uppercase">Wybrano</button>
+                                                    <button onclick="event.stopPropagation(); openOpinionModal('${app.wykonawca_id}', ${p.id}, '${name}')" class="bg-amber-500 text-white px-3 py-1.5 rounded-xl text-[8px] font-black uppercase hover:bg-amber-600 shadow-md">Dodaj opinię</button>
+                                                `;
+                                            } else {
+                                                return ''; // Inny fachowiec został wybrany, dla tego nie wyświetlamy nic
+                                            }
+                                        })()}
                                     </div>
                             </div>
                         </div>`;
