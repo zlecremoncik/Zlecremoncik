@@ -1576,7 +1576,10 @@ async function loadContractors(page = 1) {
 }
 
 async function showProDetails(uid) {
+    // 1. Pobieramy profil wykonawcy oraz jego opinie po user_id
     const { data: p } = await db.from('profile_wykonawcow').select('*').eq('user_id', uid).single();
+    const { data: contractorOpinions } = await db.from('opinie').select('*').eq('wykonawca_id', uid).order('id', { ascending: false });
+    
     let detailModal = document.getElementById('pro-detail-modal');
     if(!detailModal) {
         detailModal = document.createElement('div');
@@ -1585,31 +1588,57 @@ async function showProDetails(uid) {
         document.body.appendChild(detailModal);
     }
     
+    if (!p) return alert("Nie znaleziono profilu wykonawcy.");
+    
     const realizacje = [p.realizacja1, p.realizacja2, p.realizacja3, p.realizacja4, p.realizacja5].filter(img => img);
     
+    // 2. Generujemy kod HTML dla sekcji opinii
+    let opinionsHtml = `<div class="mt-8 border-t border-slate-100 pt-6">
+        <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">⭐ Opinie klientów</h3>`;
+    
+    if (!contractorOpinions || contractorOpinions.length === 0) {
+        opinionsHtml += `<p class="text-xs text-slate-400 italic bg-slate-50 p-4 rounded-2xl text-center">Ten wykonawca nie posiada jeszcze opinii tekstowych.</p>`;
+    } else {
+        opinionsHtml += `<div class="space-y-3">` + contractorOpinions.map(o => `
+            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-xs">
+                <div class="flex justify-between items-center mb-2">
+                    <div class="text-amber-500 font-bold tracking-tight">${'⭐'.repeat(o.gwiazdki)}</div>
+                    <span class="text-[9px] text-slate-400 font-bold font-mono">${o.autor_email || 'Klient'}</span>
+                </div>
+                <p class="text-slate-600 leading-relaxed font-medium">${o.tresc}</p>
+            </div>
+        `).join('') + `</div>`;
+    }
+    opinionsHtml += `</div>`;
+    
+    // 3. Wstrzykujemy pełną zawartość do modala
     detailModal.innerHTML = `
-        <div class="bg-white rounded-[2.5rem] w-full max-w-2xl max-h-[90vh] overflow-y-auto p-8 relative">
+        <div class="bg-white rounded-[2.5rem] w-full max-w-2xl max-h-[90vh] overflow-y-auto p-8 relative card-shadow">
             <button onclick="document.getElementById('pro-detail-modal').classList.add('hidden')" class="absolute top-6 right-6 text-2xl font-bold text-slate-300 hover:text-slate-900 transition-colors">✕</button>
             <div class="mb-6">
                 <span class="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">Profil Wykonawcy</span>
-                <h2 class="text-3xl font-black text-slate-900 uppercase mt-1">${p.nazwa_firmy}</h2>
-                <p class="text-sm font-bold text-slate-400">📍 ${p.miejscowosc} (${p.kod_pocztowy || '---'})</p>
+                <h2 class="text-3xl font-black text-slate-900 uppercase mt-1 leading-tight">${p.nazwa_firmy}</h2>
+                <p class="text-sm font-bold text-slate-400 mt-0.5">📍 ${p.miejscowosc} (${p.kod_pocztowy || '---'})</p>
             </div>
-            <div class="grid grid-cols-2 gap-4 mb-8 bg-slate-50 p-6 rounded-3xl border border-slate-100">
-                <div><p class="text-[9px] font-black text-slate-400 uppercase">E-mail</p><p class="text-xs font-bold text-slate-800">${p.email}</p></div>
+            <div class="grid grid-cols-2 gap-4 mb-6 bg-slate-50 p-5 rounded-3xl border border-slate-100">
+                <div><p class="text-[9px] font-black text-slate-400 uppercase">E-mail</p><p class="text-xs font-bold text-slate-800 break-all">${p.email}</p></div>
                 <div><p class="text-[9px] font-black text-slate-400 uppercase">Telefon</p><p class="text-xs font-bold text-slate-800">${p.telefon || 'Nie podano'}</p></div>
                 <div><p class="text-[9px] font-black text-slate-400 uppercase">NIP</p><p class="text-xs font-bold text-slate-800">${p.nip || 'Brak'}</p></div>
                 <div><p class="text-[9px] font-black text-slate-400 uppercase">Specjalizacja</p><p class="text-xs font-bold text-slate-800">${p.specjalizacja}</p></div>
             </div>
-            <div class="mb-8">
-                <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">O mnie</h3>
-                <p class="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">${p.o_mnie || 'Wykonawca jeszcze nie dodał opisu o sobie.'}</p>
+            <div class="mb-6">
+                <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">O mnie</h3>
+                <p class="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap font-medium">${p.o_mnie || 'Wykonawca jeszcze nie dodał opisu o sobie.'}</p>
             </div>
             ${realizacje.length ? `
-                <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Nasze Realizacje</h3>
-                <div class="grid grid-cols-3 gap-2">
-                    ${realizacje.map(img => `<img src="${img}" class="w-full h-32 object-cover rounded-2xl border cursor-zoom-in" onclick="openImageModal('${img}')">`).join('')}
+                <div class="mb-6">
+                    <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Nasze Realizacje</h3>
+                    <div class="grid grid-cols-3 gap-2">
+                        ${realizacje.map(img => `<img src="${img}" class="w-full h-32 object-cover rounded-2xl border cursor-zoom-in" onclick="openImageModal('${img}')">`).join('')}
+                    </div>
                 </div>` : ''}
+            
+            ${opinionsHtml}
         </div>
     `;
     detailModal.classList.remove('hidden');
