@@ -1016,10 +1016,8 @@ async function loadAccountPanel(page = 1) {
     const perPage = 5;
 
     if (!currentProfile) {
-        // WIDOK ZLECENIODAWCY (Moje ogłoszenia + Lista chętnych fachowców)
         actTitle.innerText = "📂 MOJE ZLECENIA";
         const { data: posts, error: pErr } = await db.from('zlecenia').select('*, zgloszenia(*)').eq('user_id', currentUser.id).order('created_at', {ascending: false});
-        
         if (pErr) return postsList.innerHTML = "Błąd pobierania danych.";
         if (!posts || posts.length === 0) return postsList.innerHTML = `<p class="text-xs text-slate-400 text-center py-10 font-bold uppercase">Brak Twoich ogłoszeń.</p>`;
 
@@ -1035,40 +1033,31 @@ async function loadAccountPanel(page = 1) {
 
         postsList.innerHTML = pagedPosts.map(p => {
             const applicants = p.zgloszenia || [];
-            let applicantsHtml = "";
-            
-            if (applicants.length > 0) {
-                applicantsHtml = `
-                    <div class="mt-4 pt-3 border-t border-slate-100 space-y-2">
-                        <p class="text-[9px] font-black text-blue-600 uppercase tracking-wider mb-2">Chętni fachowcy (${applicants.length}/5):</p>
-                        ${applicants.map(app => {
-                            const prof = profileMap[app.wykonawca_id];
-                            const isChosen = p.wybrany_wykonawca_id === app.wykonawca_id;
-                            const name = prof?.nazwa_firmy || "Fachowiec";
-                            
-                            return `
-                            <div class="flex flex-col bg-slate-50 p-3 rounded-2xl border ${isChosen ? 'border-green-400 bg-green-50' : 'border-slate-100'}">
-                                <div class="flex justify-between items-center gap-2">
-                                    <div class="flex flex-col">
-                                        <span class="text-[10px] font-black text-slate-800 uppercase">${name} ${isChosen ? '✅ WYBRANY' : ''}</span>
-                                        <div class="flex gap-3 text-[8px] font-bold text-slate-400 uppercase mt-0.5">
-                                            <span>📞 ${prof?.telefon || 'Brak tel.'}</span>
-                                            <span>📧 ${prof?.email || 'Brak e-mail'}</span>
-                                        </div>
-                                    </div>
-                                    <div class="flex gap-1">
-                                        <button onclick="event.stopPropagation(); openChatBox('${app.wykonawca_id}', ${p.id}, '${name}')" class="bg-white border border-slate-200 text-slate-700 px-3 py-1.5 rounded-xl text-[8px] font-black uppercase hover:bg-blue-50 transition-all">Czat</button>
-                                        ${!p.wybrany_wykonawca_id ? `
-                                            <button onclick="event.stopPropagation(); chooseAndRefresh(${p.id}, '${app.wykonawca_id}')" class="bg-blue-600 text-white px-3 py-1.5 rounded-xl text-[8px] font-black uppercase hover:bg-blue-700 shadow-md">Wybierz</button>
-                                        ` : ''}
+            let applicantsHtml = applicants.length > 0 ? `
+                <div class="mt-4 pt-3 border-t border-slate-100 space-y-2">
+                    <p class="text-[9px] font-black text-blue-600 uppercase tracking-wider mb-2">Chętni fachowcy (${applicants.length}/5):</p>
+                    ${applicants.map(app => {
+                        const prof = profileMap[app.wykonawca_id];
+                        const isChosen = p.wybrany_wykonawca_id === app.wykonawca_id;
+                        const name = prof?.nazwa_firmy || "Fachowiec";
+                        return `
+                        <div class="flex flex-col bg-slate-50 p-3 rounded-2xl border ${isChosen ? 'border-green-400 bg-green-50' : 'border-slate-100'}">
+                            <div class="flex justify-between items-center gap-2">
+                                <div class="flex flex-col">
+                                    <span class="text-[10px] font-black text-slate-800 uppercase">${name} ${isChosen ? '✅ WYBRANY' : ''}</span>
+                                    <div class="flex gap-3 text-[8px] font-bold text-slate-400 uppercase mt-0.5">
+                                        <span>📞 ${prof?.telefon || 'Brak tel.'}</span>
+                                        <span>📧 ${prof?.email || 'Brak e-mail'}</span>
                                     </div>
                                 </div>
-                            </div>`;
-                        }).join('')}
-                    </div>`;
-            } else {
-                applicantsHtml = `<p class="mt-3 text-[9px] font-bold text-slate-400 uppercase italic bg-slate-50 p-3 rounded-xl text-center">Brak zgłoszeń</p>`;
-            }
+                                <div class="flex gap-1">
+                                    <button onclick="event.stopPropagation(); openChatBox('${app.wykonawca_id}', ${p.id}, '${name}')" class="bg-white border border-slate-200 text-slate-700 px-3 py-1.5 rounded-xl text-[8px] font-black uppercase hover:bg-blue-50 transition-all">Czat</button>
+                                    ${!p.wybrany_wykonawca_id ? `<button onclick="event.stopPropagation(); chooseAndRefresh(${p.id}, '${app.wykonawca_id}')" class="bg-blue-600 text-white px-3 py-1.5 rounded-xl text-[8px] font-black uppercase hover:bg-blue-700 shadow-md">Wybierz</button>` : ''}
+                                </div>
+                            </div>
+                        </div>`;
+                    }).join('')}
+                </div>` : `<p class="mt-3 text-[9px] font-bold text-slate-400 uppercase italic bg-slate-50 p-3 rounded-xl text-center">Brak zgłoszeń</p>`;
 
             return `
                 <div class="border border-slate-200 rounded-[1.5rem] p-5 bg-white mb-4 shadow-sm cursor-pointer hover:border-blue-200 transition-all" onclick="openDetails(${p.id})">
@@ -1083,47 +1072,47 @@ async function loadAccountPanel(page = 1) {
                         </div>
                     </div>
                     ${applicantsHtml}
-                    ${p.wybrany_wykonawca_id && p.status_zlecenia !== 'zakonczone' ? `
-                        <button onclick="event.stopPropagation(); completeAndRefresh(${p.id})" class="mt-4 w-full bg-slate-900 hover:bg-black text-white py-3 rounded-2xl text-[9px] font-black uppercase tracking-widest shadow-lg transition-all">Zakończ i wystaw opinię ✅</button>
-                    ` : ''}
+                    ${p.wybrany_wykonawca_id && p.status_zlecenia !== 'zakonczone' ? `<button onclick="event.stopPropagation(); completeAndRefresh(${p.id})" class="mt-4 w-full bg-slate-900 hover:bg-black text-white py-3 rounded-2xl text-[9px] font-black uppercase tracking-widest shadow-lg transition-all">Zakończ i wystaw opinię ✅</button>` : ''}
                 </div>`;
         }).join('');
-
-        const totalPages = Math.ceil(posts.length / perPage);
-        if (totalPages > 1) {
-            let paginHtml = `<div class="flex gap-2 justify-center mt-6 text-[10px] font-bold">`;
-            for(let i=1; i<=totalPages; i++) {
-                paginHtml += `<button onclick="loadAccountPanel(${i})" class="px-2 py-1 rounded-lg ${i===page ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400'}">${i}</button>`;
-            }
-            paginHtml += `</div>`;
-            postsList.innerHTML += paginHtml;
-        }
     } else {
-        // WIDOK WYKONAWCY (Bez zmian)
         actTitle.innerText = "🛒 KUPIONE ZLECENIA";
-        const { data: apps } = await db.from('zgloszenia').select('*, zlecenie:zlecenia(*)').eq('wykonawca_id', currentUser.id).order('created_at', {ascending: false});
+        const { data: apps } = await db.from('zgloszenia').select('id, created_at, zlecenie:zlecenia(*)').eq('wykonawca_id', currentUser.id).order('created_at', {ascending: false});
         const start = (page - 1) * perPage;
         const pagedApps = apps?.slice(start, start + perPage) || [];
         postsList.innerHTML = pagedApps.map(a => {
             if (!a.zlecenie) return "";
-            const ownerName = a.zlecenie.user_email?.split('@')[0] || 'Klient';
+            const ownerLogin = a.zlecenie.user_email?.split('@')[0] || 'Klient';
             return `
-            <div class="border border-blue-200 rounded-xl p-4 bg-white shadow-sm mb-3 cursor-pointer" onclick="openDetails(${a.zlecenie.id})">
-                <div class="flex justify-between items-center mb-2">
-                    <h4 class="font-bold text-xs uppercase text-slate-800">${a.zlecenie.tytul}</h4>
-                    <span class="text-[8px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded font-bold uppercase">Opłacone</span>
+            <div class="border border-blue-200 rounded-[1.5rem] p-5 bg-white shadow-sm mb-4 cursor-pointer hover:border-blue-400 transition-all" onclick="openDetails(${a.zlecenie.id})">
+                <div class="flex justify-between items-start mb-3">
+                    <div>
+                        <h4 class="font-black text-xs uppercase text-slate-800 leading-tight">${a.zlecenie.tytul}</h4>
+                        <span class="text-[8px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-black uppercase mt-1 inline-block">Opłacone</span>
+                    </div>
+                    <button onclick="event.stopPropagation(); delBought('${a.id}')" class="text-[9px] font-black text-red-500 hover:text-red-700 bg-red-50 px-2 py-1 rounded-lg">USUŃ</button>
                 </div>
-                <button onclick="event.stopPropagation(); openChatBox('${a.zlecenie.user_id}', ${a.zlecenie.id}, '${ownerName}')" class="w-full bg-slate-900 text-white py-2.5 rounded-lg text-[10px] font-bold uppercase tracking-wider">Czat z klientem</button>
+                <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100 mb-3 space-y-1 text-[10px]">
+                    <p class="font-black text-slate-400 uppercase tracking-wider mb-1">Dane Zleceniodawcy:</p>
+                    <p class="font-bold text-slate-700 uppercase italic">👤 Login: ${ownerLogin}</p>
+                    <p class="font-bold text-slate-700">📞 Tel: ${a.zlecenie.telefon || 'Brak'}</p>
+                    <p class="font-bold text-slate-700">📧 Email: ${a.zlecenie.user_email || 'Brak'}</p>
+                </div>
+                <button onclick="event.stopPropagation(); openChatBox('${a.zlecenie.user_id}', ${a.zlecenie.id}, '${ownerLogin}')" class="w-full bg-slate-900 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md">Otwórz Czat</button>
             </div>`;
         }).join('') || `<p class="text-xs text-slate-400 text-center py-10 font-bold uppercase">Brak zakupionych zleceń.</p>`;
     }
     loadConversations();
 }
-
 async function chooseAndRefresh(zlId, wykId) {
-    if(!confirm("Zatwierdzić tego fachowcę?")) return;
-    await db.from('zlecenia').update({ wybrany_wykonawca_id: wykId }).eq('id', zlId);
-    loadAccountPanel();
+    if(!confirm("Czy na pewno chcesz wybrać tego fachowcę do realizacji zlecenia?")) return;
+    const { error } = await db.from('zlecenia').update({ wybrany_wykonawca_id: wykId }).eq('id', zlId);
+    if (error) {
+        alert("Błąd podczas wybierania wykonawcy: " + error.message);
+    } else {
+        alert("Fachowiec został pomyślnie wybrany!");
+        loadAccountPanel(); 
+    }
 }
 
 async function completeAndRefresh(zlId) {
@@ -1133,7 +1122,7 @@ async function completeAndRefresh(zlId) {
     openDetails(zlId);
 }
 async function loadConversations() {
-    const { data: chats } = await db.from('wiadomosci').select('zlecenie_id, zlecenie:zlecenia(tytul), nadawca_id, odbiorca_id, czy_przeczytane').or(`nadawca_id.eq.${currentUser.id},odbiorca_id.eq.${currentUser.id}`);
+    const { data: chats } = await db.from('wiadomosci').select('zlecenie_id, zlecenie:zlecenia(tytul, user_email), nadawca_id, odbiorca_id, czy_przeczytane').or(`nadawca_id.eq.${currentUser.id},odbiorca_id.eq.${currentUser.id}`);
     const chatsList = document.getElementById('user-chats-list');
     let unique = []; let seen = new Set(); let unreadTotal = 0;
     
@@ -1141,16 +1130,20 @@ async function loadConversations() {
         const partner = c.nadawca_id === currentUser.id ? c.odbiorca_id : c.nadawca_id;
         const key = `${partner}-${c.zlecenie_id}`;
         if(c.odbiorca_id === currentUser.id && !c.czy_przeczytane) unreadTotal++;
-        if(!seen.has(key)) { seen.add(key); unique.push({ partner, title: c.zlecenie?.tytul || "Ogłoszenie", zlecenie_id: c.zlecenie_id, unread: (c.odbiorca_id === currentUser.id && !c.czy_przeczytane) }); }
+        if(!seen.has(key)) { 
+            seen.add(key);
+            const ownerLogin = c.zlecenie?.user_email ? c.zlecenie.user_email.split('@')[0] : 'Klient';
+            unique.push({ partner, title: `${ownerLogin} ${c.zlecenie?.tytul || "Zlecenie"}`, zlecenie_id: c.zlecenie_id, unread: (c.odbiorca_id === currentUser.id && !c.czy_przeczytane) }); 
+        }
     });
 
     const notifyNode = document.getElementById('nav-notify');
     const badgeNode = document.getElementById('chat-notify-count');
     if (unreadTotal > 0) { notifyNode.classList.remove('hidden'); badgeNode.innerText = unreadTotal; badgeNode.classList.remove('hidden'); } else { notifyNode.classList.add('hidden'); badgeNode.classList.add('hidden'); }
 
-        chatsList.innerHTML = unique.map(c => `
-        <button onclick="openChatBox('${c.partner}', ${c.zlecenie_id}, 'Konwersacja')" class="w-full text-left bg-slate-50 p-3 rounded-xl text-[11px] font-black border ${c.unread ? 'border-red-400 bg-red-50/50' : 'border-slate-100'} hover:bg-white hover:border-blue-300 transition-all block relative">
-            💬 Dotyczy: "${c.title}"
+    chatsList.innerHTML = unique.map(c => `
+        <button onclick="openChatBox('${c.partner}', ${c.zlecenie_id}, 'Konwersacja')" class="w-full text-left bg-slate-50 p-3 rounded-xl text-[10px] font-black border ${c.unread ? 'border-red-400 bg-red-50/50' : 'border-slate-100'} hover:bg-white hover:border-blue-300 transition-all block relative">
+            💬 ${c.title}
             ${c.unread ? '<span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>' : ''}
         </button>
     `).join("") || `<p class="text-xs text-slate-400 text-center py-6">Brak rozpoczętych konwersacji.</p>`;
