@@ -41,14 +41,17 @@
             <button id="nav-add-job-btn" onclick="toggleAddModal(true)" class="hidden text-[10px] font-black text-white bg-blue-600 px-4 py-2 rounded-full uppercase hover:bg-blue-700 transition-all tracking-wider shadow-md shadow-blue-100">ZlećRemoncik</button>
             <span id="points-counter" class="hidden text-[10px] font-black text-amber-600 bg-amber-50 border border-amber-100 px-3 py-1.5 rounded-full uppercase"></span>
             
+            <button id="my-account-btn" onclick="toggleAccountMenu(true)" class="hidden text-[10px] font-bold text-blue-600 bg-blue-50 border border-blue-100 px-3 py-1.5 rounded-full uppercase hover:bg-blue-100 transition-all flex items-center gap-1">
+                Moje Konto <span id="nav-notify" class="w-2 h-2 bg-red-500 rounded-full hidden"></span>
+            </button>
+
             <div class="relative group">
-                <button id="main-menu-btn" class="w-10 h-10 flex flex-col justify-center items-center gap-1.5 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all">
-                    <span class="w-5 h-0.5 bg-slate-600"></span>
-                    <span class="w-5 h-0.5 bg-slate-600"></span>
-                    <span class="w-5 h-0.5 bg-slate-600"></span>
+                <button id="main-menu-btn" class="w-[30px] h-[30px] flex flex-col justify-center items-center gap-1 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all">
+                    <span class="w-4 h-0.5 bg-slate-600"></span>
+                    <span class="w-4 h-0.5 bg-slate-600"></span>
+                    <span class="w-4 h-0.5 bg-slate-600"></span>
                 </button>
                 <div class="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 hidden group-hover:block z-[100]">
-                    <button onclick="toggleAccountMenu(true)" class="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-blue-50 flex justify-between items-center">Moje Konto <span id="nav-notify" class="w-2 h-2 bg-red-500 rounded-full hidden"></span></button>
                     <button onclick="openContractorsBase()" class="w-full text-left px-4 py-2 text-xs font-bold text-blue-600 hover:bg-blue-50">Baza Fachowców</button>
                     <div class="border-t border-slate-50 my-1"></div>
                     <button onclick="signOut()" class="w-full text-left px-4 py-2 text-xs font-bold text-red-500 hover:bg-red-50">Wyloguj</button>
