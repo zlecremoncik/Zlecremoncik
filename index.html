@@ -185,10 +185,12 @@
         <button onclick="closeChatBox()" class="w-8 h-8 flex items-center justify-center bg-slate-50 text-slate-400 hover:text-red-500 rounded-full transition-colors text-lg">✕</button>
     </div>
     
+    <!-- Tutaj pojawią się wiadomości i suwak -->
     <div id="chat-messages" class="flex-1 overflow-y-auto p-6 py-4 space-y-3 text-xs scrollbar-thin scrollbar-thumb-slate-200 bg-white">
         <!-- Wiadomości tutaj -->
     </div>
     
+    <!-- To pole ZAWSZE będzie na dole -->
     <div class="p-4 bg-white border-t border-slate-50 shrink-0">
         <div class="flex gap-2 bg-slate-50 p-2 rounded-2xl border border-slate-100 focus-within:border-blue-300 transition-all">
             <input id="chat-input" placeholder="Wpisz wiadomość..." class="flex-1 bg-transparent p-2 text-xs outline-none font-medium">
@@ -1166,7 +1168,7 @@ async function openChatBox(partnerId, zlId, partnerName) {
     try {
         await db.from('wiadomosci').update({ czy_przeczytane: true })
             .eq('zlecenie_id', activeZlecenieId).eq('nadawca_id', activePartnerId).eq('odbiorca_id', currentUser.id);
-    } catch(e) { console.error(e); }
+    } catch(e) {}
     
     if(chatRefreshInterval) clearInterval(chatRefreshInterval);
     chatRefreshInterval = setInterval(loadMessages, 3000);
@@ -1197,10 +1199,11 @@ async function loadMessages() {
 
     const newHtml = filtered.map(m => {
         const d = new Date(m.created_at);
+        // DATA I CZAS: np. 18.06 12:07
         const timestamp = `${d.toLocaleDateString([], {day:'2-digit', month:'2-digit'})} ${d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
         
         return `
-        <div class="max-w-[85%] mb-3 p-3 shadow-sm ${String(m.nadawca_id) === ja ? 'chat-bubble-me ml-auto' : 'chat-bubble-them mr-auto'}">
+        <div class="max-w-[85%] mb-3 p-3 shadow-sm ${String(m.nadawca_id) === ja ? 'ml-auto chat-bubble-me' : 'mr-auto chat-bubble-them'}">
             <p class="text-[7px] mb-1 opacity-70 font-black uppercase">${String(m.nadawca_id) === ja ? 'Ty' : 'Rozmówca'}</p>
             <p class="text-xs leading-relaxed">${m.tresc}</p>
             <p class="text-[6px] mt-1 opacity-50 text-right uppercase font-bold tracking-tighter">${timestamp}</p>
