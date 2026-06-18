@@ -1051,9 +1051,9 @@ async function loadAccountPanel(page = 1) {
                                                                     <div class="flex gap-1">
                                         <button onclick="event.stopPropagation(); openChatBox('${app.wykonawca_id}', ${p.id}, '${name}')" class="bg-white border border-slate-200 text-slate-700 px-3 py-1.5 rounded-xl text-[8px] font-black uppercase hover:bg-blue-50 transition-all">Czat</button>
                                         ${(() => {
-                                                                                        const currentChosenId = p.wybrany_wykonawca_id ? String(p.wybrany_wykonawca_id).toLowerCase() : null;
-                                            const currentAppId = app.wykonawca_id ? String(app.wykonawca_id).toLowerCase() : '';
-                                            const isChosen = currentChosenId === currentAppId;
+                                                                                                                                    const currentChosenId = p.wybrany_wykonawca_id ? String(p.wybrany_wykonawca_id).trim().toLowerCase() : null;
+                                            const currentAppId = app.wykonawca_id ? String(app.wykonawca_id).trim().toLowerCase() : '';
+                                            const isChosen = (currentChosenId === currentAppId);
                                             
                                             if (!currentChosenId) {
                                                 return `<button onclick="event.stopPropagation(); chooseAndRefresh(${p.id}, '${app.wykonawca_id}')" class="bg-blue-600 text-white px-3 py-1.5 rounded-xl text-[8px] font-black uppercase hover:bg-blue-700 shadow-md">Wybierz</button>`;
@@ -1118,21 +1118,24 @@ async function loadAccountPanel(page = 1) {
     loadConversations();
 }
 async function chooseAndRefresh(zlId, wykId) {
-    if(!confirm("Czy na pewno chcesz wybrać tego fachowcę do realizacji zlecenia?")) return;
+    if(!confirm("Czy na pewno chcesz wybrać tego fachowcę?")) return;
     
-    const cleanZlId = parseInt(zlId);
-    const cleanWykId = String(wykId).trim();
+    const targetId = parseInt(zlId);
+    const contractorUuid = String(wykId).trim();
 
-    const { error } = await db.from('zlecenia')
-        .update({ wybrany_wykonawca_id: cleanWykId })
-        .eq('id', cleanZlId);
+    const { data, error } = await db.from('zlecenia')
+        .update({ wybrany_wykonawca_id: contractorUuid })
+        .eq('id', targetId)
+        .select();
     
     if (error) {
-        alert("Błąd zapisu w bazie: " + error.message);
+        alert("Błąd bazy: " + error.message);
+    } else if (!data || data.length === 0) {
+        alert("Błąd: Nie zaktualizowano wiersza. Sprawdź uprawnienia RLS w Supabase.");
     } else {
-        alert("Fachowiec został wybrany!");
-        await load(); // Odświeżenie danych głównych
-        await loadAccountPanel(1); // Odświeżenie panelu
+        alert("Fachowiec wybrany pomyślnie!");
+        await load(); 
+        setTimeout(() => loadAccountPanel(1), 500);
     }
 }
 
