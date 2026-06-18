@@ -999,14 +999,12 @@ async function submitOpinion() {
         const { data: prof } = await db.from('profile_wykonawcow').select('punkty').eq('user_id', targetWykonawcaId).maybeSingle();
         if(prof) await db.from('profile_wykonawcow').update({ punkty: (prof.punkty + bonus) }).eq('user_id', targetWykonawcaId);
 
+        alert("Opinia została pomyślnie dodana!");
         if (targetZlecenie.typ_wpisu !== 'wykonawca') {
-            await db.from('zlecenia').delete().eq('id', targetZlecenie.id);
-            alert("Opinia dodana. Zlecenie zostało trwale usunięte z bazy!");
             goBackToList();
-            return;
+        } else {
+            openDetails(id);
         }
-        alert("Recenzja została pomyślnie dodana!");
-        openDetails(id);
     }
 }
 
