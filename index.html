@@ -707,8 +707,10 @@ async function load() {
 
     const filteredData = allData.filter(z => {
         const isRecent = new Date(z.created_at || z.id) >= new Date(dateLimitISO);
-        const hasChosenContractor = z.wybrany_wykonawca_id !== null && z.wybrany_wykonawca_id !== undefined;
-        return isRecent || hasChosenContractor;
+        const isNotFinished = z.status_zlecenia !== 'zakonczone';
+        
+        // Na głównej tablicy pokazujemy tylko zlecenia świeże (do 14 dni) i te, które NIE są jeszcze zakończone
+        return isRecent && isNotFinished;
     });
 
     if (filteredData.length === 0) {
@@ -757,8 +759,26 @@ async function load() {
 
     listEl.innerHTML = htmlContent;
 }
-// 2. Automatyczne odświeżanie co 30 sekund
+// Funkcja trwale usuwająca z bazy ogłoszenia starsze niż 14 dni (retencja danych)
+async function cronCleanOldJobs() {
+    const dateLimit = new Date();
+    dateLimit.setDate(dateLimit.getDate() - 14);
+    const dateLimitISO = dateLimit.toISOString();
+
+    // Usuwamy tylko zlecenia typu 'klient', które nie zostały zakończone i są starsze niż 14 dni
+    const { error } = await db.from('zlecenia')
+        .delete()
+        .eq('typ_wpisu', 'klient')
+        .neq('status_zlecenia', 'zakonczone')
+        .lt('created_at', dateLimitISO);
+
+    if (error) console.error("Błąd czyszczenia starych ogłoszeń:", error.message);
+}
+
+// 2. Automatyczne odświeżanie i uruchomienie czyszczenia
+cronCleanOldJobs(); // Uruchom raz przy starcie strony
 setInterval(load, 30000);
+setInterval(cronCleanOldJobs, 3600000); // Czyszczenie bazy co godzinę
 setInterval(() => { if(currentUser) loadConversations(); }, 10000);
 
 function openDetails(id) { window.location.hash = `ogloszenie-${id}`; }
