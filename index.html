@@ -1151,27 +1151,24 @@ async function loadConversations() {
 let chatRefreshInterval = null;
 
 async function openChatBox(partnerId, zlId, partnerName) {
+    // Wymuszamy poprawne typy danych
     activePartnerId = String(partnerId); 
     activeZlecenieId = parseInt(zlId);
     
     document.getElementById('chat-partner-name').innerText = partnerName || "Rozmowa";
     document.getElementById('chat-box').classList.remove('hidden');
     
-    // Oznacz jako przeczytane
-    await db.from('wiadomosci').update({ czy_przeczytane: true })
-        .eq('zlecenie_id', activeZlecenieId).eq('nadawca_id', activePartnerId).eq('odbiorca_id', currentUser.id);
+    // Oznacz jako przeczytane (try-catch, żeby błąd bazy nie zaciął czatu)
+    try {
+        await db.from('wiadomosci').update({ czy_przeczytane: true })
+            .eq('zlecenie_id', activeZlecenieId).eq('nadawca_id', activePartnerId).eq('odbiorca_id', currentUser.id);
+    } catch(e) {}
     
     if(chatRefreshInterval) clearInterval(chatRefreshInterval);
     chatRefreshInterval = setInterval(loadMessages, 3000);
     loadMessages();
     
     document.getElementById('chat-input').onkeydown = (e) => { if(e.key === 'Enter') sendMessage(); };
-}
-
-function closeChatBox() {
-    if(chatRefreshInterval) clearInterval(chatRefreshInterval);
-    document.getElementById('chat-box').classList.add('hidden');
-    loadAccountPanel();
 }
 
 async function loadMessages() {
@@ -1185,22 +1182,26 @@ async function loadMessages() {
     if(error) return;
 
     const msgBox = document.getElementById('chat-messages');
-    // Filtrujemy wiadomości tylko między mną a wybranym partnerem
-    const filtered = data.filter(m => 
-        (m.nadawca_id === currentUser.id && m.odbiorca_id === activePartnerId) || 
-        (m.nadawca_id === activePartnerId && m.odbiorca_id === currentUser.id)
-    );
+    const ja = String(currentUser.id);
+    const partner = String(activePartnerId);
+
+    // Filtrujemy tylko rozmowę z tym konkretnym fachowcem/klientem
+    const filtered = data.filter(m => {
+        const mN = String(m.nadawca_id);
+        const mO = String(m.odbiorca_id);
+        return (mN === ja && mO === partner) || (mN === partner && mO === ja);
+    });
 
     const newHtml = filtered.map(m => `
-        <div class="max-w-[85%] mb-3 p-3 shadow-sm ${m.nadawca_id === currentUser.id ? 'ml-auto chat-bubble-me' : 'mr-auto chat-bubble-them'}">
-            <p class="text-[7px] mb-1 opacity-70 font-black uppercase">${m.nadawca_id === currentUser.id ? 'Ty' : 'Rozmówca'}</p>
+        <div class="max-w-[85%] mb-3 p-3 shadow-sm ${String(m.nadawca_id) === ja ? 'ml-auto chat-bubble-me' : 'mr-auto chat-bubble-them'}">
+            <p class="text-[7px] mb-1 opacity-70 font-black uppercase">${String(m.nadawca_id) === ja ? 'Ty' : 'Fachowiec'}</p>
             <p class="text-xs leading-relaxed">${m.tresc}</p>
             <p class="text-[6px] mt-1 opacity-50 text-right uppercase">${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</p>
         </div>
     `).join("");
     
     if (msgBox.innerHTML !== newHtml) {
-        msgBox.innerHTML = newHtml || '<div class="text-center py-10 text-[10px] text-slate-400 font-bold uppercase tracking-widest">Napisz wiadomość...</div>';
+        msgBox.innerHTML = newHtml || '<div class="text-center py-10 text-[10px] text-slate-400 font-bold uppercase tracking-widest">Brak wiadomości. Napisz pierwszy!</div>';
         msgBox.scrollTop = msgBox.scrollHeight;
     }
 }
@@ -1208,21 +1209,21 @@ async function loadMessages() {
 async function sendMessage() {
     const input = document.getElementById('chat-input');
     const tresc = input.value.trim();
-    if(!tresc || !activePartnerId || !activeZlecenieId) return;
+    if(!tresc || !activePartnerId || !activeZlecenieId || !currentUser) return;
 
     const { error } = await db.from('wiadomosci').insert([{ 
         zlecenie_id: activeZlecenieId, 
         nadawca_id: currentUser.id, 
         odbiorca_id: activePartnerId, 
-        tresc: tresc, 
-        czy_przeczytane: false 
+        tresc: tresc,
+        czy_przeczytane: false
     }]);
 
     if(error) {
-        alert("Błąd: " + error.message);
+        alert("Błąd wysyłania: " + error.message);
     } else {
         input.value = ""; 
-        await loadMessages(); // Natychmiastowe odświeżenie po wysłaniu
+        await loadMessages();
     }
 }
 
