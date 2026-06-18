@@ -1641,8 +1641,60 @@ async function saveProfile() {
         alert("Dane zapisane!"); window.location.reload();
     } else {
         await db.auth.updateUser({ data: { full_name: nowaNazwa, telefon_kontaktowy: nowyTel } });
-        alert("Dane zapisane!"); window.location.reload();
+       alert("Dane zapisane!"); window.location.reload();
     }
+}
+
+// Funkcja obsługująca wysyłanie opinii i kończenie zlecenia z modala
+async function submitModalOpinion(wykonawcaId, zlecenieId) {
+    const stars = parseInt(document.getElementById('pop-stars').value);
+    const text = document.getElementById('pop-text').value.trim();
+        
+    if(!text) return alert("Proszę wpisać treść opinii przed wysłaniem.");
+
+    // Bezpieczne przygotowanie typów danych dla Supabase
+    const cleanWykId = String(wykonawcaId).trim();
+    const cleanZlId = Number(zlecenieId);
+
+    if (isNaN(cleanZlId) || cleanZlId <= 0) {
+        return alert("Błąd: Niepoprawny identyfikator zlecenia.");
+    }
+
+    // 1. Dodaj opinię do tabeli 'opinie'
+    const { error: opErr } = await db.from('opinie').insert([{ 
+        wykonawca_id: cleanWykId, 
+        autor_email: currentUser.email, 
+        gwiazdki: stars, 
+        tresc: text 
+    }]);
+
+    if (opErr) {
+        return alert("Błąd dodawania opinii: " + opErr.message);
+    }
+
+    // 2. Dodaj punkty wykonawcy (premiowanie gwiazdkami)
+    const { data: prof } = await db.from('profile_wykonawcow').select('punkty').eq('user_id', cleanWykId).maybeSingle();
+    if(prof) {
+        await db.from('profile_wykonawcow').update({ punkty: (prof.punkty + stars) }).eq('user_id', cleanWykId);
+    }
+
+    // 3. Zmień status zlecenia na 'zakonczone'
+    const { error: statusErr } = await db.from('zlecenia').update({ status_zlecenia: 'zakonczone' }).eq('id', cleanZlId);
+    
+    if (statusErr) {
+        console.error("Błąd aktualizacji statusu zlecenia:", statusErr);
+    }
+
+    alert("Opinia wystawiona! Zlecenie zostało oficjalnie zakończone.");
+            
+    // 4. Ukryj okno modala i odśwież dane na żywo
+    const modalBox = document.getElementById('opinion-popup');
+    if (modalBox) modalBox.classList.add('hidden');
+    
+    if (typeof load === 'function') {
+        await load();
+    }
+    await loadAccountPanel(1);
 }
 </script>
 </body>
