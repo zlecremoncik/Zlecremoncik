@@ -45,13 +45,13 @@
                 Moje Konto <span id="nav-notify" class="w-2 h-2 bg-red-500 rounded-full hidden"></span>
             </button>
 
-            <div class="relative group">
-                <button id="main-menu-btn" class="w-[30px] h-[30px] flex flex-col justify-center items-center gap-1 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all">
+                        <div class="relative">
+                <button onclick="this.nextElementSibling.classList.toggle('hidden')" class="w-[30px] h-[30px] flex flex-col justify-center items-center gap-1 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all">
                     <span class="w-4 h-0.5 bg-slate-600"></span>
                     <span class="w-4 h-0.5 bg-slate-600"></span>
                     <span class="w-4 h-0.5 bg-slate-600"></span>
                 </button>
-                <div class="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 hidden group-hover:block z-[100]">
+                <div class="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 hidden z-[100]">
                     <button onclick="openContractorsBase()" class="w-full text-left px-4 py-2 text-xs font-bold text-blue-600 hover:bg-blue-50">Baza Fachowców</button>
                     <div class="border-t border-slate-50 my-1"></div>
                     <button onclick="signOut()" class="w-full text-left px-4 py-2 text-xs font-bold text-red-500 hover:bg-red-50">Wyloguj</button>
