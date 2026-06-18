@@ -1532,13 +1532,19 @@ async function loadContractors(page = 1) {
     const city = document.getElementById('base-search-city')?.value.trim() || "";
     const spec = document.getElementById('base-search-spec')?.value || "";
     
-    // Próba pobrania danych z opiniami, jeśli relacja nie istnieje - pobieramy same profile
-    let { data: pros, error } = await db.from('profile_wykonawcow').select('*, opinie(gwiazdki)');
-    
-    if (error) {
-        let { data: fallbackPros } = await db.from('profile_wykonawcow').select('*');
-        pros = fallbackPros;
+    // Pobieramy profile oraz wszystkie opinie równolegle, aby złączyć je ręcznie po prawidłowym user_id
+    const { data: pros, error: prosErr } = await db.from('profile_wykonawcow').select('*');
+    const { data: allOpinions, error: opsErr } = await db.from('opinie').select('wykonawca_id, gwiazdki');
+
+    if (prosErr || !pros) {
+        list.innerHTML = '<p class="col-span-full text-center py-20 text-slate-400 text-xs font-bold uppercase">Brak zarejestrowanych fachowców w bazie.</p>';
+        return;
     }
+
+    // Mapujemy opinie do odpowiednich profilów na podstawie unikalnego user_id
+    pros.forEach(p => {
+        p.opinie = (allOpinions || []).filter(o => String(o.wykonawca_id).trim().toLowerCase() === String(p.user_id).trim().toLowerCase());
+    });
 
     if (!pros || pros.length === 0) {
         list.innerHTML = '<p class="col-span-full text-center py-20 text-slate-400 text-xs font-bold uppercase">Brak zarejestrowanych fachowców w bazie.</p>';
