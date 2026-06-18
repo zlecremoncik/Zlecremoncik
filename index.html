@@ -1120,17 +1120,25 @@ async function loadAccountPanel(page = 1) {
 async function chooseAndRefresh(zlId, wykId) {
     if(!confirm("Czy na pewno chcesz wybrać tego fachowcę do realizacji zlecenia?")) return;
     
-    // Aktualizacja w bazie danych
-    const { error } = await db.from('zlecenia').update({ wybrany_wykonawca_id: wykId }).eq('id', zlId);
+    const cleanZlId = Number(zlId);
+    const cleanWykId = String(wykId).trim();
+
+    // Aktualizacja w bazie danych z jawnym rzutowaniem typów
+    const { error } = await db.from('zlecenia')
+        .update({ wybrany_wykonawca_id: cleanWykId })
+        .eq('id', cleanZlId);
     
     if (error) {
         alert("Błąd podczas wybierania wykonawcy: " + error.message);
     } else {
         alert("Fachowiec został pomyślnie wybrany!");
         
-        // Lokalny restart i pełne przeładowanie panelu konta, aby pobrać świeży stan z Supabase
-        if (typeof load !== 'undefined') {
+        // Wymuszenie pobrania świeżych danych z bazy przed ponownym renderowaniem panelu
+        if (typeof load === 'function') {
             await load(); 
+        } else {
+            window.location.reload(); // Zapasowe przeładowanie strony, jeśli funkcja load() nie jest globalna
+            return;
         }
         await loadAccountPanel(1);
     }
