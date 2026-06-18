@@ -1050,10 +1050,15 @@ async function loadAccountPanel(page = 1) {
                                         <span>📧 ${prof?.email || 'Brak e-mail'}</span>
                                     </div>
                                 </div>
-                                <div class="flex gap-1">
-                                    <button onclick="event.stopPropagation(); openChatBox('${app.wykonawca_id}', ${p.id}, '${name}')" class="bg-white border border-slate-200 text-slate-700 px-3 py-1.5 rounded-xl text-[8px] font-black uppercase hover:bg-blue-50 transition-all">Czat</button>
-                                    ${!p.wybrany_wykonawca_id ? `<button onclick="event.stopPropagation(); chooseAndRefresh(${p.id}, '${app.wykonawca_id}')" class="bg-blue-600 text-white px-3 py-1.5 rounded-xl text-[8px] font-black uppercase hover:bg-blue-700 shadow-md">Wybierz</button>` : ''}
-                                </div>
+                                                                    <div class="flex gap-1">
+                                        <button onclick="event.stopPropagation(); openChatBox('${app.wykonawca_id}', ${p.id}, '${name}')" class="bg-white border border-slate-200 text-slate-700 px-3 py-1.5 rounded-xl text-[8px] font-black uppercase hover:bg-blue-50 transition-all">Czat</button>
+                                        ${!p.wybrany_wykonawca_id ? `
+                                            <button onclick="event.stopPropagation(); chooseAndRefresh(${p.id}, '${app.wykonawca_id}')" class="bg-blue-600 text-white px-3 py-1.5 rounded-xl text-[8px] font-black uppercase hover:bg-blue-700 shadow-md">Wybierz</button>
+                                        ` : (isChosen ? `
+                                            <button disabled class="bg-slate-200 text-slate-400 px-3 py-1.5 rounded-xl text-[8px] font-black uppercase">Wybrano</button>
+                                            <button onclick="event.stopPropagation(); openOpinionModal('${app.wykonawca_id}', ${p.id}, '${name}')" class="bg-amber-500 text-white px-3 py-1.5 rounded-xl text-[8px] font-black uppercase hover:bg-amber-600 shadow-md">Dodaj opinię</button>
+                                        ` : '')}
+                                    </div>
                             </div>
                         </div>`;
                     }).join('')}
@@ -1377,7 +1382,72 @@ async function saveProfile() {
     }
 }
 
+function openOpinionModal(wykonawcaId, zlecenieId, nazwa) {
+    let modal = document.getElementById('opinion-popup');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'opinion-popup';
+        modal.className = "fixed bottom-6 right-4 sm:right-[470px] sm:top-24 sm:bottom-auto w-[92%] sm:w-[380px] bg-white z-[70] shadow-2xl rounded-[2.5rem] border border-slate-100 flex flex-col overflow-hidden animate-in fade-in zoom-in duration-300";
+        document.body.appendChild(modal);
+    }
+    
+    modal.innerHTML = `
+        <div class="p-6 pb-3 flex justify-between items-center border-b border-slate-100 bg-white">
+            <div class="flex flex-col">
+                <span class="text-[9px] font-black text-amber-600 uppercase tracking-widest">Wystaw opinię</span>
+                <span class="text-sm font-black text-slate-800 uppercase italic">${nazwa}</span>
+            </div>
+            <button onclick="this.parentElement.parentElement.classList.add('hidden')" class="w-8 h-8 flex items-center justify-center bg-slate-50 text-slate-400 hover:text-red-500 rounded-full text-lg">✕</button>
+        </div>
+        <div class="p-6 space-y-4">
+            <div>
+                <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block">Ocena fachowca:</label>
+                <select id="pop-stars" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl font-bold text-xs outline-none">
+                    <option value="6">⭐⭐⭐⭐⭐⭐ 6/6 Ideał</option>
+                    <option value="5">⭐⭐⭐⭐⭐ 5/6 Bardzo dobrze</option>
+                    <option value="4">⭐⭐⭐⭐ 4/6 Dobrze</option>
+                    <option value="3">⭐⭐⭐ 3/6 Przeciętnie</option>
+                    <option value="2">⭐⭐ 2/6 Słabo</option>
+                    <option value="1">⭐ 1/6 Bardzo słabo</option>
+                </select>
+            </div>
+            <div>
+                <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block">Twoja opinia:</label>
+                <textarea id="pop-text" placeholder="Napisz kilka słów o terminowości i jakości prac..." class="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl h-32 text-xs outline-none focus:border-blue-400 transition-all"></textarea>
+            </div>
+            <button onclick="submitModalOpinion('${wykonawcaId}', ${zlecenieId})" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-black transition-all shadow-xl">Wyślij opinię i zakończ</button>
+        </div>
+    `;
+    modal.classList.remove('hidden');
+}
 
+async function submitModalOpinion(wykonawcaId, zlecenieId) {
+    const stars = parseInt(document.getElementById('pop-stars').value);
+    const text = document.getElementById('pop-text').value.trim();
+    if(!text) return alert("Proszę wpisać treść opinii.");
+
+    const { error } = await db.from('opinie').insert([{ 
+        wykonawca_id: wykonawcaId, 
+        autor_email: currentUser.email, 
+        gwiazdki: stars, 
+        tresc: text 
+    }]);
+
+    if (!error) {
+        // Dodanie punktów wykonawcy (bonus za gwiazdki)
+        const { data: prof } = await db.from('profile_wykonawcow').select('punkty').eq('user_id', wykonawcaId).maybeSingle();
+        if(prof) await db.from('profile_wykonawcow').update({ punkty: (prof.punkty + stars) }).eq('user_id', wykonawcaId);
+        
+        // Usunięcie zlecenia po wystawieniu opinii (zgodnie z logiką systemu)
+        await db.from('zlecenia').delete().eq('id', zlecenieId);
+        
+        alert("Opinia została dodana. Dziękujemy! Zlecenie zostało przeniesione do archiwum.");
+        document.getElementById('opinion-popup').classList.add('hidden');
+        loadAccountPanel();
+    } else {
+        alert("Błąd: " + error.message);
+    }
+}
 </script>
 </body>
 </html>
