@@ -1388,15 +1388,21 @@ function openLegal(type) {
 function closeLegal() { document.getElementById('legal-modal').classList.add('hidden'); }
     function openEditProfileForm() {
     const box = document.getElementById('edit-profile-box');
+    const proSection = document.getElementById('pro-only-edit');
     box.classList.toggle('hidden');
     if(!box.classList.contains('hidden')) {
         document.getElementById('edit-email').value = currentUser.email;
         if(currentProfile) {
             document.getElementById('edit-nazwa').value = currentProfile.nazwa_firmy || "";
             document.getElementById('edit-tel').value = currentProfile.telefon || "";
+            if(proSection) {
+                proSection.classList.remove('hidden');
+                document.getElementById('edit-omnie').value = currentProfile.o_mnie || "";
+            }
         } else {
             document.getElementById('edit-nazwa').value = currentUser.user_metadata?.full_name || "";
             document.getElementById('edit-tel').value = currentUser.user_metadata?.telefon_kontaktowy || "";
+            if(proSection) proSection.classList.add('hidden');
         }
     }
 }
