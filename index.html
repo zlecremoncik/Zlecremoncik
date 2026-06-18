@@ -185,10 +185,12 @@
         <button onclick="closeChatBox()" class="w-8 h-8 flex items-center justify-center bg-slate-50 text-slate-400 hover:text-red-500 rounded-full transition-colors text-lg">✕</button>
     </div>
     
+    <!-- KLUCZOWE: flex-1 i overflow-y-auto sprawią, że tutaj pojawi się suwak -->
     <div id="chat-messages" class="flex-1 overflow-y-auto p-6 py-4 space-y-3 text-xs scrollbar-thin scrollbar-thumb-slate-200 bg-white">
         <!-- Wiadomości tutaj -->
     </div>
     
+    <!-- KLUCZOWE: shrink-0 sprawi, że to pole NIGDY nie ucieknie na dół -->
     <div class="p-4 bg-white border-t border-slate-50 shrink-0">
         <div class="flex gap-2 bg-slate-50 p-2 rounded-2xl border border-slate-100 focus-within:border-blue-300 transition-all">
             <input id="chat-input" placeholder="Wpisz wiadomość..." class="flex-1 bg-transparent p-2 text-xs outline-none font-medium">
@@ -1169,8 +1171,8 @@ async function openChatBox(partnerId, zlId, partnerName) {
     } catch(e) {}
     
     if(chatRefreshInterval) clearInterval(chatRefreshInterval);
-    chatRefreshInterval = setInterval(loadMessages, 3000);
-    loadMessages();
+    chatRefreshInterval = setInterval(, 3000);
+    ();
     
     document.getElementById('chat-input').onkeydown = (e) => { if(e.key === 'Enter') sendMessage(); };
 }
@@ -1197,7 +1199,7 @@ async function loadMessages() {
 
     const newHtml = filtered.map(m => {
         const d = new Date(m.created_at);
-        // Format: 15.02 14:30
+        // TUTAJ JEST DATA: Format 15.02 14:30
         const timestamp = `${d.toLocaleDateString([], {day:'2-digit', month:'2-digit'})} ${d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
         
         return `
@@ -1210,7 +1212,8 @@ async function loadMessages() {
     
     if (msgBox.innerHTML !== newHtml) {
         msgBox.innerHTML = newHtml || '<div class="text-center py-10 text-[10px] text-slate-400 font-bold uppercase tracking-widest">Napisz pierwszą wiadomość...</div>';
-        msgBox.scrollTop = msgBox.scrollHeight;
+        // Automatyczne przewijanie na dół po dodaniu nowej wiadomości
+        msgBox.scrollTo({ top: msgBox.scrollHeight, behavior: 'smooth' });
     }
 }
 
@@ -1242,35 +1245,12 @@ function closeChatBox() {
     loadAccountPanel();
 }
 
-async function loadMessages() {
-    if(!activePartnerId || !activeZlecenieId) return;
-    // Pobieramy wiadomości dla konkretnego zlecenia, gdzie użytkownik jest nadawcą LUB odbiorcą
-    const { data, error } = await db.from('wiadomosci')
-        .select('*')
-        .eq('zlecenie_id', activeZlecenieId)
-        .or(`nadawca_id.eq.${currentUser.id},odbiorca_id.eq.${currentUser.id}`)
-        .order('created_at', { ascending: true });
-
-    if(error) return console.error("Błąd czatu:", error);
-
-    const msgBox = document.getElementById('chat-messages');
-    // Filtrujemy tylko wiadomości wymieniane z konkretnym partnerem
-    const filtered = data.filter(m => m.nadawca_id === activePartnerId || m.odbiorca_id === activePartnerId);
-
-    msgBox.innerHTML = filtered.map(m => `
-        <div class="max-w-[80%] mb-3 p-3 shadow-sm ${m.nadawca_id === currentUser.id ? 'ml-auto chat-bubble-me' : 'mr-auto chat-bubble-them'}">
-            <p class="text-xs leading-relaxed">${m.tresc}</p>
-            <p class="text-[6px] mt-1 opacity-50 text-right uppercase">${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</p>
-        </div>
-    `).join("") || '<div class="text-center py-10 text-[10px] text-slate-400 font-bold uppercase tracking-widest">Napisz pierwszą wiadomość...</div>';
-    msgBox.scrollTop = msgBox.scrollHeight;
-}
 
 async function sendMessage() {
     const input = document.getElementById('chat-input');
     if(!input.value.trim()) return;
     await db.from('wiadomosci').insert([{ zlecenie_id: activeZlecenieId, nadawca_id: currentUser.id, odbiorca_id: activePartnerId, tresc: input.value, czy_przeczytane: false }]);
-    input.value = ""; loadMessages();
+    input.value = ""; ();
 }
 
 async function del(id) { if(confirm("Czy na pewno chcesz usunąć to ogłoszenie?")) { await db.from("zlecenia").delete().eq('id', id); loadAccountPanel(); } }
