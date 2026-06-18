@@ -1166,7 +1166,7 @@ async function openChatBox(partnerId, zlId, partnerName) {
     try {
         await db.from('wiadomosci').update({ czy_przeczytane: true })
             .eq('zlecenie_id', activeZlecenieId).eq('nadawca_id', activePartnerId).eq('odbiorca_id', currentUser.id);
-    } catch(e) {}
+    } catch(e) { console.error(e); }
     
     if(chatRefreshInterval) clearInterval(chatRefreshInterval);
     chatRefreshInterval = setInterval(loadMessages, 3000);
@@ -1200,7 +1200,7 @@ async function loadMessages() {
         const timestamp = `${d.toLocaleDateString([], {day:'2-digit', month:'2-digit'})} ${d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
         
         return `
-        <div class="max-w-[85%] mb-3 p-3 shadow-sm ${String(m.nadawca_id) === ja ? 'ml-auto chat-bubble-me' : 'mr-auto chat-bubble-them'}">
+        <div class="max-w-[85%] mb-3 p-3 shadow-sm ${String(m.nadawca_id) === ja ? 'chat-bubble-me ml-auto' : 'chat-bubble-them mr-auto'}">
             <p class="text-[7px] mb-1 opacity-70 font-black uppercase">${String(m.nadawca_id) === ja ? 'Ty' : 'Rozmówca'}</p>
             <p class="text-xs leading-relaxed">${m.tresc}</p>
             <p class="text-[6px] mt-1 opacity-50 text-right uppercase font-bold tracking-tighter">${timestamp}</p>
@@ -1237,16 +1237,7 @@ async function sendMessage() {
 function closeChatBox() {
     if(chatRefreshInterval) clearInterval(chatRefreshInterval);
     document.getElementById('chat-box').classList.add('hidden');
-    document.getElementById('user-chats-list').classList.remove('hidden');
     loadAccountPanel();
-}
-
-
-async function sendMessage() {
-    const input = document.getElementById('chat-input');
-    if(!input.value.trim()) return;
-    await db.from('wiadomosci').insert([{ zlecenie_id: activeZlecenieId, nadawca_id: currentUser.id, odbiorca_id: activePartnerId, tresc: input.value, czy_przeczytane: false }]);
-    input.value = ""; ();
 }
 
 async function del(id) { if(confirm("Czy na pewno chcesz usunąć to ogłoszenie?")) { await db.from("zlecenia").delete().eq('id', id); loadAccountPanel(); } }
