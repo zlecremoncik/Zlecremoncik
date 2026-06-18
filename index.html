@@ -1592,22 +1592,31 @@ async function showProDetails(uid) {
     
     const realizacje = [p.realizacja1, p.realizacja2, p.realizacja3, p.realizacja4, p.realizacja5].filter(img => img);
     
-    // 2. Generujemy kod HTML dla sekcji opinii
+    // 2. Wyliczamy średnią ocen dla tego konkretnego wykonawcy do nagłówka modalnego
+    const opCount = contractorOpinions?.length || 0;
+    const opAvg = opCount ? (contractorOpinions.reduce((a, b) => a + b.gwiazdki, 0) / opCount).toFixed(1) : "0.0";
+
+    // Generujemy kod HTML dla sekcji opinii z wyliczoną średnią w nagłówku
     let opinionsHtml = `<div class="mt-8 border-t border-slate-100 pt-6">
-        <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">⭐ Opinie klientów</h3>`;
+        <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">⭐ Opinie klientów (${opAvg} / 5)</h3>`;
     
     if (!contractorOpinions || contractorOpinions.length === 0) {
         opinionsHtml += `<p class="text-xs text-slate-400 italic bg-slate-50 p-4 rounded-2xl text-center">Ten wykonawca nie posiada jeszcze opinii tekstowych.</p>`;
     } else {
-        opinionsHtml += `<div class="space-y-3">` + contractorOpinions.map(o => `
-            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-xs">
-                <div class="flex justify-between items-center mb-2">
-                    <div class="text-amber-500 font-bold tracking-tight">${'⭐'.repeat(o.gwiazdki)}</div>
-                    <span class="text-[9px] text-slate-400 font-bold font-mono">${o.autor_email || 'Klient'}</span>
+        opinionsHtml += `<div class="space-y-3">` + contractorOpinions.map(o => {
+            // Wycinamy wszystko po lewej stronie od małpy (@)
+            const displayNick = o.autor_email && o.autor_email.includes('@') ? o.autor_email.split('@')[0] : (o.autor_email || 'Klient');
+            
+            return `
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-xs">
+                    <div class="flex justify-between items-center mb-2">
+                        <div class="text-amber-500 font-bold tracking-tight">${'⭐'.repeat(o.gwiazdki)}</div>
+                        <span class="text-[10px] text-slate-500 font-black uppercase italic">${displayNick}</span>
+                    </div>
+                    <p class="text-slate-600 leading-relaxed font-medium">${o.tresc}</p>
                 </div>
-                <p class="text-slate-600 leading-relaxed font-medium">${o.tresc}</p>
-            </div>
-        `).join('') + `</div>`;
+            `;
+        }).join('') + `</div>`;
     }
     opinionsHtml += `</div>`;
     
