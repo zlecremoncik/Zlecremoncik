@@ -1051,16 +1051,16 @@ async function loadAccountPanel(page = 1) {
                                                                     <div class="flex gap-1">
                                         <button onclick="event.stopPropagation(); openChatBox('${app.wykonawca_id}', ${p.id}, '${name}')" class="bg-white border border-slate-200 text-slate-700 px-3 py-1.5 rounded-xl text-[8px] font-black uppercase hover:bg-blue-50 transition-all">Czat</button>
                                         ${(() => {
-                                            const currentChosenId = p.wybrany_wykonawca_id ? String(p.wybrany_wykonawca_id).trim().toLowerCase() : null;
-                                            const currentAppId = app.wykonawca_id ? String(app.wykonawca_id).trim().toLowerCase() : '';
+                                                                                        const currentChosenId = p.wybrany_wykonawca_id ? String(p.wybrany_wykonawca_id).toLowerCase() : null;
+                                            const currentAppId = app.wykonawca_id ? String(app.wykonawca_id).toLowerCase() : '';
                                             const isChosen = currentChosenId === currentAppId;
                                             
                                             if (!currentChosenId) {
                                                 return `<button onclick="event.stopPropagation(); chooseAndRefresh(${p.id}, '${app.wykonawca_id}')" class="bg-blue-600 text-white px-3 py-1.5 rounded-xl text-[8px] font-black uppercase hover:bg-blue-700 shadow-md">Wybierz</button>`;
                                             } else if (isChosen) {
                                                 return `
-                                                    <button disabled class="bg-slate-200 text-slate-400 px-3 py-1.5 rounded-xl text-[8px] font-black uppercase">Wybrano</button>
-                                                    <button onclick="event.stopPropagation(); openOpinionModal('${app.wykonawca_id}', ${p.id}, '${name}')" class="bg-amber-500 text-white px-3 py-1.5 rounded-xl text-[8px] font-black uppercase hover:bg-amber-600 shadow-md">Dodaj opinię</button>
+                                                    <button disabled class="bg-slate-200 text-slate-500 px-3 py-1.5 rounded-xl text-[8px] font-black uppercase">Wybrano</button>
+                                                    <button onclick="event.stopPropagation(); openOpinionModal('${app.wykonawca_id}', ${p.id}, '${name}')" class="bg-amber-500 text-white px-3 py-1.5 rounded-xl text-[8px] font-black uppercase hover:bg-amber-600 shadow-md">Wystaw opinię</button>
                                                 `;
                                             } else {
                                                 return `<button disabled class="bg-slate-100 text-slate-300 px-3 py-1.5 rounded-xl text-[8px] font-black uppercase">Nie wybrany</button>`;
@@ -1120,27 +1120,19 @@ async function loadAccountPanel(page = 1) {
 async function chooseAndRefresh(zlId, wykId) {
     if(!confirm("Czy na pewno chcesz wybrać tego fachowcę do realizacji zlecenia?")) return;
     
-    const cleanZlId = Number(zlId);
+    const cleanZlId = parseInt(zlId);
     const cleanWykId = String(wykId).trim();
 
-    // Aktualizacja w bazie danych z jawnym rzutowaniem typów
     const { error } = await db.from('zlecenia')
         .update({ wybrany_wykonawca_id: cleanWykId })
         .eq('id', cleanZlId);
     
     if (error) {
-        alert("Błąd podczas wybierania wykonawcy: " + error.message);
+        alert("Błąd zapisu w bazie: " + error.message);
     } else {
-        alert("Fachowiec został pomyślnie wybrany!");
-        
-        // Wymuszenie pobrania świeżych danych z bazy przed ponownym renderowaniem panelu
-        if (typeof load === 'function') {
-            await load(); 
-        } else {
-            window.location.reload(); // Zapasowe przeładowanie strony, jeśli funkcja load() nie jest globalna
-            return;
-        }
-        await loadAccountPanel(1);
+        alert("Fachowiec został wybrany!");
+        await load(); // Odświeżenie danych głównych
+        await loadAccountPanel(1); // Odświeżenie panelu
     }
 }
 
