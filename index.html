@@ -1119,12 +1119,20 @@ async function loadAccountPanel(page = 1) {
 }
 async function chooseAndRefresh(zlId, wykId) {
     if(!confirm("Czy na pewno chcesz wybrać tego fachowcę do realizacji zlecenia?")) return;
+    
+    // Aktualizacja w bazie danych
     const { error } = await db.from('zlecenia').update({ wybrany_wykonawca_id: wykId }).eq('id', zlId);
+    
     if (error) {
         alert("Błąd podczas wybierania wykonawcy: " + error.message);
     } else {
         alert("Fachowiec został pomyślnie wybrany!");
-        loadAccountPanel(); 
+        
+        // Lokalny restart i pełne przeładowanie panelu konta, aby pobrać świeży stan z Supabase
+        if (typeof load !== 'undefined') {
+            await load(); 
+        }
+        await loadAccountPanel(1);
     }
 }
 
