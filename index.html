@@ -463,53 +463,67 @@ async function updateUI(session) {
     if (document.getElementById('logout-btn')) document.getElementById('logout-btn').classList.toggle('hidden', !session);
     if (document.getElementById('my-account-btn')) document.getElementById('my-account-btn').classList.toggle('hidden', !session);
     
-            if (currentUser) {
+    if (currentUser) {
         try {
             document.getElementById('acc-email-display').innerText = currentUser.email;
-            const savedRole = localStorage.getItem('google_login_role');
             
+            // Pobieramy rolę zapisaną bezpośrednio w metadanych użytkownika Supabase
+            const userRole = currentUser.user_metadata?.rola || 'klient';
+            
+            // Szukamy profilu wykonawcy w bazie
             let { data: prof } = await db.from('profile_wykonawcow').select('*').eq('user_id', currentUser.id).maybeSingle();
             
-            if (savedRole === 'wykonawca' && !prof) {
-                const { data: created, error: err } = await db.from('profile_wykonawcow').insert([{
+            // Krytyczny fiks: Jeśli użytkownik to Wykonawca, a profilu jeszcze nie ma w tabeli, tworzymy go teraz
+            if (userRole === 'wykonawca' && !prof) {
+                const pendingDataStr = localStorage.getItem('pending_wykonawca_profile');
+                let insertPayload = {
                     user_id: currentUser.id,
                     email: currentUser.email,
-                    nazwa_firmy: currentUser.user_metadata?.full_name || "Fachowiec Google",
+                    nazwa_firmy: "Fachowiec",
                     punkty: 10,
                     miejscowosc: "Nie podano",
-                    specjalizacja: "Ogólne prace"
-                }]).select().maybeSingle();
+                    specjalizacja: "Ogólne prace",
+                    telefon: currentUser.user_metadata?.telefon_kontaktowy || null
+                };
+
+                // Jeśli dane z formularza rejestracji zachowały się w przeglądarce, użyj ich
+                if (pendingDataStr) {
+                    const parsed = JSON.parse(pendingDataStr);
+                    if (parsed.user_id === currentUser.id) {
+                        insertPayload = parsed;
+                    }
+                }
+
+                const { data: created, error: err } = await db.from('profile_wykonawcow').insert([insertPayload]).select().maybeSingle();
                 
                 if (err) {
-                    console.error("Błąd tworzenia profilu Google:", err);
+                    console.error("Błąd krytyczny zapisu profilu wykonawcy:", err);
                 } else {
                     prof = created;
-                    localStorage.removeItem('google_login_role');
+                    localStorage.removeItem('pending_wykonawca_profile');
                 }
-            } else if (savedRole === 'klient' || prof) {
-                localStorage.removeItem('google_login_role');
             }
 
             currentProfile = prof || null;
             
-            // Po upewnieniu się, że profil został sprawdzony/utworzony, czyścimy flagę z pamięci
-            if (savedRole) {
-                localStorage.removeItem('google_login_role');
-            }
-
-            currentProfile = prof || null;
             const pCounter = document.getElementById('points-counter');
             const addJobBtn = document.getElementById('nav-add-job-btn');
 
-            if (currentProfile) {
-                if(pCounter) { pCounter.innerText = `Saldo: ${currentProfile.punkty} PKT`; pCounter.classList.remove('hidden'); }
+            // Kontrola elementów paska nawigacji na podstawie obecności profilu wykonawcy
+            if (currentProfile || userRole === 'wykonawca') {
+                if(pCounter) { 
+                    pCounter.innerText = `Saldo: ${currentProfile ? currentProfile.punkty : 10} PKT`; 
+                    pCounter.classList.remove('hidden'); 
+                }
                 if (addJobBtn) addJobBtn.classList.add('hidden');
             } else {
                 if(pCounter) pCounter.classList.add('hidden');
                 if (addJobBtn) addJobBtn.classList.remove('hidden');
             }
             loadAccountPanel();
-        } catch (e) { console.error("Błąd profilu:", e); }
+        } catch (e) { 
+            console.error("Błąd przetwarzania profilu UI:", e); 
+        }
     }
     load();
 }
@@ -555,54 +569,90 @@ function validatePassword(p) {
 async function signUp() {
     const e = document.getElementById('reg-email').value.trim();
     const p = document.getElementById('reg-password').value;
-        const phone = document.getElementById('reg-phone').value.trim();
+    const phone = document.getElementById('reg-phone').value.trim();
     const role = document.getElementById('reg-role').value;
 
+    // 1. Podstawowa walidacja wspólna
     if(!e || !p) return alert("Podaj adres e-mail oraz hasło!");
-    if(role === 'wykonawca' && phone.length !== 9) return alert("Jako Wykonawca musisz podać 9-cyfrowy numer telefonu!");
     if (!validatePassword(p)) return alert("Hasło musi zawierać min. 8 znaków, dużą literę, cyfrę oraz znak specjalny.");
+    
+    // Walidacja telefonu (zawsze obowiązkowy, dokładnie 9 cyfr)
+    if(!/^\d{9}$/.test(phone)) return alert("Numer telefonu jest obowiązkowy i musi składać się z dokładnie 9 cyfr!");
+
+    // 2. Szczegółowa walidacja dla WYKONAWCY
+    let wybraneSpecjalizacje = "";
+    let firma = "";
+    let miejscowosc = "";
+    let kod = "";
+    let nipVal = null;
+
+    if (role === 'wykonawca') {
+        firma = document.getElementById('reg-firma').value.trim();
+        miejscowosc = document.getElementById('reg-miejscowosc').value.trim();
+        kod = document.getElementById('reg-kod').value.trim();
+        const nipInput = document.getElementById('reg-nip').value.trim();
+
+        if(!firma) return alert("Jako Wykonawca musisz podać Nazwę firmy / Imię i Nazwisko!");
+        if(!miejscowosc) return alert("Pole 'Miejscowość' jest obowiązkowe dla Wykonawcy!");
+        if(!kod) return alert("Pole 'Kod pocztowy' jest obowiązkowe dla Wykonawcy!");
+
+        // Walidacja NIP (opcjonalny, ale jak jest, to dokładnie 10 cyfr)
+        if(nipInput !== "") {
+            if(!/^\d{10}$/.test(nipInput)) {
+                return alert("NIP może zawierać wyłącznie cyfry i musi składać się z dokładnie 10 znaków!");
+            }
+            nipVal = nipInput;
+        }
+
+        // Walidacja specjalizacji (minimum jedna zaznaczona)
+        const checkedBoxes = document.querySelectorAll('.spec-checkbox-item:checked');
+        if(checkedBoxes.length === 0) return alert("Musisz zaznaczyć przynajmniej jedną specjalizację budowlaną!");
+        wybraneSpecjalizacje = Array.from(checkedBoxes).map(cb => cb.value).join(", ");
+    }
 
     const btn = document.querySelector("#view-register button");
     if(btn) { btn.disabled = true; btn.innerText = "Trwa rejestracja..."; }
 
-    // 1. Zakładamy konto w systemie (Auth)
-    const { data, error } = await db.auth.signUp({ email: e, password: p });
+    // 3. Zakładamy konto w Supabase Auth wraz z przypisaniem stałej roli w metadanych
+    const { data, error } = await db.auth.signUp({ 
+        email: e, 
+        password: p,
+        options: {
+            data: {
+                rola: role,
+                telefon_kontaktowy: phone
+            }
+        }
+    });
     
     if (error) {
         if(btn) { btn.disabled = false; btn.innerText = "Załóż konto"; }
         return alert("Błąd rejestracji: " + error.message);
     }
 
+    // 4. Jeśli użytkownik założył konto i baza wymaga potwierdzenia e-mail,
+    // zapisujemy informacje profilowe do localStorage jako "oczekujące", 
+    // aby utworzyć profil automatycznie przy pierwszym zalogowaniu po kliknięciu linku.
     if (data.user) {
         if (role === 'wykonawca') {
-            // Zapisujemy do tabeli WYKONAWCÓW
-            const checkedBoxes = document.querySelectorAll('.spec-checkbox-item:checked');
-            const wybraneSpecjalizacje = Array.from(checkedBoxes).map(cb => cb.value).join(", ") || "Ogólne prace";
-
-            const { error: profErr } = await db.from('profile_wykonawcow').insert([{
+            const pendingProfile = {
                 user_id: data.user.id,
-                email: e, // <--- TUTAJ ZAPISUJEMY EMAIL WYKONAWCY PRZY REJESTRACJI
-                nazwa_firmy: document.getElementById('reg-firma').value || "Fachowiec",
-                nip: document.getElementById('reg-nip').value || null,
-                miejscowosc: document.getElementById('reg-miejscowosc').value || "Nie podano",
-                kod_pocztowy: document.getElementById('reg-kod').value || "00-000",
+                email: e,
+                nazwa_firmy: firma,
+                nip: nipVal,
+                miejscowosc: miejscowosc,
+                kod_pocztowy: kod,
                 specjalizacja: wybraneSpecjalizacje,
                 punkty: 10,
-                telefon: phone || null
-            }]);
-            if(profErr) console.error("Błąd tabeli wykonawcy:", profErr);
-            
-        } else {
-            // OPCJONALNIE: Tutaj możesz dodać zapis do tabeli 'profile_klientow' 
-            // jeśli stworzysz taką tabelę w Supabase (instrukcja poniżej)
-            await db.auth.updateUser({ data: { telefon_kontaktowy: phone, rola: 'klient' } });
+                telefon: phone
+            };
+            localStorage.setItem('pending_wykonawca_profile', JSON.stringify(pendingProfile));
         }
     }
 
-    alert("Rejestracja udana! Jeśli nie możesz się zalogować, sprawdź e-mail i kliknij link aktywacyjny.");
+    alert("Rejestracja udana! Sprawdź skrzynkę e-mail: " + e + " i kliknij link aktywacyjny, aby aktywować profil Wykonawcy.");
     window.location.reload();
 }
-
 async function signOut() { 
     await db.auth.signOut(); 
     localStorage.clear(); // Czyści role i sesje
