@@ -95,8 +95,12 @@
                 <input id="postcode" placeholder="Kod pocztowy (Opcjonalnie)" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl outline-none focus:border-blue-400">
             </div>
             
-            <select id="k" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl outline-none font-bold text-sm text-slate-700 select-dynamic-categories text-slate-700 bg-white">
-                </select>
+            <div class="bg-slate-50 border-2 border-slate-100 rounded-2xl p-4">
+    <p class="text-[10px] font-black text-slate-400 uppercase mb-2 tracking-wider">Wybierz specjalizacje (możesz zaznaczyć kilka):</p>
+    <div id="job-checkboxes-container" class="space-y-1.5 max-h-40 overflow-y-auto text-[11px] font-semibold text-slate-700 pr-1">
+        <!-- Tutaj skrypt automatycznie włoży checkboxy -->
+    </div>
+</div>
             
                         <textarea id="o" placeholder="Opisz dokładnie zakres prac lub swoje doświadczenie..." class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl h-32 outline-none focus:border-blue-400"></textarea>
             <div class="grid grid-cols-3 gap-2">
@@ -435,6 +439,16 @@ containerCheckboxes.innerHTML = SKLADNICA_SPECJALIZACJI.map(spec => `
     </label>
 `).join("");
 
+const containerJobCheckboxes = document.getElementById('job-checkboxes-container');
+if (containerJobCheckboxes) {
+    containerJobCheckboxes.innerHTML = SKLADNICA_SPECJALIZACJI.map(spec => `
+        <label class="flex items-start gap-2 cursor-pointer p-1 rounded hover:bg-slate-100 transition-colors">
+            <input type="checkbox" value="${spec}" class="job-checkbox-item mt-1 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+            <span>${spec}</span>
+        </label>
+    `).join("");
+}
+
 function switchAuthView(view) {
     if(view === 'register') {
         document.getElementById('view-login').classList.add('hidden');
@@ -710,14 +724,19 @@ async function uploadFile(fileInputId) {
 
 async function add() {
     const btn = document.getElementById('add-btn');
-    const tVal = document.getElementById("t").value;
-    const pVal = document.getElementById("p").value;
-    const mVal = document.getElementById("m").value;
-    const kVal = document.getElementById("k").value;
-    const oVal = document.getElementById("o").value;
-    const pcVal = document.getElementById("postcode").value;
+    const tVal = document.getElementById("t").value.trim();
+    const pVal = document.getElementById("p").value.trim();
+    const mVal = document.getElementById("m").value.trim();
+    const oVal = document.getElementById("o").value.trim();
+    const pcVal = document.getElementById("postcode").value.trim();
+    const noPhone = document.getElementById('no-phone').checked;
 
-        const noPhone = document.getElementById('no-phone').checked;
+    const checkedBoxes = document.querySelectorAll('.job-checkbox-item:checked');
+    if (checkedBoxes.length === 0) {
+        return alert("Musisz wybrać przynajmniej jedną kategorię / specjalizację prac!");
+    }
+    const wybraneKategorie = Array.from(checkedBoxes).map(cb => cb.value).join(", ");
+
     if (!tVal || !mVal || !oVal || (!noPhone && pVal.length !== 9)) {
         return alert("Uzupełnij formularz! Pola Tytuł, Miasto i Opis są obowiązkowe. Podaj 9-cyfrowy telefon lub zaznacz 'Wolę nie podawać'.");
     }
@@ -731,12 +750,19 @@ async function add() {
     const wyznaczonaRolaWpisu = currentProfile ? 'wykonawca' : 'klient';
     
     const insertData = {
-        tytul: tVal, miasto: mVal, opis: oVal, telefon: pVal, 
-        kategoria: kVal || 'Inne', user_id: currentUser.id, typ_wpisu: wyznaczonaRolaWpisu,
+        tytul: tVal, 
+        miasto: mVal, 
+        opis: oVal, 
+        telefon: pVal, 
+        kategoria: wybraneKategorie, 
+        user_id: currentUser.id, 
+        typ_wpisu: wyznaczonaRolaWpisu,
         user_email: currentUser.email,
-        zdjecie1: imgUrl1, zdjecie2: imgUrl2, zdjecie3: imgUrl3
+        zdjecie1: imgUrl1, 
+        zdjecie2: imgUrl2, 
+        zdjecie3: imgUrl3
     };
-    if (pcVal && pcVal.trim() !== "") insertData.kod_pocztowy = pcVal;
+    if (pcVal && pcVal !== "") insertData.kod_pocztowy = pcVal;
 
     const { error } = await db.from("zlecenia").insert([insertData]).select();
 
@@ -745,6 +771,7 @@ async function add() {
         btn.disabled = false; btn.innerText = "Opublikuj ogłoszenie";
     } else {
         alert("Sukces! Ogłoszenie pojawiło się na tablicy.");
+        
         document.getElementById("t").value = "";
         document.getElementById("p").value = "";
         document.getElementById("o").value = "";
@@ -753,8 +780,15 @@ async function add() {
         document.getElementById("img1").value = "";
         document.getElementById("img2").value = "";
         document.getElementById("img3").value = "";
+        document.getElementById('no-phone').checked = false;
+        document.getElementById('p').disabled = false;
+        
+        document.querySelectorAll('.job-checkbox-item').forEach(cb => cb.checked = false);
+
         btn.disabled = false; btn.innerText = "Opublikuj ogłoszenie";
-        toggleAddModal(false); load(); if(currentUser) loadAccountPanel(); 
+        toggleAddModal(false); 
+        load(); 
+        if(currentUser) loadAccountPanel(); 
     }
 }
 
