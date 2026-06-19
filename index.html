@@ -548,9 +548,11 @@ async function executeLogin() {
     const { error } = await db.auth.signInWithPassword({ email: e, password: p });
     
     if (error) {
-        // Mapowanie błędów Supabase na język polski
+        // Mapowanie błędów logowania i aktywacji Supabase na język polski
         if (error.message === "Invalid login credentials") {
-            alert("Błąd logowania: Podano nieprawidłowy e-mail lub hasło. Upewnij się też, że Twoje konto zostało aktywowane linkiem wysłanym na e-mail.");
+            alert("Błąd logowania: Podano nieprawidłowy e-mail lub hasło.");
+        } else if (error.message === "Email not confirmed") {
+            alert("Błąd logowania: Twój adres e-mail nie został jeszcze potwierdzony. Sprawdź swoją skrzynkę i kliknij w link aktywacyjny.");
         } else {
             alert("Błąd logowania: " + error.message);
         }
