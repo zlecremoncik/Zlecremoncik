@@ -532,7 +532,7 @@ async function updateUI(session) {
             const pCounter = document.getElementById('points-counter');
             const addJobBtn = document.getElementById('nav-add-job-btn');
 
-            // Kontrola elementów paska nawigacji na podstawie obecności profilu wykonawcy
+            // Wymuszenie widoczności salda, jeśli w metadanych użytkownika widnieje rola wykonawcy
             if (currentProfile || userRole === 'wykonawca') {
                 if(pCounter) { 
                     pCounter.innerText = `Saldo: ${currentProfile ? currentProfile.punkty : 10} PKT`; 
@@ -1108,7 +1108,9 @@ function openImageModal(url) {
 }
 
 async function applyForJob(zlecenieId) {
-    if (!currentProfile) return alert("Tylko Wykonawca może zgłaszać chęć realizacji!");
+    // Sprawdzenie profilu LUB roli bezpośrednio z konta użytkownika
+    const isWykonawca = currentProfile || (currentUser && currentUser.user_metadata?.rola === 'wykonawca');
+    if (!isWykonawca) return alert("Tylko Wykonawca może zgłaszać chęć realizacji!");
     
     // 1. Pobieramy dane zlecenia, żeby sprawdzić czy jest telefon
     const { data: z } = await db.from('zlecenia').select('*').eq('id', zlecenieId).single();
