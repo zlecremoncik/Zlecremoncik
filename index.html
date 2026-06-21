@@ -1077,22 +1077,7 @@ async function completeJob(zlecenieId) {
     openDetails(zlecenieId);
 }
 
-// Funkcje do obsługi modala powiększania zdjęć
-function openImageModal(url) {
-    let imgModal = document.getElementById('image-fullscreen-modal');
-    if (!imgModal) {
-        imgModal = document.createElement('div');
-        imgModal.id = 'image-fullscreen-modal';
-        imgModal.className = 'fixed inset-0 bg-slate-900/90 backdrop-blur-md z-[60] flex items-center justify-center p-4 cursor-zoom-out';
-        imgModal.onclick = () => imgModal.classList.add('hidden');
-        imgModal.innerHTML = `<img id='fullscreen-target-img' class='max-w-full max-h-[90vh] rounded-2xl shadow-2xl border border-white/10'>`;
-        document.body.appendChild(imgModal);
-    }
-    document.getElementById('fullscreen-target-img').src = url;
-    imgModal.classList.remove('hidden');
-}
-
-// Funkcje do obsługi modala powiększania zdjęć
+// Funkcja do obsługi modala powiększania zdjęć
 function openImageModal(url) {
     let imgModal = document.getElementById('image-fullscreen-modal');
     if (!imgModal) {
