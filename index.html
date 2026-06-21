@@ -221,7 +221,7 @@
 </div>
 
 <!-- Nowe okno czatu wyskakujące OBOK panelu -->
-<div id="chat-box" class="fixed bottom-6 right-4 sm:right-[470px] sm:top-24 sm:bottom-auto w-[92%] sm:w-[380px] h-[550px] bg-white z-[60] shadow-2xl rounded-[2.5rem] border border-slate-100 flex flex-col overflow-hidden animate-in fade-in zoom-in duration-300 hidden">
+<div id="chat-box" class="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-[470px] sm:top-24 sm:bottom-auto w-[calc(100%-2rem)] sm:w-[380px] h-[75vh] sm:h-[550px] bg-white z-[60] shadow-2xl rounded-[2.5rem] border border-slate-100 flex flex-col overflow-hidden animate-in fade-in zoom-in duration-300 hidden">
     <div class="p-6 pb-3 flex justify-between items-center border-b border-slate-100 shrink-0 bg-white">
         <div class="flex flex-col">
             <span class="text-[9px] font-black text-blue-600 uppercase tracking-widest">Konwersacja</span>
@@ -230,12 +230,9 @@
         <button onclick="closeChatBox()" class="w-8 h-8 flex items-center justify-center bg-slate-50 text-slate-400 hover:text-red-500 rounded-full transition-colors text-lg">✕</button>
     </div>
     
-    <!-- Tutaj pojawią się wiadomości i suwak -->
     <div id="chat-messages" class="flex-1 overflow-y-auto p-6 py-4 space-y-3 text-xs scrollbar-thin scrollbar-thumb-slate-200 bg-white">
-        <!-- Wiadomości tutaj -->
-    </div>
+        </div>
     
-    <!-- To pole ZAWSZE będzie na dole -->
     <div class="p-4 bg-white border-t border-slate-50 shrink-0">
         <div class="flex gap-2 bg-slate-50 p-2 rounded-2xl border border-slate-100 focus-within:border-blue-300 transition-all">
             <input id="chat-input" placeholder="Wpisz wiadomość..." class="flex-1 bg-transparent p-2 text-xs outline-none font-medium">
@@ -608,17 +605,10 @@ async function signUp() {
 
     // 1. Podstawowa walidacja wspólna
     if(!e || !p) return alert("Podaj adres e-mail oraz hasło!");
-    if (!validatePassword(p)) return alert("Hasło musi zawierać min. 8 znaków, dużą literę, cyfrę oraz znak specjalny.");
-    
-    // Walidacja telefonu (zawsze obowiązkowy, dokładnie 9 cyfr)
-    if(!/^\d{9}$/.test(phone)) return alert("Numer telefonu jest obowiązkowy i musi składać się z dokładnie 9 cyfr!");
+    if (!validatePassword(p)) return alert("Hasło musi zawierać min. 8 znaków, dużą litera, cyfrę oraz znak specjalny.");
+    if(!/^\d{9}$/.test(phone)) return alert("Numer telefonu musi składać się z dokładnie 9 cyfr!");
 
-    // 2. Szczegółowa walidacja dla WYKONAWCY
-    let wybraneSpecjalizacje = "";
-    let firma = "";
-    let miejscowosc = "";
-    let kod = "";
-    let nipVal = null;
+    let wybraneSpecjalizacje = "", firma = "", miejscowosc = "", kod = "", nipVal = null;
 
     if (role === 'wykonawca') {
         firma = document.getElementById('reg-firma').value.trim();
@@ -626,37 +616,20 @@ async function signUp() {
         kod = document.getElementById('reg-kod').value.trim();
         const nipInput = document.getElementById('reg-nip').value.trim();
 
-        if(!firma) return alert("Jako Wykonawca musisz podać Nazwę firmy / Imię i Nazwisko!");
-        if(!miejscowosc) return alert("Pole 'Miejscowość' jest obowiązkowe dla Wykonawcy!");
-        if(!kod) return alert("Pole 'Kod pocztowy' jest obowiązkowe dla Wykonawcy!");
+        if(!firma || !miejscowosc || !kod) return alert("Wypełnij wymagane pola wykonawcy!");
+        if(nipInput !== "" && /^\d{10}$/.test(nipInput)) nipVal = nipInput;
 
-        // Walidacja NIP (opcjonalny, ale jak jest, to dokładnie 10 cyfr)
-        if(nipInput !== "") {
-            if(!/^\d{10}$/.test(nipInput)) {
-                return alert("NIP może zawierać wyłącznie cyfry i musi składać się z dokładnie 10 znaków!");
-            }
-            nipVal = nipInput;
-        }
-
-        // Walidacja specjalizacji (minimum jedna zaznaczona)
         const checkedBoxes = document.querySelectorAll('.spec-checkbox-item:checked');
-        if(checkedBoxes.length === 0) return alert("Musisz zaznaczyć przynajmniej jedną specjalizację budowlaną!");
+        if(checkedBoxes.length === 0) return alert("Zaznacz przynajmniej jedną specjalizację!");
         wybraneSpecjalizacje = Array.from(checkedBoxes).map(cb => cb.value).join(", ");
     }
 
     const btn = document.querySelector("#view-register button");
     if(btn) { btn.disabled = true; btn.innerText = "Trwa rejestracja..."; }
 
-    // 3. Zakładamy konto w Supabase Auth wraz z przypisaniem stałej roli w metadanych
     const { data, error } = await db.auth.signUp({ 
-        email: e, 
-        password: p,
-        options: {
-            data: {
-                rola: role,
-                telefon_kontaktowy: phone
-            }
-        }
+        email: e, password: p,
+        options: { data: { rola: role, telefon_kontaktowy: phone } }
     });
     
     if (error) {
@@ -664,28 +637,18 @@ async function signUp() {
         return alert("Błąd rejestracji: " + error.message);
     }
 
-    // 4. Jeśli użytkownik założył konto i baza wymaga potwierdzenia e-mail,
-    // zapisujemy informacje profilowe do localStorage jako "oczekujące", 
-    // aby utworzyć profil automatycznie przy pierwszym zalogowaniu po kliknięciu linku.
-    if (data.user) {
-        if (role === 'wykonawca') {
-            const pendingProfile = {
-                user_id: data.user.id,
-                email: e,
-                nazwa_firmy: firma,
-                nip: nipVal,
-                miejscowosc: miejscowosc,
-                kod_pocztowy: kod,
-                specjalizacja: wybraneSpecjalizacje,
-                punkty: 10,
-                telefon: phone
-            };
-            localStorage.setItem('pending_wykonawca_profile', JSON.stringify(pendingProfile));
-        }
+    if (data.user && role === 'wykonawca') {
+        const pendingProfile = {
+            user_id: data.user.id, email: e, nazwa_firmy: firma, nip: nipVal,
+            miejscowosc: miejscowosc, kod_pocztowy: kod, specjalizacja: wybraneSpecjalizacje,
+            punkty: 10, telefon: phone
+        };
+        localStorage.setItem('pending_wykonawca_profile', JSON.stringify(pendingProfile));
     }
 
-    alert("Rejestracja udana! Sprawdź skrzynkę e-mail: " + e + " i kliknij link aktywacyjny, aby aktywować profil Wykonawcy.");
-    window.location.reload();
+    alert("Rejestracja udana! Kliknij link aktywacyjny wysłany na Twój e-mail.");
+    // Opóźnienie daje czas przeglądarce w telefonie na stabilne zapisanie danych w pamięci
+    setTimeout(() => { window.location.reload(); }, 600);
 }
 async function signOut() { 
     await db.auth.signOut(); 
@@ -698,11 +661,11 @@ function toggleAccountMenu(open) {
     const sidebar = document.getElementById('account-sidebar');
     const overlay = document.getElementById('account-sidebar-overlay');
     if (open) {
-        sidebar.className = "fixed top-0 right-0 h-full w-full sm:w-[450px] bg-white z-50 shadow-2xl slide-panel p-6 overflow-y-auto flex flex-col active";
+        sidebar.classList.add('active');
         overlay.classList.remove('hidden');
         if(currentUser) loadAccountPanel();
     } else {
-        sidebar.className = "fixed top-0 right-0 h-full w-full sm:w-[450px] bg-white z-50 shadow-2xl slide-panel p-6 overflow-y-auto flex flex-col";
+        sidebar.classList.remove('active');
         overlay.classList.add('hidden');
     }
 }
@@ -805,10 +768,6 @@ async function load() {
     let q = db.from('zlecenia').select('*, zgloszenia(*)').order('id', { ascending: false });
     const cityInput = document.getElementById('search-city').value.trim();
     
-    const dateLimit = new Date();
-    dateLimit.setDate(dateLimit.getDate() - 14);
-    const dateLimitISO = dateLimit.toISOString();
-
     if (cityInput !== "") q = q.ilike('miasto', `%${cityInput}%`);
     const categorySelect = document.getElementById('search-category').value;
     if (categorySelect !== "") q = q.eq('kategoria', categorySelect);
@@ -821,11 +780,16 @@ async function load() {
         return;
     }
 
+    const dateLimit = new Date();
+    dateLimit.setDate(dateLimit.getDate() - 14);
+
     const filteredData = allData.filter(z => {
-        const isRecent = new Date(z.created_at || z.id) >= new Date(dateLimitISO);
+        // Krytyczny FIX dla systemów iOS/Android - rygorystyczne parsowanie standardu dat ISO
+        const rawDate = z.created_at ? z.created_at.replace(' ', 'T') : null;
+        const recordDate = rawDate ? new Date(rawDate) : new Date();
+        const isRecent = isNaN(recordDate.getTime()) ? true : recordDate >= dateLimit;
         const isNotFinished = z.status_zlecenia !== 'zakonczone';
         
-        // Na głównej tablicy pokazujemy tylko zlecenia świeże (do 14 dni) i te, które NIE są jeszcze zakończone
         return isRecent && isNotFinished;
     });
 
