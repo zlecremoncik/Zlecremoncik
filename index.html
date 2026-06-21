@@ -496,18 +496,27 @@ async function updateUI(session) {
                     nazwa_firmy: "Fachowiec",
                     punkty: 10,
                     miejscowosc: "Nie podano",
+                    kod_pocztowy: null,
                     specjalizacja: "Ogólne prace",
                     telefon: currentUser.user_metadata?.telefon_kontaktowy || null
                 };
 
-                // Jeśli dane z formularza rejestracji zachowały się w przeglądarce, użyj ich
                 if (pendingDataStr) {
                     const parsed = JSON.parse(pendingDataStr);
                     if (parsed.user_id === currentUser.id) {
-                        insertPayload = parsed;
+                        insertPayload = {
+                            user_id: parsed.user_id,
+                            email: parsed.email,
+                            nazwa_firmy: parsed.nazwa_firmy,
+                            nip: parsed.nip,
+                            miejscowosc: parsed.miejscowosc,
+                            kod_pocztowy: parsed.kod_pocztowy,
+                            specjalizacja: parsed.specjalizacja,
+                            punkty: parsed.punkty,
+                            telefon: parsed.telefon
+                        };
                     }
                 }
-
                 const { data: created, error: err } = await db.from('profile_wykonawcow').insert([insertPayload]).select().maybeSingle();
                 
                 if (err) {
