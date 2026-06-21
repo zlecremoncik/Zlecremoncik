@@ -481,14 +481,15 @@ async function updateUI(session) {
         try {
             document.getElementById('acc-email-display').innerText = currentUser.email;
             
-            // Pobieramy rolę zapisaną bezpośrednio w metadanych użytkownika Supabase
-            const userRole = currentUser.user_metadata?.rola || 'klient';
+            // Sprawdzenie czy w localStorage są zapisane oczekujące dane wykonawcy (fallback jeśli metadane się opóźniają)
+            const hasPendingData = localStorage.getItem('pending_wykonawca_profile') !== null;
+            const userRole = hasPendingData ? 'wykonawca' : (currentUser.user_metadata?.rola || 'klient');
             
             // Szukamy profilu wykonawcy w bazie
             let { data: prof } = await db.from('profile_wykonawcow').select('*').eq('user_id', currentUser.id).maybeSingle();
             
             // Krytyczny fiks: Jeśli użytkownik to Wykonawca, a profilu jeszcze nie ma w tabeli, tworzymy go teraz
-            if (userRole === 'wykonawca' && !prof) {
+            if ((userRole === 'wykonawca' || hasPendingData) && !prof) {
                 const pendingDataStr = localStorage.getItem('pending_wykonawca_profile');
                 let insertPayload = {
                     user_id: currentUser.id,
@@ -633,8 +634,14 @@ async function signUp() {
     if(btn) { btn.disabled = true; btn.innerText = "Trwa rejestracja..."; }
 
     const { data, error } = await db.auth.signUp({ 
-        email: e, password: p,
-        options: { data: { rola: role, telefon_kontaktowy: phone } }
+        email: e, 
+        password: p,
+        options: {
+            data: {
+                rola: String(role).trim(), // Gwarantuje, że Supabase Auth dostanie czysty tekst 'wykonawca'
+                telefon_kontaktowy: phone
+            }
+        }
     });
     
     if (error) {
