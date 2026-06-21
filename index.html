@@ -298,6 +298,9 @@
                     <input id="reg-miejscowosc" placeholder="Miejscowość" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm outline-none">
                     <input id="reg-kod" placeholder="Kod pocztowy" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm outline-none">
                 </div>
+                <div>
+                    <textarea id="reg-omnie" placeholder="O mnie / Krótki opis Twojej działalności budowlanej..." class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm h-24 outline-none focus:border-blue-400 bg-white transition-all"></textarea>
+                </div>
                 <div class="bg-slate-50 border border-slate-200 rounded-xl p-3">
                     <p class="text-[9px] font-black text-slate-400 uppercase mb-2">Zaznacz specjalizacje budowlane:</p>
                     <div id="spec-checkboxes-container" class="space-y-1.5 max-h-36 overflow-y-auto text-[11px] font-semibold text-slate-700 pr-1"></div>
@@ -510,7 +513,8 @@ async function updateUI(session) {
                             kod_pocztowy: parsed.kod_pocztowy,
                             specjalizacja: parsed.specjalizacja,
                             punkty: parsed.punkty,
-                            telefon: parsed.telefon
+                            telefon: parsed.telefon,
+                            o_mnie: parsed.o_mnie || null
                         };
                     }
                 }
@@ -608,19 +612,20 @@ async function signUp() {
     if (!validatePassword(p)) return alert("Hasło musi zawierać min. 8 znaków, dużą litera, cyfrę oraz znak specjalny.");
     if(!/^\d{9}$/.test(phone)) return alert("Numer telefonu musi składać się z dokładnie 9 cyfr!");
 
-    let wybraneSpecjalizacje = "", firma = "", miejscowosc = "", kod = "", nipVal = null;
+    let wybraneSpecjalizacje = "", firma = "", miejscowosc = "", kod = "", nipVal = null, oMnieVal = "";
 
     if (role === 'wykonawca') {
         firma = document.getElementById('reg-firma').value.trim();
         miejscowosc = document.getElementById('reg-miejscowosc').value.trim();
         kod = document.getElementById('reg-kod').value.trim();
+        oMnieVal = document.getElementById('reg-omnie').value.trim();
         const nipInput = document.getElementById('reg-nip').value.trim();
 
         if(!firma || !miejscowosc || !kod) return alert("Wypełnij wymagane pola wykonawcy!");
         if(nipInput !== "" && /^\d{10}$/.test(nipInput)) nipVal = nipInput;
 
         const checkedBoxes = document.querySelectorAll('.spec-checkbox-item:checked');
-        if(checkedBoxes.length === 0) return alert("Zaznacz przynajmniej jedną specjalizację!");
+        if(checkedBoxes.length === 0) return alert("Musisz zaznaczyć przynajmniej jedną specjalizację budowlaną!");
         wybraneSpecjalizacje = Array.from(checkedBoxes).map(cb => cb.value).join(", ");
     }
 
@@ -639,9 +644,16 @@ async function signUp() {
 
     if (data.user && role === 'wykonawca') {
         const pendingProfile = {
-            user_id: data.user.id, email: e, nazwa_firmy: firma, nip: nipVal,
-            miejscowosc: miejscowosc, kod_pocztowy: kod, specjalizacja: wybraneSpecjalizacje,
-            punkty: 10, telefon: phone
+            user_id: data.user.id,
+            email: e,
+            nazwa_firmy: firma,
+            nip: nipVal,
+            miejscowosc: miejscowosc,
+            kod_pocztowy: kod,
+            specjalizacja: wybraneSpecjalizacje,
+            punkty: 10,
+            telefon: phone,
+            o_mnie: oMnieVal
         };
         localStorage.setItem('pending_wykonawca_profile', JSON.stringify(pendingProfile));
     }
