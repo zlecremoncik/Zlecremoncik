@@ -274,11 +274,11 @@
             </div>
         </div> <!-- DODANE: To zamyka view-login -->
 
-        <div id="view-register" class="hidden space-y-4">
+                <div id="view-register" class="hidden space-y-4">
             <h2 class="text-xl font-black text-slate-800 tracking-tight">Rejestracja</h2>
             <select id="reg-role" onchange="toggleRegRoleFields(this.value)" class="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none font-bold text-sm text-slate-600 transition-all bg-white">
-                <option value="klient">Zleceniodawca</option>
                 <option value="wykonawca">Wykonawca</option>
+                <option value="klient">Zleceniodawca</option>
             </select>
             <div class="grid grid-cols-1 gap-3">
                 <input id="reg-email" type="email" placeholder="email" class="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none focus:border-blue-400 font-medium text-sm transition-all">
@@ -288,10 +288,10 @@
                 <span class="font-bold text-slate-600 block mb-0.5">Wymogi bezpieczeństwa hasła:</span>
                 • min. 8 znaków | • duża litera | • liczba | • znak specjalny
             </div>
-                        <div id="phone-field-wrapper" class="space-y-1">
+            <div id="phone-field-wrapper" class="space-y-1">
                 <input id="reg-phone" type="tel" maxlength="9" placeholder="Numer telefonu (9 cyfr)" class="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none focus:border-blue-400 font-medium text-sm transition-all">
             </div>
-            <div id="pro-fields" class="hidden space-y-3 pt-2 border-t border-dashed border-slate-200">
+            <div id="pro-fields" class="space-y-3 pt-2 border-t border-dashed border-slate-200">
                 <input id="reg-firma" placeholder="Nazwa firmy / Imię i Nazwisko" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm outline-none">
                 <input id="reg-nip" placeholder="NIP (Opcjonalnie)" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm outline-none">
                 <div class="grid grid-cols-2 gap-3">
