@@ -116,6 +116,12 @@
                 <input id="p" type="tel" maxlength="9" placeholder="Telefon kontaktowy (9 cyfr)" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl outline-none focus:border-blue-400 disabled:opacity-50">
                 <p class="text-[9px] text-blue-500 font-bold mt-2 px-2 leading-tight">Zastanów się: zlecenia z numerem telefonu zdobywają średnio o 80% więcej ofert od sprawdzonych wykonawców.</p>
             </div>
+            <div class="bg-blue-50/50 p-4 rounded-2xl border border-blue-100">
+                <label class="flex items-start gap-3 cursor-pointer">
+                    <input type="checkbox" id="job-consent-data" class="mt-1 w-4 h-4 rounded border-slate-300 text-blue-600">
+                    <span class="text-[10px] font-bold text-slate-600 leading-tight">Wyrażam zgodę na przekazanie moich danych kontaktowych (imię, telefon, e-mail) zweryfikowanym Wykonawcom w celu otrzymania ofert cenowych. <span class="text-red-500">*</span></span>
+                </label>
+            </div>
             <button onclick="add()" id="add-btn" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase shadow-xl hover:bg-blue-700 transition-all">Opublikuj ogłoszenie</button>
         </div>
     </div>
@@ -218,6 +224,9 @@
         </h3>
                 <div id="user-chats-list" class="space-y-2 overflow-y-auto flex-1"></div>
     </div>
+    <div class="mt-auto pt-6 border-t border-red-50">
+        <button onclick="deleteAccountPermanently()" class="w-full py-3 text-[10px] font-black text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl uppercase tracking-widest transition-all">Usuń trwale konto</button>
+    </div>
 </div>
 
 <!-- Nowe okno czatu wyskakujące OBOK panelu -->
@@ -310,6 +319,16 @@
                     <p class="text-[9px] font-black text-slate-400 uppercase mb-2">Zaznacz specjalizacje budowlane:</p>
                     <div id="spec-checkboxes-container" class="space-y-1.5 max-h-36 overflow-y-auto text-[11px] font-semibold text-slate-700 pr-1"></div>
                 </div>
+            </div>
+            <div class="space-y-3 py-2 px-1">
+                <label class="flex items-start gap-3 cursor-pointer">
+                    <input type="checkbox" id="reg-consent-terms" class="mt-1 w-4 h-4 rounded border-slate-300 text-blue-600">
+                    <span class="text-[10px] text-slate-500 leading-tight">Akceptuję <button onclick="openLegal('regulamin')" class="underline">Regulamin</button> oraz <button onclick="openLegal('rodo')" class="underline">Politykę Prywatności</button>. Rozumiem, że moje dane będą przetwarzane w celu prowadzenia konta. <span class="text-red-500 font-bold">*</span></span>
+                </label>
+                <label class="flex items-start gap-3 cursor-pointer">
+                    <input type="checkbox" id="reg-consent-marketing" class="mt-1 w-4 h-4 rounded border-slate-300 text-blue-600">
+                    <span class="text-[10px] text-slate-500 leading-tight">Chcę otrzymywać informacje o nowościach i promocjach na mój adres e-mail. (Opcjonalnie)</span>
+                </label>
             </div>
             <button onclick="signUp()" class="w-full bg-slate-800 hover:bg-slate-900 text-white py-4 rounded-2xl font-black uppercase text-xs shadow-md transition-all">Załóż konto</button>
             <div class="text-left pt-1">
@@ -1693,80 +1712,28 @@ async function loadContractors(page = 1) {
 }
 
 async function showProDetails(uid) {
-    // 1. Pobieramy profil wykonawcy oraz jego opinie po user_id
     const { data: p } = await db.from('profile_wykonawcow').select('*').eq('user_id', uid).single();
     const { data: contractorOpinions } = await db.from('opinie').select('*').eq('wykonawca_id', uid).order('id', { ascending: false });
-    
-    let detailModal = document.getElementById('pro-detail-modal');
-    if(!detailModal) {
-        detailModal = document.createElement('div');
-        detailModal.id = 'pro-detail-modal';
-        detailModal.className = "fixed inset-0 bg-slate-900/80 backdrop-blur-lg z-[110] flex items-center justify-center p-4 hidden";
-        document.body.appendChild(detailModal);
-    }
-    
-    if (!p) return alert("Nie znaleziono profilu wykonawcy.");
-    
-    const realizacje = [p.realizacja1, p.realizacja2, p.realizacja3, p.realizacja4, p.realizacja5].filter(img => img);
-    
-    // 2. Wyliczamy średnią ocen dla tego konkretnego wykonawcy do nagłówka modalnego
-    const opCount = contractorOpinions?.length || 0;
-    const opAvg = opCount ? (contractorOpinions.reduce((a, b) => a + b.gwiazdki, 0) / opCount).toFixed(1) : "0.0";
-
-    // Generujemy kod HTML dla sekcji opinii z wyliczoną średnią w nagłówku
-    let opinionsHtml = `<div class="mt-8 border-t border-slate-100 pt-6">
-        <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">⭐ Opinie klientów (${opAvg} / 5)</h3>`;
-    
-    if (!contractorOpinions || contractorOpinions.length === 0) {
-        opinionsHtml += `<p class="text-xs text-slate-400 italic bg-slate-50 p-4 rounded-2xl text-center">Ten wykonawca nie posiada jeszcze opinii tekstowych.</p>`;
-    } else {
-        opinionsHtml += `<div class="space-y-3">` + contractorOpinions.map(o => {
-            // Wycinamy wszystko po lewej stronie od małpy (@)
-            const displayNick = o.autor_email && o.autor_email.includes('@') ? o.autor_email.split('@')[0] : (o.autor_email || 'Klient');
-            
-            return `
-                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-xs">
-                    <div class="flex justify-between items-center mb-2">
-                        <div class="text-amber-500 font-bold tracking-tight">${'⭐'.repeat(o.gwiazdki)}</div>
-                        <span class="text-[10px] text-slate-500 font-black uppercase italic">${displayNick}</span>
-                    </div>
-                    <p class="text-slate-600 leading-relaxed font-medium">${o.tresc}</p>
-                </div>
-            `;
-        }).join('') + `</div>`;
-    }
-    opinionsHtml += `</div>`;
-    
-    // 3. Wstrzykujemy pełną zawartość do modala
+    let detailModal = document.getElementById('pro-detail-modal') || (()=>{const m=document.createElement('div'); m.id='pro-detail-modal'; m.className="fixed inset-0 bg-slate-900/80 backdrop-blur-lg z-[110] flex items-center justify-center p-4 hidden"; document.body.appendChild(m); return m;})();
+    if (!p) return alert("Nie znaleziono profilu.");
+    const isLogged = !!currentUser;
     detailModal.innerHTML = `
         <div class="bg-white rounded-[2.5rem] w-full max-w-2xl max-h-[90vh] overflow-y-auto p-8 relative card-shadow">
-            <button onclick="document.getElementById('pro-detail-modal').classList.add('hidden')" class="absolute top-6 right-6 text-2xl font-bold text-slate-300 hover:text-slate-900 transition-colors">✕</button>
-            <div class="mb-6">
-                <span class="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">Profil Wykonawcy</span>
-                <h2 class="text-3xl font-black text-slate-900 uppercase mt-1 leading-tight">${p.nazwa_firmy}</h2>
-                <p class="text-sm font-bold text-slate-400 mt-0.5">📍 ${p.miejscowosc} (${p.kod_pocztowy || '---'})</p>
+            <button onclick="document.getElementById('pro-detail-modal').classList.add('hidden')" class="absolute top-6 right-6 text-2xl font-bold text-slate-300">✕</button>
+            <h2 class="text-3xl font-black text-slate-900 uppercase mt-1 leading-tight">${p.nazwa_firmy}</h2>
+            <p class="text-sm font-bold text-slate-400 mt-0.5">📍 ${p.miejscowosc}</p>
+            <div class="grid grid-cols-2 gap-4 my-6 bg-slate-50 p-5 rounded-3xl border border-slate-100">
+                <div><p class="text-[9px] font-black text-slate-400 uppercase">E-mail</p>
+                    ${isLogged ? `<button onclick="this.parentElement.innerText='${p.email}'" class="text-xs font-bold text-blue-600 underline">Pokaż e-mail</button>` : `<span class="text-[10px] font-bold text-red-400">Zaloguj się</span>`}
+                </div>
+                <div><p class="text-[9px] font-black text-slate-400 uppercase">Telefon</p>
+                    ${isLogged ? `<button onclick="this.parentElement.innerText='${p.telefon || 'Nie podano'}'" class="text-xs font-bold text-blue-600 underline">Pokaż numer</button>` : `<span class="text-[10px] font-bold text-red-400">Zaloguj się</span>`}
+                </div>
+                <div class="col-span-2"><p class="text-[9px] font-black text-slate-400 uppercase">Specjalizacja</p><p class="text-xs font-bold text-slate-800">${p.specjalizacja}</p></div>
             </div>
-            <div class="grid grid-cols-2 gap-4 mb-6 bg-slate-50 p-5 rounded-3xl border border-slate-100">
-                <div><p class="text-[9px] font-black text-slate-400 uppercase">E-mail</p><p class="text-xs font-bold text-slate-800 break-all">${p.email}</p></div>
-                <div><p class="text-[9px] font-black text-slate-400 uppercase">Telefon</p><p class="text-xs font-bold text-slate-800">${p.telefon || 'Nie podano'}</p></div>
-                <div><p class="text-[9px] font-black text-slate-400 uppercase">NIP</p><p class="text-xs font-bold text-slate-800">${p.nip || 'Brak'}</p></div>
-                <div><p class="text-[9px] font-black text-slate-400 uppercase">Specjalizacja</p><p class="text-xs font-bold text-slate-800">${p.specjalizacja}</p></div>
-            </div>
-            <div class="mb-6">
-                <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">O mnie</h3>
-                <p class="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap font-medium">${p.o_mnie || 'Wykonawca jeszcze nie dodał opisu o sobie.'}</p>
-            </div>
-            ${realizacje.length ? `
-                <div class="mb-6">
-                    <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Nasze Realizacje</h3>
-                    <div class="grid grid-cols-3 gap-2">
-                        ${realizacje.map(img => `<img src="${img}" class="w-full h-32 object-cover rounded-2xl border cursor-zoom-in" onclick="openImageModal('${img}')">`).join('')}
-                    </div>
-                </div>` : ''}
-            
-            ${opinionsHtml}
-        </div>
-    `;
+            <div class="mb-6"><h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">O mnie</h3><p class="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap font-medium">${p.o_mnie || 'Brak opisu.'}</p></div>
+            ${isLogged ? `<button onclick="document.getElementById('pro-detail-modal').classList.add('hidden'); openChatBox('${p.user_id}', 0, '${p.nazwa_firmy}')" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase text-xs shadow-xl transition-all">Rozpocznij Czat</button>` : ''}
+        </div>`;
     detailModal.classList.remove('hidden');
 }
 
@@ -1855,6 +1822,15 @@ async function submitModalOpinion(wykonawcaId, zlecenieId) {
         await load();
     }
     await loadAccountPanel(1);
+}
+
+async function deleteAccountPermanently() {
+    if(!confirm("CZY NA PEWNO CHCESZ TRWALE USUNĄĆ KONTO? Wszystkie Twoje zlecenia i dane zostaną skasowane.")) return;
+    const { error } = await db.from('profile_wykonawcow').delete().eq('user_id', currentUser.id);
+    await db.from('zlecenia').delete().eq('user_id', currentUser.id);
+    await db.auth.signOut();
+    alert("Konto i dane zostały usunięte.");
+    window.location.reload();
 }
 </script>
 </body>
