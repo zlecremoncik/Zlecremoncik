@@ -611,6 +611,7 @@ function validatePassword(p) {
 }
 
 async function signUp() {
+    if(!document.getElementById('reg-consent-terms').checked) return alert("Musisz zaakceptować regulamin i politykę prywatności, aby założyć konto.");
     const e = document.getElementById('reg-email').value.trim();
     const p = document.getElementById('reg-password').value;
     const phone = document.getElementById('reg-phone').value.trim();
@@ -714,6 +715,7 @@ async function uploadFile(fileInputId) {
 }
 
 async function add() {
+    if(!document.getElementById('job-consent-data').checked) return alert("Musisz wyrazić zgodę na przekazanie danych wykonawcom, aby opublikować zlecenie.");
     const btn = document.getElementById('add-btn');
     const tVal = document.getElementById("t").value.trim();
     const pVal = document.getElementById("p").value.trim();
