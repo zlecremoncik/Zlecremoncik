@@ -270,8 +270,17 @@
                 <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-200"></div></div>
                 <div class="relative flex justify-center text-xs uppercase"><span class="bg-white px-2 text-slate-400 font-bold">Lub przez Google</span></div>
             </div>
-
-                                    <button onclick="loginWithGoogle()" class="w-full bg-white border-2 border-slate-100 hover:border-blue-400 text-slate-700 py-3 rounded-2xl font-bold text-xs transition-all flex items-center justify-center gap-2 shadow-sm mb-2">
+            <div class="space-y-3 py-2 px-1 mb-2">
+                <label class="flex items-start gap-3 cursor-pointer">
+                    <input type="checkbox" id="google-consent-terms" class="mt-1 w-4 h-4 rounded border-slate-300 text-blue-600">
+                    <span class="text-[10px] text-slate-500 leading-tight">Akceptuję <button onclick="openLegal('regulamin')" class="underline">Regulamin</button> oraz <button onclick="openLegal('rodo')" class="underline">Politykę Prywatności</button>. Rozumiem, że moje dane będą przetwarzane w celu prowadzenia konta. <span class="text-red-500 font-bold">*</span></span>
+                </label>
+                <label class="flex items-start gap-3 cursor-pointer">
+                    <input type="checkbox" id="google-consent-marketing" class="mt-1 w-4 h-4 rounded border-slate-300 text-blue-600">
+                    <span class="text-[10px] text-slate-500 leading-tight">Chcę otrzymywać informacje o nowościach i promocjach na mój adres e-mail. (Opcjonalnie)</span>
+                </label>
+            </div>
+            <button onclick="loginWithGoogle()" class="w-full bg-white border-2 border-slate-100 hover:border-blue-400 text-slate-700 py-3 rounded-2xl font-bold text-xs transition-all flex items-center justify-center gap-2 shadow-sm mb-2">
                 <img src="https://www.google.com/favicon.ico" class="w-4 h-4"> Zaloguj przez Google
             </button>
             <div class="relative group mb-4 text-center">
@@ -593,6 +602,7 @@ async function executeLogin() {
 }
 
 async function loginWithGoogle() {
+    if(!document.getElementById('google-consent-terms').checked) return alert("Musisz zaakceptować regulamin i politykę prywatności, aby zalogować się przez Google.");
     // Sprawdzamy czy użytkownik wybrał rolę w formularzu rejestracji przed kliknięciem Google
     const selectedRole = document.getElementById('reg-role').value;
     localStorage.setItem('google_login_role', selectedRole);
