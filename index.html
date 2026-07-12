@@ -1817,32 +1817,34 @@ async function loadContractors(page = 1) {
     const city = document.getElementById('base-search-city')?.value.trim() || "";
     const spec = document.getElementById('base-search-spec')?.value || "";
     
-    // Pobieramy profile oraz wszystkie opinie równolegle, aby złączyć je ręcznie po prawidłowym user_id
-    const { data: pros, error: prosErr } = await db.from('profile_wykonawcow').select('*');
-    const { data: allOpinions, error: opsErr } = await db.from('opinie').select('wykonawca_id, gwiazdki');
+    // BEZPIECZNE RPC – przez F12 nie da się wyciągnąć email/telefon/NIP
+    const { data: pros, error: prosErr } = await db.rpc('get_public_contractors', {
+        search_city: city,
+        search_spec: spec
+    });
+    
+    // Opinie osobno (publiczne, bo nie zawierają wrażliwych danych poza autorem)
+    const { data: allOpinions } = await db.from('opinie').select('wykonawca_id, gwiazdki');
 
     if (prosErr || !pros) {
+        console.error("Błąd Bazy Fachowców:", prosErr);
+        list.innerHTML = '<p class="col-span-full text-center py-20 text-slate-400 text-xs font-bold uppercase">Błąd ładowania bazy fachowców.</p>';
+        return;
+    }
+
+    if (pros.length === 0) {
         list.innerHTML = '<p class="col-span-full text-center py-20 text-slate-400 text-xs font-bold uppercase">Brak zarejestrowanych fachowców w bazie.</p>';
         return;
     }
 
-    // Mapujemy opinie do odpowiednich profilów na podstawie unikalnego user_id
     pros.forEach(p => {
         p.opinie = (allOpinions || []).filter(o => String(o.wykonawca_id).trim().toLowerCase() === String(p.user_id).trim().toLowerCase());
     });
-
-    if (!pros || pros.length === 0) {
-        list.innerHTML = '<p class="col-span-full text-center py-20 text-slate-400 text-xs font-bold uppercase">Brak zarejestrowanych fachowców w bazie.</p>';
-        return;
-    }
-
-    let filtered = pros;
-    if(city) filtered = filtered.filter(p => p.miejscowosc?.toLowerCase().includes(city.toLowerCase()));
-    if(spec) filtered = filtered.filter(p => p.specjalizacja?.includes(spec));
     
     const perPage = 40;
+    const totalPages = Math.ceil(pros.length / perPage);
     const start = (page - 1) * perPage;
-    const paged = filtered.slice(start, start + perPage);
+    const paged = pros.slice(start, start + perPage);
 
     list.innerHTML = paged.map(p => {
         const count = p.opinie?.length || 0;
@@ -1858,30 +1860,94 @@ async function loadContractors(page = 1) {
             </div>
         `;
     }).join('');
+    
+    const pagEl = document.getElementById('base-pagination');
+    if(pagEl) {
+        pagEl.innerHTML = totalPages > 1 ? Array.from({length: totalPages}, (_,i) => {
+            const n = i+1;
+            return `<button onclick="loadContractors(${n})" class="px-3 py-2 rounded-xl text-xs font-bold ${n===page?'bg-blue-600 text-white':'bg-white border text-slate-600'}">${n}</button>`;
+        }).join('') : '';
+    }
 }
 
 async function showProDetails(uid) {
-    const { data: p } = await db.from('profile_wykonawcow').select('*').eq('user_id', uid).single();
+    const { data: pArr, error } = await db.rpc('get_public_contractor_details', { target_uid: uid });
+    const prof = Array.isArray(pArr) ? pArr[0] : pArr;
+    
+    if (error || !prof) return alert("Nie znaleziono profilu.");
+    
     const { data: contractorOpinions } = await db.from('opinie').select('*').eq('wykonawca_id', uid).order('id', { ascending: false });
-    let detailModal = document.getElementById('pro-detail-modal') || (()=>{const m=document.createElement('div'); m.id='pro-detail-modal'; m.className="fixed inset-0 bg-slate-900/80 backdrop-blur-lg z-[110] flex items-center justify-center p-4 hidden"; document.body.appendChild(m); return m;})();
-    if (!p) return alert("Nie znaleziono profilu.");
+    
+    let detailModal = document.getElementById('pro-detail-modal');
+    if (!detailModal) {
+        detailModal = document.createElement('div');
+        detailModal.id = 'pro-detail-modal';
+        detailModal.className = "fixed inset-0 bg-slate-900/80 backdrop-blur-lg z-[110] flex items-center justify-center p-4 hidden";
+        document.body.appendChild(detailModal);
+    }
+    
     const isLogged = !!currentUser;
+    const count = contractorOpinions?.length || 0;
+    const avg = count ? (contractorOpinions.reduce((a, b) => a + b.gwiazdki, 0) / count).toFixed(1) : "0.0";
+    
+    // Zdjęcia realizacji
+    let realizationsHtml = '';
+    const imgs = [prof.realizacja1, prof.realizacja2, prof.realizacja3].filter(url => url && url.trim() !== '' && !url.includes('[object') && url !== 'undefined');
+    if (imgs.length > 0) {
+        realizationsHtml = `
+            <div class="mb-6">
+                <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Realizacje</h3>
+                <div class="flex flex-wrap gap-2">
+                    ${imgs.map(url => `<img src="${url}" onclick="openImageModal('${url}')" class="w-20 h-20 object-cover rounded-xl border border-slate-200 cursor-zoom-in hover:opacity-90 transition-all shadow-sm">`).join('')}
+                </div>
+            </div>`;
+    }
+    
+    // Opinie
+    let opinieHtml = '';
+    if (contractorOpinions && contractorOpinions.length > 0) {
+        opinieHtml = `
+            <div class="mb-6">
+                <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Opinie (${count}) – Średnia: ${avg} ⭐</h3>
+                <div class="space-y-3 max-h-48 overflow-y-auto pr-2">
+                    ${contractorOpinions.map(o => `
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                            <div class="flex justify-between items-center mb-1">
+                                <div class="text-amber-400 text-[10px]">${'⭐'.repeat(o.gwiazdki)}</div>
+                                <span class="text-[8px] font-bold text-slate-400">${o.autor_email.split('@')[0]}@...</span>
+                            </div>
+                            <p class="text-[11px] text-slate-600 leading-snug">${o.tresc}</p>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>`;
+    } else {
+        opinieHtml = `<p class="text-[11px] text-slate-400 italic mb-6">Ten fachowiec nie ma jeszcze opinii.</p>`;
+    }
+    
     detailModal.innerHTML = `
         <div class="bg-white rounded-[2.5rem] w-full max-w-2xl max-h-[90vh] overflow-y-auto p-8 relative card-shadow">
-            <button onclick="document.getElementById('pro-detail-modal').classList.add('hidden')" class="absolute top-6 right-6 text-2xl font-bold text-slate-300">✕</button>
-            <h2 class="text-3xl font-black text-slate-900 uppercase mt-1 leading-tight">${p.nazwa_firmy}</h2>
-            <p class="text-sm font-bold text-slate-400 mt-0.5">📍 ${p.miejscowosc}</p>
-            <div class="grid grid-cols-2 gap-4 my-6 bg-slate-50 p-5 rounded-3xl border border-slate-100">
-                <div><p class="text-[9px] font-black text-slate-400 uppercase">E-mail</p>
-                    ${isLogged ? `<button onclick="this.parentElement.innerText='${p.email}'" class="text-xs font-bold text-blue-600 underline">Pokaż e-mail</button>` : `<span class="text-[10px] font-bold text-red-400">Zaloguj się</span>`}
-                </div>
-                <div><p class="text-[9px] font-black text-slate-400 uppercase">Telefon</p>
-                    ${isLogged ? `<button onclick="this.parentElement.innerText='${p.telefon || 'Nie podano'}'" class="text-xs font-bold text-blue-600 underline">Pokaż numer</button>` : `<span class="text-[10px] font-bold text-red-400">Zaloguj się</span>`}
-                </div>
-                <div class="col-span-2"><p class="text-[9px] font-black text-slate-400 uppercase">Specjalizacja</p><p class="text-xs font-bold text-slate-800">${p.specjalizacja}</p></div>
+            <button onclick="document.getElementById('pro-detail-modal').classList.add('hidden')" class="absolute top-6 right-6 text-2xl font-bold text-slate-300 hover:text-slate-500">✕</button>
+            <h2 class="text-3xl font-black text-slate-900 uppercase mt-1 leading-tight">${prof.nazwa_firmy}</h2>
+            <p class="text-sm font-bold text-slate-400 mt-0.5">📍 ${prof.miejscowosc || 'Nie podano'}</p>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 my-6 bg-slate-50 p-5 rounded-3xl border border-slate-100 text-xs font-bold text-slate-700">
+                <div><p class="text-[9px] font-black text-slate-400 uppercase mb-1">Specjalizacja</p><p>${prof.specjalizacja || 'Nie podano'}</p></div>
+                <div><p class="text-[9px] font-black text-slate-400 uppercase mb-1">Punkty</p><p class="text-amber-600">${prof.punkty || 0} PKT</p></div>
             </div>
-            <div class="mb-6"><h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">O mnie</h3><p class="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap font-medium">${p.o_mnie || 'Brak opisu.'}</p></div>
-            ${isLogged ? `<button onclick="document.getElementById('pro-detail-modal').classList.add('hidden'); openChatBox('${p.user_id}', 0, '${p.nazwa_firmy}')" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase text-xs shadow-xl transition-all">Rozpocznij Czat</button>` : ''}
+            
+            <div class="mb-6">
+                <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">O mnie</h3>
+                <p class="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap font-medium">${prof.o_mnie || 'Fachowiec nie dodał jeszcze opisu.'}</p>
+            </div>
+            
+            ${realizationsHtml}
+            ${opinieHtml}
+            
+            <div class="flex gap-3">
+                ${isLogged ? `<button onclick="document.getElementById('pro-detail-modal').classList.add('hidden'); openChatBox('${prof.user_id}', 0, '${prof.nazwa_firmy}')" class="flex-1 bg-blue-600 text-white py-4 rounded-2xl font-black uppercase text-xs shadow-xl transition-all hover:bg-blue-700">Napisz wiadomość</button>` : `<div class="flex-1 bg-slate-100 text-slate-400 py-4 rounded-2xl font-black uppercase text-xs text-center">Zaloguj się, aby napisać</div>`}
+                <button onclick="document.getElementById('pro-detail-modal').classList.add('hidden')" class="px-6 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black uppercase text-xs hover:bg-slate-200 transition-all">Zamknij</button>
+            </div>
         </div>`;
     detailModal.classList.remove('hidden');
 }
