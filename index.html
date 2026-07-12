@@ -1515,37 +1515,117 @@ async function saveEditedPost() {
     if (!error) { alert("Ogłoszenie zaktualizowane!"); toggleEditPostModal(false); load(); }
     btn.disabled = false; btn.innerText = "Zapisz zmiany w ogłoszeniu";
 }
-function openLegal(type) {
-    const modal = document.getElementById('legal-modal');
-    const title = document.getElementById('legal-title');
-    const body = document.getElementById('legal-body');
-    if (!modal || !title || !body) return;
-    
-    modal.classList.remove('hidden');
-    
     if(type === 'regulamin') {
         title.innerText = "Regulamin platformy ZlećRemoncik";
         body.innerHTML = `
-            <div class="space-y-3 text-slate-700 text-xs leading-relaxed">
-                <p class="font-bold text-red-600 uppercase text-[10px]">§1. POSTANOWIENIA OGÓLNE I WYŁĄCZENIE ODPOWIEDZIALNOŚCI</p>
-                <p>1. Korzystanie z platformy ZlećRemoncik jest całkowicie dobrowolne. Administrator nie jest stroną umów, transakcji ani ustaleń pomiędzy Użytkownikami.</p>
-                <p>2. Serwis pełni wyłącznie rolę tablicy ogłoszeniowej i cyfrowego pośrednika (łącznika) ułatwiającego nawiązanie kontaktu. Administrator w najszerszym dopuszczalnym przez prawo zakresie nie ponosi odpowiedzialności za treść ogłoszeń, rzetelność wykonawców, jakość robót, szkody majątkowe, straty finansowe ani za jakiekolwiek negatywne doświadczenia wynikające z kontaktu między stronami.</p>
-                <p class="font-bold text-slate-800 uppercase text-[10px]">§2. SYSTEM PUNKTOWY I REJESTRACJA</p>
-                <p>1. Każdy Wykonawca otrzymuje na start 10 punktów (PKT).</p>
-                <p>2. Pula punktów odnawia się automatycznie o <strong>+6 PKT</strong> w każdy poniedziałek o godzinie 00:00.</p>
-                <p>3. Za wystawione przez Klienta opinie, Wykonawca otrzymuje bonus punktowy równy liczbie przyznanych gwiazdek (1-5 PKT).</p>
-                <p class="font-bold text-slate-800 uppercase text-[10px]">§3. CZAS TRWANIA OGŁOSZEŃ</p>
-                <p>1. Wszystkie ogłoszenia są publicznie dostępne na tablicy przez maksymalny okres <strong>14 dni od momentu publikacji</strong>.</p>
-                <p>2. Po upływie 14 dni ogłoszenie zostaje automatycznie wygaszone i trwale usunięte z bazy danych serwisu.</p>
+            <div class="space-y-4 text-slate-700 text-xs leading-relaxed">
+                
+                <p class="font-black text-slate-900 uppercase text-[11px] border-b border-slate-200 pb-2">§1. POSTANOWIENIA OGÓLNE</p>
+                <p><strong>1.</strong> Administratorem danych osobowych przetwarzanych w ramach serwisu <strong>ZlećRemoncik</strong> (dostępnego pod adresem <a href="https://zlecremoncik.pl" class="text-blue-600 underline">https://zlecremoncik.pl</a>) jest właściciel platformy, zwany dalej <strong>„Administratorem”</strong>.</p>
+                <p><strong>2.</strong> Administrator przetwarza dane osobowe zgodnie z Rozporządzeniem Parlamentu Europejskiego i Rady (UE) 2016/679 z dnia 27 kwietnia 2016 r. (ogólne rozporządzenie o ochronie danych – <strong>„RODO”</strong>) oraz przepisami prawa polskiego.</p>
+                <p><strong>3.</strong> Korzystanie z platformy ZlećRemoncik jest <strong>całkowicie dobrowolne</strong>. Rejestracja konta, podawanie jakichkolwiek danych osobowych (w tym adresu e-mail, numeru telefonu, nazwy firmy, NIP, miejscowości) oraz publikowanie ogłoszeń stanowi wyłączną, swobodną decyzję każdego Użytkownika.</p>
+                <p><strong>4.</strong> Administrator nie jest stroną żadnych umów, transakcji ani ustaleń zawieranych pomiędzy Użytkownikami (Zleceniodawcami a Wykonawcami). Serwis pełni <strong>wyłącznie funkcję tablicy ogłoszeniowej i cyfrowego pośrednika</strong> umożliwiającego nawiązanie kontaktu.</p>
+                <p><strong>5.</strong> Administrator – w najszerszym dopuszczalnym przez prawo zakresie – <strong>nie ponosi odpowiedzialności</strong> za: treść ogłoszeń publikowanych przez Użytkowników, rzetelność i jakość usług świadczonych przez Wykonawców, terminowość wykonania prac, szkody majątkowe i niemajątkowe, straty finansowe, utracone korzyści oraz wszelkie inne negatywne konsekwencje wynikające z kontaktów między Użytkownikami.</p>
+
+                <p class="font-black text-slate-900 uppercase text-[11px] border-b border-slate-200 pb-2">§2. ZAKRES I CELE PRZETWARZANIA DANYCH</p>
+                <p><strong>1.</strong> Administrator przetwarza następujące kategorie danych:</p>
+                <ul class="list-disc pl-5 space-y-1">
+                    <li><strong>Dane konta:</strong> adres e-mail, hasło (szyfrowane) – w celu założenia i obsługi konta Użytkownika (podstawa: art. 6 ust. 1 lit. b RODO – niezbędność do wykonania umowy o świadczenie usług).</li>
+                    <li><strong>Dane Wykonawcy w Bazie Fachowców:</strong> nazwa firmy / imię i nazwisko, miejscowość, kod pocztowy, numer telefonu, adres e-mail, specjalizacje, opis działalności – w celu prezentacji w publicznie dostępnej Bazie Fachowców umożliwiającej Zleceniodawcom wyszukiwanie wykonawców (podstawa: art. 6 ust. 1 lit. a RODO – <strong>dobrowolna, świadoma zgoda</strong> wyrażona poprzez akceptację niniejszego Regulaminu podczas rejestracji).</li>
+                    <li><strong>Dane kontaktowe w ogłoszeniach:</strong> numer telefonu, adres e-mail – udostępniane Wykonawcy <strong>wyłącznie po wykupieniu dostępu</strong> do zlecenia (odpłatnie punktami). Dane Zleceniodawcy są domyślnie ukryte i niejawne dla osób trzecich (podstawa: art. 6 ust. 1 lit. b RODO).</li>
+                    <li><strong>Dane techniczne:</strong> pliki cookies niezbędne do prawidłowego działania serwisu (podstawa: art. 6 ust. 1 lit. f RODO – prawnie uzasadniony interes Administratora).</li>
+                </ul>
+                <p><strong>2.</strong> Podanie numeru telefonu w ogłoszeniu jest <strong>w pełni dobrowolne</strong>. Użytkownik może zaznaczyć opcję „Wolę nie podawać numeru” – wówczas kontakt odbywa się wyłącznie drogą e-mailową.</p>
+
+                <p class="font-black text-slate-900 uppercase text-[11px] border-b border-slate-200 pb-2">§3. ODBIORCY DANYCH</p>
+                <p><strong>1.</strong> Odbiorcami danych osobowych są:</p>
+                <ul class="list-disc pl-5 space-y-1">
+                    <li><strong>Zleceniodawcy</strong> – którzy przeglądają Bazę Fachowców w celu wyboru odpowiedniego Wykonawcy. Baza zawiera dane podane dobrowolnie przez Wykonawcę podczas rejestracji (firma, miejscowość, specjalizacje, opis).</li>
+                    <li><strong>Wykonawcy</strong> – którzy po wykupieniu dostępu do konkretnego zlecenia (poprzez pobranie punktów z salda) otrzymują dane kontaktowe Zleceniodawcy (telefon i e-mail) w celu złożenia oferty.</li>
+                    <li><strong>Dostawca usług hostingowych i bazodanowych</strong> – Supabase Inc. (przetwarzanie w chmurze, zgodnie z certyfikatami SOC 2 i ISO 27001).</li>
+                </ul>
+                <p><strong>2.</strong> Dane Użytkowników <strong>NIE są</strong> sprzedawane, udostępniane ani przekazywane podmiotom trzecim w celach marketingowych lub komercyjnych.</p>
+                <p><strong>3.</strong> Dane nie są przekazywane do państw spoza Europejskiego Obszaru Gospodarczego, z wyjątkiem sytuacji gdy dostawca infrastruktury (Supabase) przetwarza dane na serwerach zlokalizowanych poza EOG – wówczas odbywa się to na podstawie standardowych klauzul umownych zatwierdzonych przez Komisję Europejską.</p>
+
+                <p class="font-black text-slate-900 uppercase text-[11px] border-b border-slate-200 pb-2">§4. OKRES PRZECHOWYWANIA DANYCH</p>
+                <p><strong>1.</strong> Dane osobowe przetwarzane są przez okres:</p>
+                <ul class="list-disc pl-5 space-y-1">
+                    <li><strong>Dane konta Użytkownika:</strong> przez cały okres posiadania aktywnego konta w serwisie. Po usunięciu konta przez Użytkownika dane są trwale usuwane <strong>w ciągu 30 dni</strong>.</li>
+                    <li><strong>Ogłoszenia (zlecenia i wizytówki):</strong> przez maksymalnie <strong>14 dni</strong> od daty publikacji. Po tym okresie ogłoszenie zostaje automatycznie, bezpowrotnie usunięte z bazy danych.</li>
+                    <li><strong>Opinie i recenzje:</strong> przechowywane przez okres istnienia konta Wykonawcy, chyba że Użytkownik zażąda ich usunięcia.</li>
+                    <li><strong>Dane w Bazie Fachowców:</strong> przechowywane do czasu cofnięcia zgody przez Wykonawcę lub usunięcia konta – w zależności co nastąpi wcześniej.</li>
+                </ul>
+
+                <p class="font-black text-slate-900 uppercase text-[11px] border-b border-slate-200 pb-2">§5. PRAWA UŻYTKOWNIKÓW</p>
+                <p><strong>1.</strong> Każdemu Użytkownikowi, którego dane są przetwarzane, przysługuje prawo do:</p>
+                <ul class="list-disc pl-5 space-y-1">
+                    <li><strong>Dostępu do treści swoich danych</strong> – Użytkownik może w każdej chwili sprawdzić, jakie dane są przechowywane, poprzez panel „Moje Konto”.</li>
+                    <li><strong>Sprostowania (poprawiania) danych</strong> – poprzez funkcję „Edytuj moje dane” dostępną w panelu konta.</li>
+                    <li><strong>Usunięcia danych („prawo do bycia zapomnianym”)</strong> – poprzez funkcję „Usuń trwale konto” lub poprzez wysłanie żądania na adres e-mail Administratora. Usunięcie konta powoduje trwałe skasowanie wszystkich danych Użytkownika z bazy.</li>
+                    <li><strong>Ograniczenia przetwarzania</strong> – Użytkownik może żądać czasowego wstrzymania przetwarzania swoich danych.</li>
+                    <li><strong>Przenoszenia danych</strong> – Użytkownik może otrzymać kopię swoich danych w ustrukturyzowanym formacie.</li>
+                    <li><strong>Wniesienia sprzeciwu</strong> wobec przetwarzania danych opartego na prawnie uzasadnionym interesie Administratora.</li>
+                    <li><strong>Cofnięcia zgody</strong> w dowolnym momencie – bez wpływu na zgodność z prawem przetwarzania dokonanego przed jej cofnięciem. Cofnięcie zgody na przetwarzanie danych w Bazie Fachowców skutkuje usunięciem profilu Wykonawcy z Bazy.</li>
+                </ul>
+                <p><strong>2.</strong> W celu realizacji powyższych praw Użytkownik może skontaktować się z Administratorem poprzez e-mail: <a href="mailto:zlecremoncik@gmail.com" class="text-blue-600 font-bold underline">zlecremoncik@gmail.com</a>.</p>
+                <p><strong>3.</strong> Administrator rozpatruje zgłoszenia w terminie <strong>do 30 dni</strong> kalendarzowych od ich otrzymania.</p>
+                <p><strong>4.</strong> Użytkownikowi przysługuje również prawo wniesienia skargi do organu nadzorczego – <strong>Prezesa Urzędu Ochrony Danych Osobowych (PUODO)</strong>, ul. Stawki 2, 00-193 Warszawa.</p>
+
+                <p class="font-black text-slate-900 uppercase text-[11px] border-b border-slate-200 pb-2">§6. SYSTEM PUNKTOWY I ZASADY KORZYSTANIA</p>
+                <p><strong>1.</strong> Każdy zarejestrowany Wykonawca otrzymuje na start <strong>10 punktów (PKT)</strong>.</p>
+                <p><strong>2.</strong> Pula punktów odnawia się automatycznie o <strong>+6 PKT</strong> w każdy poniedziałek o godzinie 00:00. Punkty nie kumulują się ponad początkowy limit.</p>
+                <p><strong>3.</strong> Za każdą pozytywną opinię wystawioną przez Zleceniodawcę, Wykonawca otrzymuje bonus punktowy równy liczbie przyznanych gwiazdek (1–5 PKT).</p>
+                <p><strong>4.</strong> Koszt wykupienia dostępu do zlecenia wynosi: <strong>2 PKT</strong> – gdy ogłoszenie zawiera numer telefonu, <strong>1 PKT</strong> – gdy ogłoszenie nie zawiera numeru telefonu.</p>
+                <p><strong>5.</strong> Limit zgłoszeń do jednego zlecenia wynosi maksymalnie <strong>5 Wykonawców</strong>. Po osiągnięciu limitu przycisk zgłoszeniowy jest blokowany.</p>
+
+                <p class="font-black text-slate-900 uppercase text-[11px] border-b border-slate-200 pb-2">§7. POSTANOWIENIA KOŃCOWE</p>
+                <p><strong>1.</strong> Administrator zastrzega sobie prawo do zmiany Regulaminu. O wszelkich zmianach Użytkownicy zostaną poinformowani z wyprzedzeniem poprzez e-mail lub komunikat w serwisie.</p>
+                <p><strong>2.</strong> W sprawach nieuregulowanych niniejszym Regulaminem zastosowanie mają przepisy Kodeksu cywilnego oraz RODO.</p>
+                <p><strong>3.</strong> Regulamin wchodzi w życie z dniem publikacji na stronie.</p>
+
+                <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 mt-4">
+                    <p class="font-black text-amber-700 text-[10px] uppercase mb-1">📧 Kontakt z Administratorem:</p>
+                    <p class="text-amber-800 font-bold">E-mail: <a href="mailto:zlecremoncik@gmail.com" class="underline">zlecremoncik@gmail.com</a></p>
+                    <p class="text-amber-700 text-[9px] mt-1">Wszelkie pytania dotyczące przetwarzania danych osobowych prosimy kierować na powyższy adres.</p>
+                </div>
             </div>`;
     } else if(type === 'rodo') {
         title.innerText = "Polityka Prywatności i RODO";
         body.innerHTML = `
-            <div class="space-y-3 text-slate-700 text-xs leading-relaxed">
-                <p class="font-bold text-slate-800 uppercase text-[10px]">§1. DOBROWOLNOŚĆ DANYCH</p>
-                <p>1. Podanie jakichkolwiek danych osobowych, numerów telefonu czy adresów e-mail jest w 100% dobrowolne i stanowi wyłączną decyzję Użytkownika. Użytkownik sam bierze odpowiedzialność za upublicznianie swoich danych.</p>
-                <p>2. Dane kontaktowe Zleceniodawców są szyfrowane i ukryte. Zostają udostępnione Wykonawcy wyłącznie w momencie poprawnego zaaplikowania do ogłoszenia i pobrania punktów z salda.</p>
-                <p>3. Każdy użytkownik ma prawo do wglądu, edycji oraz żądania trwałego usunięcia swoich danych z serwisu w dowolnym momencie.</p>
+            <div class="space-y-4 text-slate-700 text-xs leading-relaxed">
+
+                <p class="font-black text-slate-900 uppercase text-[11px] border-b border-slate-200 pb-2">§1. ADMINISTRATOR DANYCH</p>
+                <p><strong>1.</strong> Administratorem danych osobowych zbieranych za pośrednictwem serwisu <strong>ZlećRemoncik</strong> (<a href="https://zlecremoncik.pl" class="text-blue-600 underline">https://zlecremoncik.pl</a>) jest właściciel platformy z siedzibą w Ząbkach.</p>
+                <p><strong>2.</strong> Kontakt z Administratorem: <a href="mailto:zlecremoncik@gmail.com" class="text-blue-600 font-bold underline">zlecremoncik@gmail.com</a>.</p>
+                <p><strong>3.</strong> Administrator dokłada szczególnej staranności w celu ochrony interesów osób, których dane dotyczą, zapewniając zgodne z prawem, rzetelne i przejrzyste przetwarzanie danych.</p>
+
+                <p class="font-black text-slate-900 uppercase text-[11px] border-b border-slate-200 pb-2">§2. DOBROWOLNOŚĆ PODAWANIA DANYCH</p>
+                <p><strong>1.</strong> Podanie jakichkolwiek danych osobowych (w tym adresu e-mail, numeru telefonu, nazwy firmy, NIP, miejscowości) jest <strong>w 100% dobrowolne</strong> i stanowi wyłączną, świadomą decyzję Użytkownika.</p>
+                <p><strong>2.</strong> Rejestracja w serwisie jako Wykonawca i tym samym pojawienie się w Bazie Fachowców następuje <strong>wyłącznie po wyrażeniu świadomej zgody</strong> poprzez zaznaczenie odpowiedniego checkboxa akceptującego Regulamin i Politykę Prywatności podczas rejestracji.</p>
+                <p><strong>3.</strong> Użytkownik ponosi pełną odpowiedzialność za dane, które zdecyduje się upublicznić w ramach swojego ogłoszenia lub profilu Wykonawcy.</p>
+
+                <p class="font-black text-slate-900 uppercase text-[11px] border-b border-slate-200 pb-2">§3. CEL I PODSTAWA PRAWNA PRZETWARZANIA</p>
+                <p><strong>1.</strong> Dane przetwarzane są w następujących celach:</p>
+                <ul class="list-disc pl-5 space-y-1">
+                    <li><strong>Prowadzenie konta Użytkownika</strong> – art. 6 ust. 1 lit. b RODO (umowa).</li>
+                    <li><strong>Publikacja w Bazie Fachowców</strong> – art. 6 ust. 1 lit. a RODO (zgoda).</li>
+                    <li><strong>Udostępnienie danych kontaktowych Wykonawcom</strong> po zakupie dostępu – art. 6 ust. 1 lit. b RODO.</li>
+                    <li><strong>Komunikacja systemowa i obsługa czatu</strong> – art. 6 ust. 1 lit. b i f RODO.</li>
+                    <li><strong>Marketing bezpośredni</strong> (wyłącznie po odrębnej, dobrowolnej zgodzie) – art. 6 ust. 1 lit. a RODO.</li>
+                </ul>
+
+                <p class="font-black text-slate-900 uppercase text-[11px] border-b border-slate-200 pb-2">§4. BEZPIECZEŃSTWO I PRAWA UŻYTKOWNIKÓW</p>
+                <p><strong>1.</strong> Dane kontaktowe Zleceniodawców są w serwisie <strong>domyślnie ukryte</strong>. Zostają udostępnione Wykonawcy wyłącznie w momencie wykupienia dostępu do ogłoszenia.</p>
+                <p><strong>2.</strong> Każdy Użytkownik posiada pełne prawa wynikające z RODO: dostęp, sprostowanie, usunięcie, ograniczenie, przeniesienie, sprzeciw oraz <strong>cofnięcie zgody w dowolnym momencie</strong>.</p>
+                <p><strong>3.</strong> Żądanie usunięcia danych można zrealizować samodzielnie poprzez przycisk <strong>„Usuń trwale konto”</strong> w panelu Użytkownika lub wysyłając e-mail do Administratora.</p>
+                <p><strong>4.</strong> Dane przechowywane są nie dłużej niż to konieczne: ogłoszenia – maksymalnie <strong>14 dni</strong>, dane konta – do momentu jego usunięcia (realizacja w ciągu 30 dni).</p>
+                <p><strong>5.</strong> Serwis wykorzystuje <strong>wyłącznie niezbędne pliki cookies</strong> do prawidłowego działania (sesja, logowanie). Nie stosuje się cookies marketingowych ani śledzących bez zgody Użytkownika.</p>
+
+                <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 mt-4">
+                    <p class="font-black text-amber-700 text-[10px] uppercase mb-1">⚠️ Skarga do organu nadzorczego:</p>
+                    <p class="text-amber-800 font-bold">Prezes Urzędu Ochrony Danych Osobowych (PUODO)</p>
+                    <p class="text-amber-700 text-[9px]">ul. Stawki 2, 00-193 Warszawa | tel. 22 531 03 00</p>
+                </div>
             </div>`;
     } else if(type === 'kontakt') {
         title.innerText = "Pomoc i Kontakt";
