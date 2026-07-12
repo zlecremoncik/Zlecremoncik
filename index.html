@@ -796,31 +796,46 @@ async function add() {
 }
 
 async function load() {
-    let q = db.from('zlecenia').select('*, zgloszenia(*)').order('id', { ascending: false });
+    let q = db.from('zlecenia').select('*').order('id', { ascending: false });
     const cityInput = document.getElementById('search-city').value.trim();
     
     if (cityInput !== "") q = q.ilike('miasto', `%${cityInput}%`);
     const categorySelect = document.getElementById('search-category').value;
     if (categorySelect !== "") q = q.eq('kategoria', categorySelect);
     
-    const { data: allData } = await q;
+    const { data: allData, error } = await q;
     const listEl = document.getElementById("list");
+    
+    if (error) {
+        console.error("Błąd load():", error);
+        listEl.innerHTML = `<p class='text-center py-16 text-xs font-semibold bg-white rounded-2xl border text-red-500'>Błąd pobierania danych: ${error.message}</p>`;
+        return;
+    }
     
     if (!allData || allData.length === 0) {
         listEl.innerHTML = `<p class='text-center py-16 text-xs font-semibold bg-white rounded-2xl border'>Brak wpisów.</p>`;
         return;
     }
 
+    // Pobieramy liczbę zgłoszeń do wszystkich zleceń osobno (count bez RLS – publiczne)
+    let appsCountMap = {};
+    try {
+        const { data: allApps } = await db.from('zgloszenia').select('zlecenie_id');
+        if (allApps) {
+            allApps.forEach(a => {
+                appsCountMap[a.zlecenie_id] = (appsCountMap[a.zlecenie_id] || 0) + 1;
+            });
+        }
+    } catch(e) {}
+
     const dateLimit = new Date();
     dateLimit.setDate(dateLimit.getDate() - 14);
 
     const filteredData = allData.filter(z => {
-        // Krytyczny FIX dla systemów iOS/Android - rygorystyczne parsowanie standardu dat ISO
         const rawDate = z.created_at ? z.created_at.replace(' ', 'T') : null;
         const recordDate = rawDate ? new Date(rawDate) : new Date();
         const isRecent = isNaN(recordDate.getTime()) ? true : recordDate >= dateLimit;
         const isNotFinished = z.status_zlecenia !== 'zakonczone';
-        
         return isRecent && isNotFinished;
     });
 
@@ -836,7 +851,7 @@ async function load() {
     const pagedData = filteredData.slice(start, start + perPage);
 
     let htmlContent = pagedData.map(z => {
-        const totalReq = z.zgloszenia ? z.zgloszenia.length : 0;
+        const totalReq = appsCountMap[z.id] || 0;
         const hasTel = (z.telefon && z.telefon.trim().length === 9) ? "✅ Podano" : "❌ Brak";
         return `
         <div onclick="openDetails(${z.id})" class="group bg-white rounded-2xl card-shadow overflow-hidden border border-slate-100 cursor-pointer hover:border-blue-300 transition-all p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative">
@@ -1193,24 +1208,41 @@ async function loadAccountPanel(page = 1) {
     const actTitle = document.getElementById('activity-title');
     const perPage = 5;
 
-    if (!currentProfile) {
+        if (!currentProfile) {
         actTitle.innerText = "📂 MOJE ZLECENIA";
-        const { data: posts, error: pErr } = await db.from('zlecenia').select('*, zgloszenia(*)').eq('user_id', currentUser.id).order('created_at', {ascending: false});
-        if (pErr) return postsList.innerHTML = "Błąd pobierania danych.";
+        const { data: posts, error: pErr } = await db.from('zlecenia').select('*').eq('user_id', currentUser.id).order('created_at', {ascending: false});
+        if (pErr) {
+            console.error("Błąd zleceń klienta:", pErr);
+            return postsList.innerHTML = "Błąd pobierania danych.";
+        }
         if (!posts || posts.length === 0) return postsList.innerHTML = `<p class="text-xs text-slate-400 text-center py-10 font-bold uppercase">Brak Twoich ogłoszeń.</p>`;
 
-        const allContractorIds = [...new Set(posts.flatMap(p => p.zgloszenia?.map(z => z.wykonawca_id) || []))];
+        // Pobieramy zgłoszenia osobno (po ID zleceń), a potem profile wykonawców
+        const zleceniaIds = posts.map(p => p.id);
+        let allApps = [];
         let profileMap = {};
-        if (allContractorIds.length > 0) {
-            const { data: profiles } = await db.from('profile_wykonawcow').select('*').in('user_id', allContractorIds);
-            profiles?.forEach(pr => profileMap[pr.user_id] = pr);
+        if (zleceniaIds.length > 0) {
+            const appsRes = await db.from('zgloszenia').select('*').in('zlecenie_id', zleceniaIds);
+            if (appsRes.data) allApps = appsRes.data;
+            
+            const wykIds = [...new Set(allApps.map(a => a.wykonawca_id))];
+            if (wykIds.length > 0) {
+                const { data: profiles } = await db.from('profile_wykonawcow').select('*').in('user_id', wykIds);
+                profiles?.forEach(pr => profileMap[pr.user_id] = pr);
+            }
         }
+        
+        const zgloszeniaMap = {};
+        allApps.forEach(a => {
+            if (!zgloszeniaMap[a.zlecenie_id]) zgloszeniaMap[a.zlecenie_id] = [];
+            zgloszeniaMap[a.zlecenie_id].push(a);
+        });
 
         const start = (page - 1) * perPage;
         const pagedPosts = posts.slice(start, start + perPage);
 
         postsList.innerHTML = pagedPosts.map(p => {
-            const applicants = p.zgloszenia || [];
+            const applicants = zgloszeniaMap[p.id] || [];
             let applicantsHtml = applicants.length > 0 ? `
                 <div class="mt-4 pt-3 border-t border-slate-100 space-y-2">
                     <p class="text-[9px] font-black text-blue-600 uppercase tracking-wider mb-2">Chętni fachowcy (${applicants.length}/5):</p>
@@ -1228,25 +1260,25 @@ async function loadAccountPanel(page = 1) {
                                         <span>📧 ${prof?.email || 'Brak e-mail'}</span>
                                     </div>
                                 </div>
-                                                                    <div class="flex gap-1">
-                                        <button onclick="event.stopPropagation(); openChatBox('${app.wykonawca_id}', ${p.id}, '${name}')" class="bg-white border border-slate-200 text-slate-700 px-3 py-1.5 rounded-xl text-[8px] font-black uppercase hover:bg-blue-50 transition-all">Czat</button>
-                                        ${(() => {
-                                                                                                                                    const currentChosenId = p.wybrany_wykonawca_id ? String(p.wybrany_wykonawca_id).trim().toLowerCase() : null;
-                                            const currentAppId = app.wykonawca_id ? String(app.wykonawca_id).trim().toLowerCase() : '';
-                                            const isChosen = (currentChosenId === currentAppId);
-                                            
-                                            if (!currentChosenId) {
-                                                return `<button onclick="event.stopPropagation(); chooseAndRefresh(${p.id}, '${app.wykonawca_id}')" class="bg-blue-600 text-white px-3 py-1.5 rounded-xl text-[8px] font-black uppercase hover:bg-blue-700 shadow-md">Wybierz</button>`;
-                                            } else if (isChosen) {
-                                                return `
-                                                    <button disabled class="bg-slate-200 text-slate-500 px-3 py-1.5 rounded-xl text-[8px] font-black uppercase">Wybrano</button>
-                                                    <button onclick="event.stopPropagation(); openOpinionModal('${app.wykonawca_id}', ${p.id}, '${name}')" class="bg-amber-500 text-white px-3 py-1.5 rounded-xl text-[8px] font-black uppercase hover:bg-amber-600 shadow-md">Wystaw opinię</button>
-                                                `;
-                                            } else {
-                                                return `<button disabled class="bg-slate-100 text-slate-300 px-3 py-1.5 rounded-xl text-[8px] font-black uppercase">Nie wybrany</button>`;
-                                            }
-                                        })()}
-                                    </div>
+                                <div class="flex gap-1">
+                                    <button onclick="event.stopPropagation(); openChatBox('${app.wykonawca_id}', ${p.id}, '${name}')" class="bg-white border border-slate-200 text-slate-700 px-3 py-1.5 rounded-xl text-[8px] font-black uppercase hover:bg-blue-50 transition-all">Czat</button>
+                                    ${(() => {
+                                        const currentChosenId = p.wybrany_wykonawca_id ? String(p.wybrany_wykonawca_id).trim().toLowerCase() : null;
+                                        const currentAppId = app.wykonawca_id ? String(app.wykonawca_id).trim().toLowerCase() : '';
+                                        const isChosenNow = (currentChosenId === currentAppId);
+                                        
+                                        if (!currentChosenId) {
+                                            return `<button onclick="event.stopPropagation(); chooseAndRefresh(${p.id}, '${app.wykonawca_id}')" class="bg-blue-600 text-white px-3 py-1.5 rounded-xl text-[8px] font-black uppercase hover:bg-blue-700 shadow-md">Wybierz</button>`;
+                                        } else if (isChosenNow) {
+                                            return `
+                                                <button disabled class="bg-slate-200 text-slate-500 px-3 py-1.5 rounded-xl text-[8px] font-black uppercase">Wybrano</button>
+                                                <button onclick="event.stopPropagation(); openOpinionModal('${app.wykonawca_id}', ${p.id}, '${name}')" class="bg-amber-500 text-white px-3 py-1.5 rounded-xl text-[8px] font-black uppercase hover:bg-amber-600 shadow-md">Wystaw opinię</button>
+                                            `;
+                                        } else {
+                                            return `<button disabled class="bg-slate-100 text-slate-300 px-3 py-1.5 rounded-xl text-[8px] font-black uppercase">Nie wybrany</button>`;
+                                        }
+                                    })()}
+                                </div>
                             </div>
                         </div>`;
                     }).join('')}
