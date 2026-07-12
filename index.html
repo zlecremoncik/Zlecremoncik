@@ -890,6 +890,23 @@ async function cronCleanOldJobs() {
 cronCleanOldJobs(); // Uruchom raz przy starcie strony
 setInterval(load, 30000);
 setInterval(cronCleanOldJobs, 3600000); // Czyszczenie bazy co godzinę
+// 3. Automatyczne odnawianie punktów w każdy poniedziałek o 00:00
+async function cronResetPoints() {
+    const now = new Date();
+    // Sprawdzamy czy dzisiaj jest poniedziałek (getDay() === 1)
+    if (now.getDay() === 1) {
+        // Resetujemy punkty do 10 dla wszystkich wykonawców, którzy mają mniej niż 10
+        const { error } = await db.from('profile_wykonawcow')
+            .update({ punkty: 10 })
+            .lt('punkty', 10);
+        
+        if (!error) {
+            console.log('✅ Punkty odnowione: ' + new Date().toLocaleString());
+        }
+    }
+}
+cronResetPoints(); // Uruchom raz przy starcie
+setInterval(cronResetPoints, 3600000); // Sprawdzaj co godzinę
 setInterval(() => { if(currentUser) loadConversations(); }, 10000);
 
 function openDetails(id) { window.location.hash = `ogloszenie-${id}`; }
