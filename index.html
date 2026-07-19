@@ -682,9 +682,10 @@ async function signUp() {
 }
 async function signOut() { 
     await db.auth.signOut(); 
-    localStorage.clear(); // Czyści role i sesje
+    localStorage.removeItem('cookie-accept');
+    localStorage.removeItem('google_login_role');
     toggleAccountMenu(false); 
-    window.location.href = window.location.origin + window.location.pathname; // Pełne odświeżenie strony
+    window.location.href = window.location.origin + window.location.pathname;
 }
 
 function toggleAccountMenu(open) {
@@ -885,43 +886,7 @@ async function load() {
 
     listEl.innerHTML = htmlContent;
 }
-// Funkcja trwale usuwająca z bazy ogłoszenia starsze niż 14 dni (retencja danych)
-async function cronCleanOldJobs() {
-    const dateLimit = new Date();
-    dateLimit.setDate(dateLimit.getDate() - 14);
-    const dateLimitISO = dateLimit.toISOString();
 
-    // Usuwamy tylko zlecenia typu 'klient', które nie zostały zakończone i są starsze niż 14 dni
-    const { error } = await db.from('zlecenia')
-        .delete()
-        .eq('typ_wpisu', 'klient')
-        .neq('status_zlecenia', 'zakonczone')
-        .lt('created_at', dateLimitISO);
-
-    if (error) console.error("Błąd czyszczenia starych ogłoszeń:", error.message);
-}
-
-// 2. Automatyczne odświeżanie i uruchomienie czyszczenia
-cronCleanOldJobs(); // Uruchom raz przy starcie strony
-setInterval(load, 30000);
-setInterval(cronCleanOldJobs, 3600000); // Czyszczenie bazy co godzinę
-// 3. Automatyczne odnawianie punktów w każdy poniedziałek o 00:00
-async function cronResetPoints() {
-    const now = new Date();
-    // Sprawdzamy czy dzisiaj jest poniedziałek (getDay() === 1)
-    if (now.getDay() === 1) {
-        // Resetujemy punkty do 10 dla wszystkich wykonawców, którzy mają mniej niż 10
-        const { error } = await db.from('profile_wykonawcow')
-            .update({ punkty: 10 })
-            .lt('punkty', 10);
-        
-        if (!error) {
-            console.log('✅ Punkty odnowione: ' + new Date().toLocaleString());
-        }
-    }
-}
-cronResetPoints(); // Uruchom raz przy starcie
-setInterval(cronResetPoints, 3600000); // Sprawdzaj co godzinę
 setInterval(() => { if(currentUser) loadConversations(); }, 10000);
 
 function openDetails(id) { window.location.hash = `ogloszenie-${id}`; }
@@ -1175,7 +1140,10 @@ async function loadOpinions(wykonawcaId) {
 async function submitOpinion() {
     const hash = window.location.hash;
     const id = hash.replace('#ogloszenie-', '');
-    const { data: targetZlecenie } = await db.from("zlecenia").select("*").eq('id', id).single();
+        const { data: targetZlecenie } = await db.from("zlecenia").select("*").eq('id', id).single();
+    
+    const already = await db.from('opinie').select('id').eq('wykonawca_id', targetZlecenie.wybrany_wykonawca_id).eq('autor_email', currentUser.email).maybeSingle();
+    if(already) return alert("Już wystawiłeś opinię za to zlecenie!");
     
     const em = document.getElementById('op-email').value;
     const stars = parseInt(document.getElementById('op-stars').value);
@@ -1426,21 +1394,35 @@ async function loadMessages() {
         return (mN === ja && mO === partner) || (mN === partner && mO === ja);
     });
 
-    const newHtml = filtered.map(m => {
-        const d = new Date(m.created_at);
-        // DATA I CZAS: np. 18.06 12:07
-        const timestamp = `${d.toLocaleDateString([], {day:'2-digit', month:'2-digit'})} ${d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
-        
-        return `
-        <div class="max-w-[85%] mb-3 p-3 shadow-sm ${String(m.nadawca_id) === ja ? 'ml-auto chat-bubble-me' : 'mr-auto chat-bubble-them'}">
-            <p class="text-[7px] mb-1 opacity-70 font-black uppercase">${String(m.nadawca_id) === ja ? 'Ty' : 'Rozmówca'}</p>
-            <p class="text-xs leading-relaxed">${m.tresc}</p>
-            <p class="text-[6px] mt-1 opacity-50 text-right uppercase font-bold tracking-tighter">${timestamp}</p>
-        </div>`;
-    }).join("");
-    
-    if (msgBox.innerHTML !== newHtml) {
-        msgBox.innerHTML = newHtml || '<div class="text-center py-10 text-[10px] text-slate-400 font-bold uppercase tracking-widest">Napisz pierwszą wiadomość...</div>';
+    msgBox.innerHTML = '';
+    if (filtered.length === 0) {
+        msgBox.innerHTML = '<div class="text-center py-10 text-[10px] text-slate-400 font-bold uppercase tracking-widest">Napisz pierwszą wiadomość...</div>';
+    } else {
+        filtered.forEach(m => {
+            const d = new Date(m.created_at);
+            const timestamp = `${d.toLocaleDateString([], {day:'2-digit', month:'2-digit'})} ${d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
+            const isMe = String(m.nadawca_id) === ja;
+            
+            const bubble = document.createElement('div');
+            bubble.className = `max-w-[85%] mb-3 p-3 shadow-sm ${isMe ? 'ml-auto chat-bubble-me' : 'mr-auto chat-bubble-them'}`;
+            
+            const sender = document.createElement('p');
+            sender.className = 'text-[7px] mb-1 opacity-70 font-black uppercase';
+            sender.textContent = isMe ? 'Ty' : 'Rozmówca';
+            
+            const p = document.createElement('p');
+            p.className = 'text-xs leading-relaxed';
+            p.textContent = m.tresc;
+            
+            const time = document.createElement('p');
+            time.className = 'text-[6px] mt-1 opacity-50 text-right uppercase font-bold tracking-tighter';
+            time.textContent = timestamp;
+            
+            bubble.appendChild(sender);
+            bubble.appendChild(p);
+            bubble.appendChild(time);
+            msgBox.appendChild(bubble);
+        });
         msgBox.scrollTo({ top: msgBox.scrollHeight, behavior: 'smooth' });
     }
 }
